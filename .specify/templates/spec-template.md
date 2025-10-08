@@ -1,115 +1,180 @@
-# Feature Specification: [FEATURE NAME]
+# Technical Specification Template
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
-**Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
-
-## User Scenarios & Testing *(mandatory)*
-
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
-
-### User Story 1 - [Brief Title] (Priority: P1)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+**Feature:** [FEATURE_NAME]  
+**Spec ID:** [SPEC-XXX]  
+**Date:** [YYYY-MM-DD]  
+**Status:** [Draft | In Review | Approved | Implemented]  
+**Author:** [AUTHOR_NAME]
 
 ---
 
-### User Story 2 - [Brief Title] (Priority: P2)
+## Executive Summary
 
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+[2-3 sentence overview of what this spec describes and why it matters]
 
 ---
 
-### User Story 3 - [Brief Title] (Priority: P3)
+## Constitutional Principles
 
-[Describe this user journey in plain language]
+This specification adheres to the following constitutional principles:
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**Primary Principles:**
+- [Principle Name]: [How this spec aligns]
 
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+**Secondary Principles:**
+- [Principle Name]: [How this spec supports]
 
 ---
 
-[Add more user stories as needed, each with an assigned priority]
+## Scope
 
-### Edge Cases
+### In Scope
+- [Item 1]
+- [Item 2]
+- [Item 3]
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
+### Out of Scope
+- [Item 1]
+- [Item 2]
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+---
 
-## Requirements *(mandatory)*
+## Requirements
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
+### Must Have (P0)
+1. [Requirement with clear acceptance criteria]
+2. [Requirement with clear acceptance criteria]
 
-### Functional Requirements
+### Should Have (P1)
+1. [Requirement with clear acceptance criteria]
+2. [Requirement with clear acceptance criteria]
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+### Nice to Have (P2)
+1. [Requirement with clear acceptance criteria]
 
-*Example of marking unclear requirements:*
+---
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+## User Stories
 
-### Key Entities *(include if feature involves data)*
+**As a** [user type]  
+**I want** [goal]  
+**So that** [benefit/rationale]
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+**Acceptance Criteria:**
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
 
-## Success Criteria *(mandatory)*
+---
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
+## Technical Design
 
-### Measurable Outcomes
+### Architecture Overview
+[High-level architecture description or diagram]
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+### Data Model
+```
+[Define schemas, tables, or data structures]
+```
+
+### API Endpoints (if applicable)
+```
+GET /api/[endpoint]
+POST /api/[endpoint]
+PUT /api/[endpoint]
+DELETE /api/[endpoint]
+```
+
+### Security Considerations
+- **Authentication:** [Approach]
+- **Authorization:** [Access control model]
+- **Data Encryption:** [What and how]
+- **Audit Logging:** [What to log]
+
+### Performance Considerations
+- **Expected Load:** [Metrics]
+- **Response Time:** [Target]
+- **Scalability:** [Approach]
+
+---
+
+## UI/UX Design
+
+[Wireframes, mockups, or descriptions]
+
+**Design Principles Applied:**
+- Light minimalist aesthetic
+- Clear information hierarchy
+- Intuitive navigation
+- Accessible and responsive
+
+---
+
+## Implementation Plan
+
+### Phase 1: [Phase Name]
+- [ ] [Task 1]
+- [ ] [Task 2]
+
+### Phase 2: [Phase Name]
+- [ ] [Task 1]
+- [ ] [Task 2]
+
+---
+
+## Testing Plan
+
+### Unit Tests
+- [Test scenario 1]
+- [Test scenario 2]
+
+### Integration Tests
+- [Test scenario 1]
+- [Test scenario 2]
+
+### Security Tests
+- [Test scenario 1]
+- [Test scenario 2]
+
+### User Acceptance Tests
+- [Test scenario 1]
+- [Test scenario 2]
+
+---
+
+## Risks & Mitigations
+
+| Risk | Probability | Impact | Mitigation |
+|------|------------|--------|-----------|
+| [Risk] | [L/M/H] | [L/M/H] | [Strategy] |
+
+---
+
+## Dependencies
+
+- [ ] [External dependency 1]
+- [ ] [Internal dependency 1]
+- [ ] [Infrastructure requirement]
+
+---
+
+## Open Questions
+
+1. [Question requiring resolution]
+2. [Question requiring resolution]
+
+---
+
+## References
+
+- [Link to related docs]
+- [Link to research/external resources]
+- Constitution: `.specify/memory/constitution.md`
+
+---
+
+## Changelog
+
+| Date | Version | Changes | Author |
+|------|---------|---------|--------|
+| [YYYY-MM-DD] | 1.0.0 | Initial draft | [Name] |

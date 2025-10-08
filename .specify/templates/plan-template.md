@@ -1,104 +1,124 @@
-# Implementation Plan: [FEATURE]
+# Project Plan Template
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Project:** [PROJECT_NAME]  
+**Date Created:** [YYYY-MM-DD]  
+**Last Updated:** [YYYY-MM-DD]  
+**Version:** [X.Y.Z]
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+---
 
-## Summary
+## Overview
 
-[Extract from feature spec: primary requirement + technical approach from research]
+**Objective:**  
+[Brief description of what this plan aims to achieve]
 
-## Technical Context
+**Scope:**  
+[What is included and excluded from this plan]
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Timeline:**  
+- Start Date: [YYYY-MM-DD]
+- Target Completion: [YYYY-MM-DD]
+- Key Milestones: [List major checkpoints]
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+---
 
-## Constitution Check
+## Constitution Alignment Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+Before proceeding, verify alignment with project constitution principles:
 
-[Gates determined based on constitution file]
+- [ ] **Principle 1 - Light Minimalist Design**: Does this plan maintain UI/UX simplicity?
+- [ ] **Principle 2 - Code Clarity & Readability**: Will code changes follow clarity standards?
+- [ ] **Principle 3 - Multi-Rate Financial Automation**: Does this support or respect billing requirements?
+- [ ] **Principle 4 - Rich Media Course Logging**: Are logging capabilities preserved/enhanced?
+- [ ] **Principle 5 - Security & Encryption First**: Are security considerations addressed?
+- [ ] **Principle 6 - Efficient Operations**: Does this improve operational efficiency?
+- [ ] **Principle 7 - Professional Service Delivery**: Will this maintain professional standards?
 
-## Project Structure
+---
 
-### Documentation (this feature)
+## Requirements
 
-```
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
-```
+### Functional Requirements
+1. [Requirement 1]
+2. [Requirement 2]
+3. [Requirement 3]
 
-### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+### Non-Functional Requirements
+- **Performance:** [Specify performance criteria]
+- **Security:** [Specify security requirements]
+- **Scalability:** [Specify scalability needs]
+- **Usability:** [Specify usability standards]
 
-```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+---
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+## Architecture & Design
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+### System Components
+[Describe major components involved]
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+### Data Models
+[Describe data structures and relationships]
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+### Integration Points
+[Describe how this integrates with existing systems]
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
-```
+---
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+## Implementation Strategy
 
-## Complexity Tracking
+### Phase 1: [Phase Name]
+- **Goals:** [What will be achieved]
+- **Tasks:** [Key tasks]
+- **Deliverables:** [What will be produced]
+- **Duration:** [Estimated time]
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+### Phase 2: [Phase Name]
+- **Goals:** [What will be achieved]
+- **Tasks:** [Key tasks]
+- **Deliverables:** [What will be produced]
+- **Duration:** [Estimated time]
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+[Add more phases as needed]
+
+---
+
+## Risk Assessment
+
+| Risk | Likelihood | Impact | Mitigation Strategy |
+|------|-----------|--------|-------------------|
+| [Risk 1] | [L/M/H] | [L/M/H] | [How to mitigate] |
+| [Risk 2] | [L/M/H] | [L/M/H] | [How to mitigate] |
+
+---
+
+## Testing Strategy
+
+- **Unit Testing:** [Approach]
+- **Integration Testing:** [Approach]
+- **Security Testing:** [Approach]
+- **User Acceptance Testing:** [Approach]
+
+---
+
+## Dependencies
+
+- [ ] [Dependency 1]
+- [ ] [Dependency 2]
+- [ ] [Dependency 3]
+
+---
+
+## Success Criteria
+
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
+
+---
+
+## Sign-off
+
+**Prepared By:** [Name]  
+**Reviewed By:** [Name]  
+**Approved By:** [Name]  
+**Approval Date:** [YYYY-MM-DD]
