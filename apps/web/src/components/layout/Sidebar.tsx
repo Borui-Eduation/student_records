@@ -1,0 +1,94 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  FileText,
+  Lock,
+  Share2,
+  Building2,
+  DollarSign,
+} from 'lucide-react';
+
+const navItems = [
+  {
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    title: 'Clients',
+    href: '/dashboard/clients',
+    icon: Users,
+  },
+  {
+    title: 'Rates',
+    href: '/dashboard/rates',
+    icon: DollarSign,
+  },
+  {
+    title: 'Sessions',
+    href: '/dashboard/sessions',
+    icon: Calendar,
+  },
+  {
+    title: 'Invoices',
+    href: '/dashboard/invoices',
+    icon: FileText,
+  },
+  {
+    title: 'Knowledge Base',
+    href: '/dashboard/knowledge',
+    icon: Lock,
+  },
+  {
+    title: 'Sharing Links',
+    href: '/dashboard/sharing',
+    icon: Share2,
+  },
+  {
+    title: 'Company Profile',
+    href: '/dashboard/profile',
+    icon: Building2,
+  },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+
+  return (
+    <div className="hidden w-64 border-r bg-card lg:block">
+      <div className="flex h-full flex-col">
+        <div className="flex h-14 items-center border-b px-6">
+          <h1 className="text-lg font-semibold">Student Record</h1>
+        </div>
+        <nav className="flex-1 space-y-1 p-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.title}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+}
+

@@ -1,0 +1,145 @@
+import { router, adminProcedure } from '../trpc';
+import { TRPCError } from '@trpc/server';
+import {
+  CreateClientSchema,
+  UpdateClientSchema,
+  ListClientsSchema,
+} from '@student-record/shared';
+import * as admin from 'firebase-admin';
+
+export const clientsRouter = router({
+  /**
+   * Create a new client
+   */
+  create: adminProcedure
+    .input(CreateClientSchema)
+    .mutation(async ({ ctx, input }) => {
+      const now = admin.firestore.Timestamp.now();
+
+      const clientData = {
+        ...input,
+        active: true,
+        defaultRateIds: [],
+        createdAt: now,
+        updatedAt: now,
+        createdBy: ctx.user.uid,
+      };
+
+      const docRef = await ctx.db.collection('clients').add(clientData);
+
+      return {
+        id: docRef.id,
+        ...clientData,
+      };
+    }),
+
+  /**
+   * Get a client by ID
+   */
+  get: adminProcedure
+    .input(CreateClientSchema.pick({ name: true }))
+    .query(async ({ ctx, input: _input }) => {
+      // Placeholder implementation
+      throw new TRPCError({
+        code: 'NOT_IMPLEMENTED',
+        message: 'This endpoint is not yet implemented',
+      });
+    }),
+
+  /**
+   * List clients with filtering
+   */
+  list: adminProcedure
+    .input(ListClientsSchema)
+    .query(async ({ ctx, input }) => {
+      let query: admin.firestore.Query = ctx.db.collection('clients');
+
+      // Apply filters
+      if (input.type) {
+        query = query.where('type', '==', input.type);
+      }
+
+      if (input.active !== undefined) {
+        query = query.where('active', '==', input.active);
+      }
+
+      // Search by name (case-insensitive prefix match)
+      if (input.search) {
+        const searchUpper = input.search.charAt(0).toUpperCase() + input.search.slice(1);
+        query = query
+          .where('name', '>=', searchUpper)
+          .where('name', '<=', searchUpper + '\uf8ff');
+      }
+
+      // Order by name
+      query = query.orderBy('name', 'asc');
+
+      // Pagination
+      if (input.cursor) {
+        const cursorDoc = await ctx.db.collection('clients').doc(input.cursor).get();
+        if (cursorDoc.exists) {
+          query = query.startAfter(cursorDoc);
+        }
+      }
+
+      query = query.limit(input.limit || 50);
+
+      const snapshot = await query.get();
+
+      const items = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return {
+        items,
+        nextCursor: snapshot.docs.length === input.limit ? snapshot.docs[snapshot.docs.length - 1].id : undefined,
+        hasMore: snapshot.docs.length === input.limit,
+        total: items.length,
+      };
+    }),
+
+  /**
+   * Update a client
+   */
+  update: adminProcedure
+    .input(UpdateClientSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input;
+
+      const docRef = ctx.db.collection('clients').doc(id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Client not found',
+        });
+      }
+
+      await docRef.update({
+        ...updates,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+
+      const updated = await docRef.get();
+      return {
+        id: updated.id,
+        ...updated.data(),
+      };
+    }),
+
+  /**
+   * Delete (deactivate) a client
+   */
+  delete: adminProcedure
+    .input(CreateClientSchema.pick({ name: true }))
+    .mutation(async ({ ctx, input: _input }) => {
+      // Placeholder implementation
+      throw new TRPCError({
+        code: 'NOT_IMPLEMENTED',
+        message: 'This endpoint is not yet implemented',
+      });
+    }),
+});
+

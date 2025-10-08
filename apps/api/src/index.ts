@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './routers/_app';
+import { createContext } from './trpc';
 
 // Load environment variables
 dotenv.config();
@@ -16,9 +19,26 @@ app.use(cors({
 
 app.use(express.json());
 
-// Health check endpoint
+// Legacy health check endpoint (for load balancers)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'API is running' });
+});
+
+// tRPC endpoint
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested endpoint does not exist',
+  });
 });
 
 // Error handling middleware
@@ -34,6 +54,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 app.listen(PORT, () => {
   console.log(`🚀 API server running on http://localhost:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 tRPC endpoint: http://localhost:${PORT}/trpc`);
 });
 
 export default app;

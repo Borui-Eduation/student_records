@@ -29,6 +29,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0",
+    "tailwindcss-animate": "^1.0.7",
     "lucide-react": "^0.303.0",
     "@tiptap/react": "^2.1.13",
     "@tiptap/starter-kit": "^2.1.13",
@@ -36,7 +37,8 @@
     "@tiptap/extension-link": "^2.1.13",
     "@excalidraw/excalidraw": "^0.17.0",
     "recharts": "^2.10.3",
-    "date-fns": "^3.0.6"
+    "date-fns": "^3.0.6",
+    "firebase": "^10.7.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
