@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { ClientDialog } from '@/components/clients/ClientDialog';
 
 export default function ClientsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -27,6 +28,8 @@ export default function ClientsPage() {
           New Client
         </Button>
       </div>
+
+      <ClientDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
 
       {error && (
         <Card className="border-destructive">
@@ -59,7 +62,7 @@ export default function ClientsPage() {
             </Card>
           ) : (
             data.items.map((client: any) => (
-              <Card key={client.id}>
+              <Card key={client.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-lg">{client.name}</CardTitle>
                   <CardDescription>
@@ -76,6 +79,12 @@ export default function ClientsPage() {
                     {client.contactInfo?.phone && (
                       <div>
                         <span className="font-medium">Phone:</span> {client.contactInfo.phone}
+                      </div>
+                    )}
+                    {client.notes && (
+                      <div className="mt-2 text-muted-foreground">
+                        {client.notes.substring(0, 100)}
+                        {client.notes.length > 100 && '...'}
                       </div>
                     )}
                   </div>

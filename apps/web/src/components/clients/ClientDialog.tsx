@@ -1,0 +1,203 @@
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CreateClientSchema, type CreateClientInput } from '@student-record/shared';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { trpc } from '@/lib/trpc';
+
+interface ClientDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ClientDialog({ open, onOpenChange }: ClientDialogProps) {
+  const utils = trpc.useUtils();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    reset,
+  } = useForm<CreateClientInput>({
+    resolver: zodResolver(CreateClientSchema),
+    defaultValues: {
+      type: 'individual',
+    },
+  });
+
+  const createMutation = trpc.clients.create.useMutation({
+    onSuccess: () => {
+      utils.clients.list.invalidate();
+      reset();
+      onOpenChange(false);
+    },
+  });
+
+  const onSubmit = async (data: CreateClientInput) => {
+    await createMutation.mutateAsync(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[525px]">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogHeader>
+            <DialogTitle>Create New Client</DialogTitle>
+            <DialogDescription>Add a new client to your system</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                placeholder="Client name"
+                {...register('name')}
+                className={errors.name ? 'border-destructive' : ''}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+
+            {/* Type */}
+            <div className="grid gap-2">
+              <Label htmlFor="type">Type *</Label>
+              <Select
+                value={watch('type')}
+                onValueChange={(value) => setValue('type', value as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="institution">Institution</SelectItem>
+                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="project">Project</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.type && (
+                <p className="text-sm text-destructive">{errors.type.message}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="client@example.com"
+                {...register('contactInfo.email')}
+              />
+              {errors.contactInfo?.email && (
+                <p className="text-sm text-destructive">
+                  {errors.contactInfo.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                placeholder="+86 138 0000 0000"
+                {...register('contactInfo.phone')}
+              />
+              {errors.contactInfo?.phone && (
+                <p className="text-sm text-destructive">
+                  {errors.contactInfo.phone.message}
+                </p>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="grid gap-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                placeholder="Full address"
+                {...register('contactInfo.address')}
+              />
+            </div>
+
+            {/* Billing Address */}
+            <div className="grid gap-2">
+              <Label htmlFor="billingAddress">Billing Address</Label>
+              <Textarea
+                id="billingAddress"
+                placeholder="Billing address (if different)"
+                {...register('billingAddress')}
+              />
+            </div>
+
+            {/* Tax ID */}
+            <div className="grid gap-2">
+              <Label htmlFor="taxId">Tax ID</Label>
+              <Input
+                id="taxId"
+                placeholder="Tax identification number"
+                {...register('taxId')}
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Additional notes"
+                {...register('notes')}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Client'}
+            </Button>
+          </DialogFooter>
+
+          {createMutation.error && (
+            <p className="mt-2 text-sm text-destructive">
+              Error: {createMutation.error.message}
+            </p>
+          )}
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
