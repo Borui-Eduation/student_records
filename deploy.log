@@ -1,3 +1,40 @@
-Building using Dockerfile and deploying container to Cloud Run service [[1mstudent-record-api[m] in project [[1mborui-education-c6666[m] region [[1mus-west1[m]
+[0;34m================================================[0m
+[0;34m   Cloud Run 后端部署脚本[0m
+[0;34m================================================[0m
+
+[1;33m📋 项目配置:[0m
+  项目 ID: borui-education-c6666
+  服务名称: student-record-api
+  区域: asia-east1
+  服务账号: student-record-api@borui-education-c6666.iam.gserviceaccount.com
+
+[0;34m🔧 设置 Google Cloud 项目...[0m
+Updated property [core/project].
+[0;34m📦 步骤 1/4: 构建代码...[0m
+安装依赖...
+Scope: all 4 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 811ms
+构建 shared 包...
+
+> @student-record/shared@1.0.0 build /Users/yao/Documents/Organized_Files/Code_Projects/Student Record/student_record/packages/shared
+> tsc
+
+构建 API...
+
+> api@1.0.0 build /Users/yao/Documents/Organized_Files/Code_Projects/Student Record/student_record/apps/api
+> tsc
+
+[0;32m✅ 代码构建完成[0m
+
+[0;34m🔑 步骤 2/4: 确认 Google Cloud API 已启用...[0m
+[0;32m✅ API 已启用[0m
+
+[0;34m🚀 步骤 3/4: 构建 Docker 镜像并部署到 Cloud Run...[0m
+这可能需要 5-10 分钟...
+
+Building using Dockerfile and deploying container to Cloud Run service [student-record-api] in project [borui-education-c6666] region [asia-east1]
 Building and deploying new service...
-Uploading sources........done
+Uploading sources............................................done
