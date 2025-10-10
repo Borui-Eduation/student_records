@@ -58,13 +58,13 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Sessions</h1>
-          <p className="text-muted-foreground">Track and manage your teaching sessions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Sessions</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Track and manage your teaching sessions</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           New Session
         </Button>
@@ -133,7 +133,7 @@ export default function SessionsPage() {
       )}
 
       {data && (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {data.items.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -147,11 +147,11 @@ export default function SessionsPage() {
           ) : (
             data.items.map((session: any) => (
               <Card key={session.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 pr-4">
-                      <CardTitle className="text-xl">{session.clientName}</CardTitle>
-                      <CardDescription className="flex items-center gap-4 mt-2">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg sm:text-xl">{session.clientName}</CardTitle>
+                      <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
                           {session.date?.toDate
@@ -167,29 +167,8 @@ export default function SessionsPage() {
                         </span>
                       </CardDescription>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex gap-2 mb-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingSession(session)}
-                          className="h-8 w-8"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeletingSession(session)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          disabled={
-                            session.billingStatus === 'billed' || session.billingStatus === 'paid'
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="text-2xl font-bold">
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 sm:gap-2">
+                      <div className="text-xl sm:text-2xl font-bold">
                         ¥{session.totalAmount?.toLocaleString()}
                       </div>
                       <div className="flex gap-2">
@@ -212,15 +191,31 @@ export default function SessionsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Hourly Rate:</span>
-                      <span className="ml-2 font-medium">¥{session.rateAmount}</span>
+                <CardContent className="pt-3 sm:pt-6">
+                  <div className="flex flex-row items-center justify-between sm:grid sm:grid-cols-2 gap-3 sm:gap-4 text-sm mb-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingSession(session)}
+                        className="h-9 w-9"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingSession(session)}
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        disabled={
+                          session.billingStatus === 'billed' || session.billingStatus === 'paid'
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Currency:</span>
-                      <span className="ml-2 font-medium">{session.currency}</span>
+                    <div className="text-sm text-muted-foreground text-right sm:text-left">
+                      Rate: <span className="font-medium text-foreground">¥{session.rateAmount}</span>
                     </div>
                   </div>
                   {session.notes && (

@@ -109,7 +109,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
             {/* Name */}
             <div className="grid gap-2">
               <Label htmlFor="name">Name *</Label>
@@ -218,7 +218,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -227,10 +227,11 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
                 onOpenChange(false);
               }}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting
                 ? isEditMode
                   ? 'Updating...'

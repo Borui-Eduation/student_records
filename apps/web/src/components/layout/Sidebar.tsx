@@ -1,5 +1,6 @@
 'use client';
 
+import { createContext, useContext, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ import {
   Building2,
   DollarSign,
 } from 'lucide-react';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navItems = [
   {
@@ -57,38 +59,85 @@ const navItems = [
   },
 ];
 
-export function Sidebar() {
+// Context for sidebar state
+const SidebarContext = createContext<{
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}>({
+  isOpen: false,
+  setIsOpen: () => {},
+});
+
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
+      {children}
+    </SidebarContext.Provider>
+  );
+}
+
+export function useSidebar() {
+  return useContext(SidebarContext);
+}
+
+function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="hidden w-64 border-r bg-card lg:block">
-      <div className="flex h-full flex-col">
-        <div className="flex h-14 items-center border-b px-6">
-          <h1 className="text-lg font-semibold">Student Record</h1>
+    <nav className="flex-1 space-y-1 p-4">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onLinkClick}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {item.title}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function Sidebar() {
+  const { isOpen, setIsOpen } = useSidebar();
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden w-64 border-r bg-card lg:block">
+        <div className="flex h-full flex-col">
+          <div className="flex h-14 items-center border-b px-6">
+            <h1 className="text-lg font-semibold">Student Record</h1>
+          </div>
+          <SidebarNav />
         </div>
-        <nav className="flex-1 space-y-1 p-4">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.title}
-              </Link>
-            );
-          })}
-        </nav>
       </div>
-    </div>
+
+      {/* Mobile Sidebar Sheet */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <div className="flex h-full flex-col">
+            <div className="flex h-14 items-center border-b px-6">
+              <h1 className="text-lg font-semibold">Student Record</h1>
+            </div>
+            <SidebarNav onLinkClick={() => setIsOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 

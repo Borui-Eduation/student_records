@@ -161,7 +161,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
       </FullscreenEditorDialog>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px]">
           <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Session' : 'Record New Session'}</DialogTitle>
@@ -172,7 +172,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
             {/* Client Selection */}
             <div className="grid gap-2">
               <Label htmlFor="clientId">Client *</Label>
@@ -211,7 +211,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
             </div>
 
             {/* Time Range */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="startTime">Start Time *</Label>
                 <Input
@@ -316,7 +316,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -325,10 +325,11 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
                 onOpenChange(false);
               }}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting
                 ? isEditMode
                   ? 'Updating...'

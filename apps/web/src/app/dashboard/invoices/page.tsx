@@ -73,13 +73,13 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Generate and manage invoices from sessions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Generate and manage invoices from sessions</p>
         </div>
-        <Button onClick={() => setIsGenerateDialogOpen(true)}>
+        <Button onClick={() => setIsGenerateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Generate Invoice
         </Button>
@@ -138,7 +138,7 @@ export default function InvoicesPage() {
       )}
 
       {data && (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {data.items.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -156,10 +156,10 @@ export default function InvoicesPage() {
           ) : (
             data.items.map((invoice: any) => (
               <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1">
-                      <CardTitle className="text-xl flex items-center gap-2">
+                      <CardTitle className="text-lg sm:text-xl flex flex-col sm:flex-row sm:items-center gap-2">
                         {invoice.invoiceNumber}
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
@@ -169,22 +169,22 @@ export default function InvoicesPage() {
                           {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                         </span>
                       </CardTitle>
-                      <CardDescription className="mt-2">
+                      <CardDescription className="mt-2 text-xs sm:text-sm">
                         {invoice.clientName}
                       </CardDescription>
                     </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold">
+                    <div className="text-right sm:text-right">
+                      <div className="text-2xl sm:text-3xl font-bold">
                         ¥{invoice.totalAmount?.toLocaleString()}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                         {invoice.currency}
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                <CardContent className="pt-3 sm:pt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm mb-4">
                     <div>
                       <span className="text-muted-foreground">Issue Date:</span>
                       <span className="ml-2 font-medium">
@@ -241,9 +241,9 @@ export default function InvoicesPage() {
                     </div>
                   )}
 
-                  <div className="mt-4 flex gap-2 flex-wrap">
+                  <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:flex-wrap">
                     {invoice.pdfUrl && (
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto">
                         <Download className="mr-2 h-4 w-4" />
                         Download PDF
                       </Button>
@@ -255,6 +255,7 @@ export default function InvoicesPage() {
                           variant="outline"
                           onClick={() => handleSendInvoice(invoice.id)}
                           disabled={updateStatusMutation.isPending}
+                          className="w-full sm:w-auto"
                         >
                           <Send className="mr-2 h-4 w-4" />
                           Send Invoice
@@ -264,7 +265,7 @@ export default function InvoicesPage() {
                           variant="outline"
                           onClick={() => setDeletingInvoice(invoice)}
                           disabled={deleteMutation.isPending}
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive w-full sm:w-auto"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -276,6 +277,7 @@ export default function InvoicesPage() {
                         size="sm"
                         onClick={() => handleMarkAsPaid(invoice.id)}
                         disabled={updateStatusMutation.isPending}
+                        className="w-full sm:w-auto"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Mark as Paid

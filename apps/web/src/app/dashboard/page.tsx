@@ -67,16 +67,16 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Welcome to Student Record Management System
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -97,26 +97,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue & Recent Sessions */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
         {/* Revenue Overview */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
               Revenue Overview
             </CardTitle>
-            <CardDescription>This month</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">This month</CardDescription>
           </CardHeader>
           <CardContent>
             {revenue ? (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">¥{revenue.totalRevenue?.toLocaleString() || 0}</p>
+                  <p className="text-2xl sm:text-3xl font-bold">¥{revenue.totalRevenue?.toLocaleString() || 0}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {revenue.sessionCount || 0} sessions, {revenue.totalHours?.toFixed(1) || 0} hours
                   </p>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Unbilled</p>
                     <p className="font-semibold text-yellow-600">
@@ -157,12 +157,12 @@ export default function DashboardPage() {
         {/* Recent Sessions */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Sessions</CardTitle>
-            <CardDescription>Last 5 sessions</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Recent Sessions</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 5 sessions</CardDescription>
           </CardHeader>
           <CardContent>
             {recentSessions && recentSessions.items.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {recentSessions.items.slice(0, 5).map((session: any) => (
                   <Link
                     key={session.id}
@@ -215,11 +215,11 @@ export default function DashboardPage() {
       {revenue && revenue.byClient && revenue.byClient.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Top Clients by Revenue</CardTitle>
-            <CardDescription>This month</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Top Clients by Revenue</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">This month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {revenue.byClient
                 .sort((a: any, b: any) => b.revenue - a.revenue)
                 .slice(0, 5)

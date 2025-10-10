@@ -39,13 +39,13 @@ export default function ClientsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Clients</h1>
-          <p className="text-muted-foreground">Manage your clients and their information</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Clients</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your clients and their information</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           New Client
         </Button>
@@ -105,7 +105,7 @@ export default function ClientsPage() {
       )}
 
       {data && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {data.items.length === 0 ? (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -118,20 +118,20 @@ export default function ClientsPage() {
           ) : (
             data.items.map((client: any) => (
               <Card key={client.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{client.name}</CardTitle>
-                      <CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg truncate">{client.name}</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">
                         {client.type.charAt(0).toUpperCase() + client.type.slice(1)}
                       </CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setEditingClient(client)}
-                        className="h-8 w-8"
+                        className="h-9 w-9"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -139,7 +139,7 @@ export default function ClientsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setDeletingClient(client)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
