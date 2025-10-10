@@ -52,3 +52,7 @@ lerna-debug.log*
 # OS
 Thumbs.db
 
+
+*.json
+# Service account keys
+*service-account*.json

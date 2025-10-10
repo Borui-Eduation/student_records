@@ -22,25 +22,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
+import { FullscreenEditorDialog } from '@/components/ui/fullscreen-editor-dialog';
 import { trpc } from '@/lib/trpc';
-import { Lock, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { Lock, Eye, EyeOff, Pencil, Maximize2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Markdown preview to avoid SSR issues
+const MDPreview = dynamic(
+  () => import('@uiw/react-markdown-preview').then((mod) => mod.default),
+  { ssr: false }
+);
 
 interface KnowledgeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entryId?: string; // If provided, show entry details
+  entryId?: string; // If provided, show entry details (view mode)
+  editMode?: boolean; // If true and entryId provided, edit mode
 }
 
-export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialogProps) {
+export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false }: KnowledgeDialogProps) {
   const utils = trpc.useUtils();
   const [showContent, setShowContent] = useState(false);
+  const [isEditing, setIsEditing] = useState(editMode);
+  const [fullscreenMode, setFullscreenMode] = useState<'content' | null>(null);
+  
 
   // Fetch entry details if viewing existing entry
   const { data: entry } = trpc.knowledgeBase.get.useQuery(
     { id: entryId! },
     { enabled: !!entryId }
   );
+
+  useEffect(() => {
+    setIsEditing(editMode);
+  }, [editMode, entryId]);
 
   const {
     register,
@@ -58,6 +75,25 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (entry && open && isEditing) {
+      setValue('title', entry.title);
+      setValue('type', entry.type);
+      setValue('content', entry.content);
+      setValue('category', entry.category || '');
+      setValue('tags', entry.tags || []);
+      setValue('requireEncryption', entry.isEncrypted || false);
+    } else if (!open) {
+      reset({
+        type: 'note',
+        requireEncryption: false,
+        tags: [],
+      });
+      setIsEditing(editMode);
+    }
+  }, [entry, open, isEditing, setValue, reset, editMode]);
+
   const createMutation = trpc.knowledgeBase.create.useMutation({
     onSuccess: () => {
       utils.knowledgeBase.list.invalidate();
@@ -66,15 +102,32 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
     },
   });
 
+  const updateMutation = trpc.knowledgeBase.update.useMutation({
+    onSuccess: () => {
+      utils.knowledgeBase.list.invalidate();
+      setIsEditing(false);
+      onOpenChange(false);
+    },
+  });
+
   const onSubmit = async (data: CreateKnowledgeEntryInput) => {
-    await createMutation.mutateAsync(data);
+    if (isEditing && entryId) {
+      await updateMutation.mutateAsync({
+        id: entryId,
+        ...data,
+      });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
   };
 
-  // If viewing existing entry
-  if (entryId && entry) {
+  const mutation = isEditing ? updateMutation : createMutation;
+
+  // If viewing existing entry (not editing)
+  if (entryId && entry && !isEditing) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {entry.isEncrypted && <Lock className="h-5 w-5 text-red-500" />}
@@ -113,11 +166,15 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
                     )}
                   </Button>
                 )}
-                <Textarea
-                  value={showContent || !entry.isEncrypted ? entry.content : '••••••••••••••••'}
-                  readOnly
-                  className="font-mono text-sm min-h-[200px]"
-                />
+                {entry.isEncrypted && !showContent ? (
+                  <div className="p-3 rounded-md border font-mono min-h-[200px]">
+                    ••••••••••••••••
+                  </div>
+                ) : (
+                  <div data-color-mode="light" className="rounded-md border">
+                    <MDPreview source={entry.content} style={{ padding: 16 }} />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -154,21 +211,60 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
+            <Button onClick={() => setIsEditing(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     );
   }
 
-  // Create new entry form
+  // Create or edit form
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <form onSubmit={handleSubmit(onSubmit)}>
+    <>
+      {/* Fullscreen Markdown Editor */}
+      <FullscreenEditorDialog
+        open={fullscreenMode === 'content'}
+        onOpenChange={(open) => !open && setFullscreenMode(null)}
+        title="📝 知识库编辑器 / Knowledge Base Editor"
+        onSave={() => setFullscreenMode(null)}
+      >
+        <MarkdownEditor
+          value={watch('content') || ''}
+          onChange={(value) => {
+            setValue('content', value, { 
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true 
+            });
+          }}
+          height="100%"
+          preview="live"
+          placeholder="# Start writing...
+
+Use Markdown syntax:
+- **Bold** and *Italic*
+- Lists and checkboxes
+- Code blocks
+- Tables
+- Links and images
+- And much more!"
+        />
+      </FullscreenEditorDialog>
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Create Knowledge Entry</DialogTitle>
+            <DialogTitle>
+              {isEditing ? 'Edit Knowledge Entry' : 'Create Knowledge Entry'}
+            </DialogTitle>
             <DialogDescription>
-              Store sensitive information securely with optional encryption
+              {isEditing 
+                ? 'Update the knowledge entry information' 
+                : 'Store sensitive information securely with optional encryption (supports Markdown)'}
             </DialogDescription>
           </DialogHeader>
 
@@ -207,18 +303,48 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
               </Select>
             </div>
 
-            {/* Content */}
+            {/* Content with Markdown */}
             <div className="grid gap-2">
-              <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                placeholder="Enter your content here"
-                {...register('content')}
-                className={`font-mono text-sm ${errors.content ? 'border-destructive' : ''}`}
-                rows={6}
+              <div className="flex items-center justify-between">
+                <Label>Content * (Markdown)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFullscreenMode('content')}
+                  className="flex items-center gap-2"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  全屏 Fullscreen
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                📝 Use Markdown for rich text formatting
+              </p>
+              <input type="hidden" {...register('content')} />
+              <MarkdownEditor
+                value={watch('content') || ''}
+                onChange={(value) => {
+                  setValue('content', value, { 
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true 
+                  });
+                }}
+                height={200}
+                preview="live"
+                placeholder="# Start writing...
+
+Use Markdown syntax:
+- **Bold** and *Italic*
+- Lists and checkboxes
+- Code blocks
+- Tables
+- Links and images
+- And much more!"
               />
               {errors.content && (
-                <p className="text-sm text-destructive">{errors.content.message}</p>
+                <p className="text-sm text-destructive mt-2">{errors.content.message}</p>
               )}
             </div>
 
@@ -272,6 +398,7 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
               variant="outline"
               onClick={() => {
                 reset();
+                setIsEditing(false);
                 onOpenChange(false);
               }}
               disabled={isSubmitting}
@@ -279,18 +406,24 @@ export function KnowledgeDialog({ open, onOpenChange, entryId }: KnowledgeDialog
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Entry'}
+              {isSubmitting
+                ? isEditing
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEditing
+                  ? 'Update Entry'
+                  : 'Create Entry'}
             </Button>
           </DialogFooter>
 
-          {createMutation.error && (
-            <p className="mt-2 text-sm text-destructive">
-              Error: {createMutation.error.message}
-            </p>
-          )}
-        </form>
-      </DialogContent>
-    </Dialog>
+            {mutation.error && (
+              <p className="mt-2 text-sm text-destructive">Error: {mutation.error.message}</p>
+            )}
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
 

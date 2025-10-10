@@ -17,7 +17,7 @@ export * from './knowledgeBase';
 export * from './sharingLink';
 
 // Company Profile types
-export * from './companyProfile';
+export type { CompanyProfile } from './companyProfile';
 
 // Audit Log types
 export * from './auditLog';

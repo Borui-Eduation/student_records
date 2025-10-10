@@ -40,3 +40,4 @@ export type CreateClientInput = z.infer<typeof CreateClientSchema>;
 export type UpdateClientInput = z.infer<typeof UpdateClientSchema>;
 export type ListClientsInput = z.infer<typeof ListClientsSchema>;
 
+

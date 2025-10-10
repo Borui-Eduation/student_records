@@ -31,7 +31,7 @@ export const knowledgeBaseRouter = router({
         const encrypted = await encryptionService.encrypt(input.content);
         content = encrypted.ciphertext;
         isEncrypted = true;
-        kmsKeyId = `${process.env.KMS_KEYRING}/${process.env.KMS_KEY}`;
+        kmsKeyId = `${process.env.KMS_KEY_RING}/${process.env.KMS_KEY_NAME}`;
         encryptionMetadata = {
           algorithm: 'AES-256-GCM',
           ivBase64: encrypted.ivBase64,
@@ -45,13 +45,11 @@ export const knowledgeBaseRouter = router({
       }
     }
 
-    const entryData = {
+    const entryData: any = {
       title: input.title,
       type: input.type,
       content,
       isEncrypted,
-      kmsKeyId,
-      encryptionMetadata,
       tags: input.tags || [],
       category: input.category,
       attachments: [],
@@ -60,6 +58,12 @@ export const knowledgeBaseRouter = router({
       updatedAt: now,
       createdBy: ctx.user.uid,
     };
+
+    // Only add encryption fields if encrypted
+    if (isEncrypted) {
+      entryData.kmsKeyId = kmsKeyId;
+      entryData.encryptionMetadata = encryptionMetadata;
+    }
 
     const docRef = await ctx.db.collection('knowledgeBase').add(entryData);
 

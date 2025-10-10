@@ -10,6 +10,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@student-record/shared": "workspace:*",
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "@trpc/server": "^10.45.0",

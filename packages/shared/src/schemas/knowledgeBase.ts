@@ -30,3 +30,4 @@ export type CreateKnowledgeEntryInput = z.infer<typeof CreateKnowledgeEntrySchem
 export type UpdateKnowledgeEntryInput = z.infer<typeof UpdateKnowledgeEntrySchema>;
 export type SearchKnowledgeInput = z.infer<typeof SearchKnowledgeSchema>;
 
+

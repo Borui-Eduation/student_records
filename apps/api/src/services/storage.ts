@@ -4,7 +4,7 @@ import * as admin from 'firebase-admin';
  * Google Cloud Storage service for file uploads
  */
 export class StorageService {
-  private bucket: admin.storage.Bucket;
+  private bucket: any;
 
   constructor() {
     const bucketName = process.env.GCS_BUCKET_NAME || 'student-record-prod';
@@ -86,4 +86,5 @@ export class StorageService {
 }
 
 export const storageService = new StorageService();
+
 

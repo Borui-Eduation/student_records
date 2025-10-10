@@ -3,17 +3,39 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ClientDialog } from '@/components/clients/ClientDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ClientsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [deletingClient, setDeletingClient] = useState<any>(null);
+
+  const utils = trpc.useUtils();
 
   // Query clients
   const { data, isLoading, error } = trpc.clients.list.useQuery({
     active: true,
     limit: 50,
+  });
+
+  // Delete mutation
+  const deleteMutation = trpc.clients.delete.useMutation({
+    onSuccess: () => {
+      utils.clients.list.invalidate();
+      setDeletingClient(null);
+    },
   });
 
   return (
@@ -29,7 +51,40 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      <ClientDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <ClientDialog
+        open={isCreateDialogOpen || !!editingClient}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setEditingClient(null);
+          }
+        }}
+        client={editingClient}
+      />
+
+      <AlertDialog
+        open={!!deletingClient}
+        onOpenChange={(open) => !open && setDeletingClient(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the client &quot;{deletingClient?.name}&quot;. You can reactivate
+              them later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingClient && deleteMutation.mutate({ id: deletingClient.id })}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <Card className="border-destructive">
@@ -64,10 +119,32 @@ export default function ClientsPage() {
             data.items.map((client: any) => (
               <Card key={client.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-lg">{client.name}</CardTitle>
-                  <CardDescription>
-                    {client.type.charAt(0).toUpperCase() + client.type.slice(1)}
-                  </CardDescription>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{client.name}</CardTitle>
+                      <CardDescription>
+                        {client.type.charAt(0).toUpperCase() + client.type.slice(1)}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingClient(client)}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingClient(client)}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">

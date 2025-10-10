@@ -29,3 +29,4 @@ export type GenerateInvoiceInput = z.infer<typeof GenerateInvoiceSchema>;
 export type UpdateInvoiceStatusInput = z.infer<typeof UpdateInvoiceStatusSchema>;
 export type GetRevenueReportInput = z.infer<typeof GetRevenueReportSchema>;
 
+

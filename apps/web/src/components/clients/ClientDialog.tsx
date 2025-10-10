@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateClientSchema, type CreateClientInput } from '@student-record/shared';
@@ -27,10 +28,12 @@ import { trpc } from '@/lib/trpc';
 interface ClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  client?: any; // Existing client for edit mode
 }
 
-export function ClientDialog({ open, onOpenChange }: ClientDialogProps) {
+export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) {
   const utils = trpc.useUtils();
+  const isEditMode = !!client;
 
   const {
     register,
@@ -46,6 +49,26 @@ export function ClientDialog({ open, onOpenChange }: ClientDialogProps) {
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (client && open) {
+      setValue('name', client.name);
+      setValue('type', client.type);
+      if (client.contactInfo) {
+        setValue('contactInfo.email', client.contactInfo.email || '');
+        setValue('contactInfo.phone', client.contactInfo.phone || '');
+        setValue('contactInfo.address', client.contactInfo.address || '');
+      }
+      setValue('billingAddress', client.billingAddress || '');
+      setValue('taxId', client.taxId || '');
+      setValue('notes', client.notes || '');
+    } else if (!open) {
+      reset({
+        type: 'individual',
+      });
+    }
+  }, [client, open, setValue, reset]);
+
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => {
       utils.clients.list.invalidate();
@@ -54,17 +77,36 @@ export function ClientDialog({ open, onOpenChange }: ClientDialogProps) {
     },
   });
 
+  const updateMutation = trpc.clients.update.useMutation({
+    onSuccess: () => {
+      utils.clients.list.invalidate();
+      reset();
+      onOpenChange(false);
+    },
+  });
+
   const onSubmit = async (data: CreateClientInput) => {
-    await createMutation.mutateAsync(data);
+    if (isEditMode) {
+      await updateMutation.mutateAsync({
+        id: client.id,
+        ...data,
+      });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
   };
+
+  const mutation = isEditMode ? updateMutation : createMutation;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Create New Client</DialogTitle>
-            <DialogDescription>Add a new client to your system</DialogDescription>
+            <DialogTitle>{isEditMode ? 'Edit Client' : 'Create New Client'}</DialogTitle>
+            <DialogDescription>
+              {isEditMode ? 'Update client information' : 'Add a new client to your system'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
@@ -180,24 +222,32 @@ export function ClientDialog({ open, onOpenChange }: ClientDialogProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Client'}
+              {isSubmitting
+                ? isEditMode
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEditMode
+                  ? 'Update Client'
+                  : 'Create Client'}
             </Button>
           </DialogFooter>
 
-          {createMutation.error && (
-            <p className="mt-2 text-sm text-destructive">
-              Error: {createMutation.error.message}
-            </p>
+          {mutation.error && (
+            <p className="mt-2 text-sm text-destructive">Error: {mutation.error.message}</p>
           )}
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+
 

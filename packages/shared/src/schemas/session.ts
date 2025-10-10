@@ -16,6 +16,7 @@ export const CreateSessionSchema = z.object({
   startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
   endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
   sessionType: SessionTypeSchema,
+  notes: z.string().optional(), // Markdown formatted session notes
   contentBlocks: z.array(ContentBlockSchema).optional(),
 });
 
@@ -25,6 +26,7 @@ export const UpdateSessionSchema = z.object({
   startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
   endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
   sessionType: SessionTypeSchema.optional(),
+  notes: z.string().optional(), // Markdown formatted session notes
   contentBlocks: z.array(ContentBlockSchema).optional(),
 });
 
@@ -46,4 +48,5 @@ export type ContentBlock = z.infer<typeof ContentBlockSchema>;
 export type CreateSessionInput = z.infer<typeof CreateSessionSchema>;
 export type UpdateSessionInput = z.infer<typeof UpdateSessionSchema>;
 export type ListSessionsInput = z.infer<typeof ListSessionsSchema>;
+
 

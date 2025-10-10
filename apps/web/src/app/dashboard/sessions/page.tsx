@@ -3,17 +3,39 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Calendar, Clock, DollarSign } from 'lucide-react';
+import { Plus, Calendar, Clock, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { SessionDialog } from '@/components/sessions/SessionDialog';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SessionsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<any>(null);
+  const [deletingSession, setDeletingSession] = useState<any>(null);
+
+  const utils = trpc.useUtils();
 
   // Query sessions
   const { data, isLoading, error } = trpc.sessions.list.useQuery({
     limit: 50,
+  });
+
+  // Delete mutation
+  const deleteMutation = trpc.sessions.delete.useMutation({
+    onSuccess: () => {
+      utils.sessions.list.invalidate();
+      setDeletingSession(null);
+    },
   });
 
   const getBillingStatusColor = (status: string) => {
@@ -48,7 +70,49 @@ export default function SessionsPage() {
         </Button>
       </div>
 
-      <SessionDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <SessionDialog
+        open={isCreateDialogOpen || !!editingSession}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setEditingSession(null);
+          }
+        }}
+        session={editingSession}
+      />
+
+      <AlertDialog
+        open={!!deletingSession}
+        onOpenChange={(open) => !open && setDeletingSession(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this session. This action cannot be undone.
+              {deletingSession?.billingStatus === 'billed' ||
+              deletingSession?.billingStatus === 'paid' ? (
+                <span className="block mt-2 text-destructive font-medium">
+                  Note: This session has been billed or paid and cannot be deleted.
+                </span>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingSession && deleteMutation.mutate({ id: deletingSession.id })}
+              disabled={
+                deleteMutation.isPending ||
+                deletingSession?.billingStatus === 'billed' ||
+                deletingSession?.billingStatus === 'paid'
+              }
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <Card className="border-destructive">
@@ -85,7 +149,7 @@ export default function SessionsPage() {
               <Card key={session.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                    <div className="flex-1 pr-4">
                       <CardTitle className="text-xl">{session.clientName}</CardTitle>
                       <CardDescription className="flex items-center gap-4 mt-2">
                         <span className="flex items-center gap-1">
@@ -104,6 +168,27 @@ export default function SessionsPage() {
                       </CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-2">
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingSession(session)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeletingSession(session)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          disabled={
+                            session.billingStatus === 'billed' || session.billingStatus === 'paid'
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="text-2xl font-bold">
                         ¥{session.totalAmount?.toLocaleString()}
                       </div>
@@ -138,6 +223,19 @@ export default function SessionsPage() {
                       <span className="ml-2 font-medium">{session.currency}</span>
                     </div>
                   </div>
+                  {session.notes && (
+                    <div className="mt-4 border-t pt-4 space-y-4">
+                      {session.notes && (
+                        <div>
+                          <div className="text-sm font-medium mb-2">📝 笔记 Notes:</div>
+                          <div className="text-sm text-muted-foreground line-clamp-3">
+                            {session.notes.substring(0, 200)}
+                            {session.notes.length > 200 && '...'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {session.contentBlocks && session.contentBlocks.length > 0 && (
                     <div className="mt-4 text-sm text-muted-foreground">
                       📝 {session.contentBlocks.length} content block(s)
@@ -162,4 +260,5 @@ export default function SessionsPage() {
     </div>
   );
 }
+
 

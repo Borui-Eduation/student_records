@@ -75,19 +75,22 @@ export const sessionsRouter = router({
       }
     }
 
-    // 3. Try general rate
+    // 3. Try general rate (rates without clientId or clientType)
     if (!applicableRate) {
-      const generalRates = await ctx.db
+      const allRates = await ctx.db
         .collection('rates')
-        .where('clientId', '==', null)
-        .where('clientType', '==', null)
         .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(new Date(input.date)))
         .orderBy('effectiveDate', 'desc')
-        .limit(1)
         .get();
 
-      if (!generalRates.empty) {
-        const rate = generalRates.docs[0];
+      // Filter for general rates (no clientId and no clientType)
+      const generalRates = allRates.docs.filter((doc) => {
+        const data = doc.data();
+        return !data.clientId && !data.clientType;
+      });
+
+      if (generalRates.length > 0) {
+        const rate = generalRates[0];
         const rateData = rate.data();
         if (!rateData.endDate || rateData.endDate.toDate() >= new Date(input.date)) {
           applicableRate = { id: rate.id, ...rateData };
@@ -118,6 +121,7 @@ export const sessionsRouter = router({
       currency: applicableRate.currency || 'CNY',
       billingStatus: 'unbilled' as const,
       contentBlocks: input.contentBlocks || [],
+      notes: input.notes || '',
       whiteboardUrls: [],
       audioUrls: [],
       createdAt: now,

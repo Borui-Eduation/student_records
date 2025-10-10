@@ -35,8 +35,8 @@ export const invoicesRouter = router({
       });
     }
 
-    const clientId = sessions[0].clientId;
-    const clientName = sessions[0].clientName;
+    const clientId = (sessions[0] as any).clientId;
+    const clientName = (sessions[0] as any).clientName;
 
     // Check all sessions are unbilled
     const billedSessions = sessions.filter(
@@ -80,7 +80,7 @@ export const invoicesRouter = router({
     const subtotal = sessions.reduce((sum: number, s: any) => sum + s.totalAmount, 0);
     const taxAmount = 0; // Tax calculation can be added later
     const totalAmount = subtotal + taxAmount;
-    const currency = sessions[0].currency || 'CNY';
+    const currency = (sessions[0] as any).currency || 'CNY';
 
     // Create invoice
     const invoiceData = {

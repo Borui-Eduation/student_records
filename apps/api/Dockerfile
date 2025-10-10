@@ -1,50 +1,28 @@
-# Multi-stage build for smaller final image
+# Dockerfile for deploying API to Cloud Run
+# Run from project root
 
-# Stage 1: Build
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy root package files
-COPY package.json pnpm-workspace.yaml ./
-COPY pnpm-lock.yaml* ./
-
-# Copy app and shared package files
-COPY apps/api/package.json ./apps/api/
-COPY packages/shared/package.json ./packages/shared/
-
-# Install pnpm
-RUN npm install -g pnpm@8.15.0
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY apps/api ./apps/api
-COPY packages/shared ./packages/shared
-
-# Build shared package first
-WORKDIR /app/packages/shared
-RUN pnpm build
-
-# Build API
-WORKDIR /app/apps/api
-RUN pnpm build
-
-# Stage 2: Production
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy built artifacts
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/packages/shared/dist ./node_modules/@student-record/shared/dist
-COPY --from=builder /app/packages/shared/package.json ./node_modules/@student-record/shared/
+# Copy package.json
+COPY apps/api/package.json ./
 
-# Install only production dependencies
-RUN npm install -g pnpm@8.15.0
-RUN pnpm install --prod --frozen-lockfile
+# Install pnpm
+RUN npm install -g pnpm@9.12.2
+
+# Create node_modules structure for shared package
+RUN mkdir -p node_modules/@student-record/shared
+
+# Copy built shared package
+COPY packages/shared/dist ./node_modules/@student-record/shared/dist
+COPY packages/shared/package.json ./node_modules/@student-record/shared/
+
+# Install dependencies (excluding workspace packages)
+RUN pnpm install --prod --no-frozen-lockfile
+
+# Copy built API dist folder
+COPY apps/api/dist ./dist
 
 # Set environment
 ENV NODE_ENV=production

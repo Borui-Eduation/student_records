@@ -1,25 +1,13 @@
 import { Timestamp } from './common';
 
-export interface BankInfo {
-  bankName: string;
-  accountNumber: string;
-  accountName: string;
-  swiftCode?: string;
-}
-
-export interface ContactInfo {
-  email: string;
-  phone: string;
-  website?: string;
-}
-
+// Simplified Company Profile - all fields optional for personal/small business use
 export interface CompanyProfile {
   id: 'default';
-  companyName: string;
-  taxId: string;
-  address: string;
-  bankInfo: BankInfo;
-  contactInfo: ContactInfo;
+  companyName?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
   logoUrl?: string;
   updatedAt: Timestamp;
   updatedBy: string;

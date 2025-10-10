@@ -3,18 +3,61 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, FileText, Download } from 'lucide-react';
+import { Plus, FileText, Download, Trash2, Send, CheckCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { InvoiceGeneratorDialog } from '@/components/invoices/InvoiceGeneratorDialog';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function InvoicesPage() {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [deletingInvoice, setDeletingInvoice] = useState<any>(null);
+
+  const utils = trpc.useUtils();
 
   // Query invoices
   const { data, isLoading, error } = trpc.invoices.list.useQuery({
     limit: 50,
   });
+
+  // Update status mutation
+  const updateStatusMutation = trpc.invoices.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.invoices.list.invalidate();
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = trpc.invoices.delete.useMutation({
+    onSuccess: () => {
+      utils.invoices.list.invalidate();
+      setDeletingInvoice(null);
+    },
+  });
+
+  const handleSendInvoice = (invoiceId: string) => {
+    updateStatusMutation.mutate({
+      id: invoiceId,
+      status: 'sent',
+    });
+  };
+
+  const handleMarkAsPaid = (invoiceId: string) => {
+    updateStatusMutation.mutate({
+      id: invoiceId,
+      status: 'paid',
+      paidDate: new Date().toISOString(),
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -46,6 +89,35 @@ export default function InvoicesPage() {
         open={isGenerateDialogOpen}
         onOpenChange={setIsGenerateDialogOpen}
       />
+
+      <AlertDialog
+        open={!!deletingInvoice}
+        onOpenChange={(open) => !open && setDeletingInvoice(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete invoice &quot;{deletingInvoice?.invoiceNumber}&quot; and
+              revert all associated sessions to unbilled status.
+              {deletingInvoice?.status !== 'draft' && (
+                <span className="block mt-2 text-destructive font-medium">
+                  Only draft invoices can be deleted!
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingInvoice && deleteMutation.mutate({ id: deletingInvoice.id })}
+              disabled={deleteMutation.isPending || deletingInvoice?.status !== 'draft'}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <Card className="border-destructive">
@@ -169,7 +241,7 @@ export default function InvoicesPage() {
                     </div>
                   )}
 
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex gap-2 flex-wrap">
                     {invoice.pdfUrl && (
                       <Button size="sm" variant="outline">
                         <Download className="mr-2 h-4 w-4" />
@@ -177,12 +249,37 @@ export default function InvoicesPage() {
                       </Button>
                     )}
                     {invoice.status === 'draft' && (
-                      <Button size="sm" variant="outline">
-                        Send Invoice
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendInvoice(invoice.id)}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <Send className="mr-2 h-4 w-4" />
+                          Send Invoice
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeletingInvoice(invoice)}
+                          disabled={deleteMutation.isPending}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
+                      </>
                     )}
                     {invoice.status === 'sent' && (
-                      <Button size="sm">Mark as Paid</Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleMarkAsPaid(invoice.id)}
+                        disabled={updateStatusMutation.isPending}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark as Paid
+                      </Button>
                     )}
                   </div>
                 </CardContent>
@@ -194,4 +291,5 @@ export default function InvoicesPage() {
     </div>
   );
 }
+
 

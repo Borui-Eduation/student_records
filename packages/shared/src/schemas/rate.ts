@@ -9,10 +9,7 @@ export const CreateRateSchema = z.object({
   effectiveDate: z.string().or(z.date()),
   endDate: z.string().or(z.date()).optional(),
   description: z.string().max(200).optional(),
-}).refine(
-  (data) => data.clientId || data.clientType,
-  { message: 'Either clientId or clientType must be provided' }
-);
+});
 
 export const UpdateRateSchema = z.object({
   id: z.string(),
@@ -23,4 +20,5 @@ export const UpdateRateSchema = z.object({
 
 export type CreateRateInput = z.infer<typeof CreateRateSchema>;
 export type UpdateRateInput = z.infer<typeof UpdateRateSchema>;
+
 

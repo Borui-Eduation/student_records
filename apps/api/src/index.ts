@@ -50,12 +50,15 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 API server running on http://localhost:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 tRPC endpoint: http://localhost:${PORT}/trpc`);
-});
+// Start server (only in non-serverless environment)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 API server running on http://localhost:${PORT}`);
+    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 tRPC endpoint: http://localhost:${PORT}/trpc`);
+  });
+}
 
+// Export for Vercel Serverless
 export default app;
 

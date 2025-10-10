@@ -6,6 +6,7 @@ import {
   ListClientsSchema,
 } from '@student-record/shared';
 import * as admin from 'firebase-admin';
+import { z } from 'zod';
 
 export const clientsRouter = router({
   /**
@@ -133,13 +134,30 @@ export const clientsRouter = router({
    * Delete (deactivate) a client
    */
   delete: adminProcedure
-    .input(CreateClientSchema.pick({ name: true }))
-    .mutation(async ({ ctx, input: _input }) => {
-      // Placeholder implementation
-      throw new TRPCError({
-        code: 'NOT_IMPLEMENTED',
-        message: 'This endpoint is not yet implemented',
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const docRef = ctx.db.collection('clients').doc(input.id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Client not found',
+        });
+      }
+
+      // Soft delete by setting active to false
+      await docRef.update({
+        active: false,
+        updatedAt: admin.firestore.Timestamp.now(),
       });
+
+      return { success: true };
     }),
 });
+
 

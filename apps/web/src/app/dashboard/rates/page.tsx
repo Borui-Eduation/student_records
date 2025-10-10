@@ -3,13 +3,27 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, DollarSign } from 'lucide-react';
+import { Plus, DollarSign, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { RateDialog } from '@/components/rates/RateDialog';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function RatesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingRate, setEditingRate] = useState<any>(null);
+  const [deletingRate, setDeletingRate] = useState<any>(null);
+
+  const utils = trpc.useUtils();
 
   // Query rates
   const { data, isLoading, error } = trpc.rates.list.useQuery({
@@ -20,6 +34,14 @@ export default function RatesPage() {
   const { data: clients } = trpc.clients.list.useQuery({
     active: true,
     limit: 100,
+  });
+
+  // Delete mutation
+  const deleteMutation = trpc.rates.delete.useMutation({
+    onSuccess: () => {
+      utils.rates.list.invalidate();
+      setDeletingRate(null);
+    },
   });
 
   const getClientName = (clientId?: string) => {
@@ -46,7 +68,37 @@ export default function RatesPage() {
         </Button>
       </div>
 
-      <RateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <RateDialog
+        open={isCreateDialogOpen || !!editingRate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setEditingRate(null);
+          }
+        }}
+        rate={editingRate}
+      />
+
+      <AlertDialog open={!!deletingRate} onOpenChange={(open) => !open && setDeletingRate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will set an end date for this rate, effectively deactivating it. You can still
+              edit it later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingRate && deleteMutation.mutate({ id: deletingRate.id })}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <Card className="border-destructive">
@@ -82,13 +134,37 @@ export default function RatesPage() {
             data.items.map((rate: any) => (
               <Card key={rate.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-2xl font-bold">
-                    ¥{rate.amount.toLocaleString()}
-                    <span className="text-sm font-normal text-muted-foreground ml-2">/hour</span>
-                  </CardTitle>
-                  <CardDescription>
-                    {getClientName(rate.clientId) || getClientType(rate.clientType) || 'General Rate'}
-                  </CardDescription>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-bold">
+                        ¥{rate.amount.toLocaleString()}
+                        <span className="text-sm font-normal text-muted-foreground ml-2">/hour</span>
+                      </CardTitle>
+                      <CardDescription>
+                        {getClientName(rate.clientId) ||
+                          getClientType(rate.clientType) ||
+                          'General Rate'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingRate(rate)}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingRate(rate)}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
@@ -125,4 +201,5 @@ export default function RatesPage() {
     </div>
   );
 }
+
 

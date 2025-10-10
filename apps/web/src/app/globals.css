@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Markdown Editor Styles */
+@import '@uiw/react-md-editor/markdown-editor.css';
+@import '@uiw/react-markdown-preview/markdown.css';
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -35,4 +39,5 @@
     @apply bg-background text-foreground;
   }
 }
+
 

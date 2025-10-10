@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateRateSchema, type CreateRateInput } from '@student-record/shared';
@@ -27,10 +28,12 @@ import { trpc } from '@/lib/trpc';
 interface RateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  rate?: any; // Existing rate for edit mode
 }
 
-export function RateDialog({ open, onOpenChange }: RateDialogProps) {
+export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
   const utils = trpc.useUtils();
+  const isEditMode = !!rate;
 
   // Get clients list for dropdown
   const { data: clients } = trpc.clients.list.useQuery({
@@ -53,6 +56,36 @@ export function RateDialog({ open, onOpenChange }: RateDialogProps) {
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (rate && open) {
+      setValue('amount', rate.amount);
+      setValue('currency', rate.currency || 'CNY');
+      setValue('clientId', rate.clientId || undefined);
+      setValue('clientType', rate.clientType || undefined);
+      
+      // Convert Firestore Timestamp to date string
+      if (rate.effectiveDate) {
+        const effectiveDate = rate.effectiveDate.toDate
+          ? rate.effectiveDate.toDate()
+          : new Date(rate.effectiveDate);
+        setValue('effectiveDate', effectiveDate.toISOString().split('T')[0]);
+      }
+      
+      if (rate.endDate) {
+        const endDate = rate.endDate.toDate ? rate.endDate.toDate() : new Date(rate.endDate);
+        setValue('endDate', endDate.toISOString().split('T')[0]);
+      }
+      
+      setValue('description', rate.description || '');
+    } else if (!open) {
+      reset({
+        currency: 'CNY',
+        effectiveDate: new Date().toISOString().split('T')[0],
+      });
+    }
+  }, [rate, open, setValue, reset]);
+
   const createMutation = trpc.rates.create.useMutation({
     onSuccess: () => {
       utils.rates.list.invalidate();
@@ -62,9 +95,27 @@ export function RateDialog({ open, onOpenChange }: RateDialogProps) {
     },
   });
 
+  const updateMutation = trpc.rates.update.useMutation({
+    onSuccess: () => {
+      utils.rates.list.invalidate();
+      utils.clients.list.invalidate();
+      reset();
+      onOpenChange(false);
+    },
+  });
+
   const onSubmit = async (data: CreateRateInput) => {
-    await createMutation.mutateAsync(data);
+    if (isEditMode) {
+      await updateMutation.mutateAsync({
+        id: rate.id,
+        ...data,
+      });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
   };
+
+  const mutation = isEditMode ? updateMutation : createMutation;
 
   const assignmentType = watch('clientId') ? 'specific' : watch('clientType') ? 'type' : 'none';
 
@@ -73,9 +124,11 @@ export function RateDialog({ open, onOpenChange }: RateDialogProps) {
       <DialogContent className="sm:max-w-[525px]">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Create New Rate</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Rate' : 'Create New Rate'}</DialogTitle>
             <DialogDescription>
-              Set an hourly rate for a specific client, client type, or as a general rate
+              {isEditMode
+                ? 'Update the hourly rate information'
+                : 'Set an hourly rate for a specific client, client type, or as a general rate'}
             </DialogDescription>
           </DialogHeader>
 
@@ -219,18 +272,23 @@ export function RateDialog({ open, onOpenChange }: RateDialogProps) {
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Rate'}
+              {isSubmitting
+                ? isEditMode
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEditMode
+                  ? 'Update Rate'
+                  : 'Create Rate'}
             </Button>
           </DialogFooter>
 
-          {createMutation.error && (
-            <p className="mt-2 text-sm text-destructive">
-              Error: {createMutation.error.message}
-            </p>
+          {mutation.error && (
+            <p className="mt-2 text-sm text-destructive">Error: {mutation.error.message}</p>
           )}
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+
 

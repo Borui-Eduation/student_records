@@ -11,21 +11,14 @@ export const companyProfileRouter = router({
     const doc = await ctx.db.collection('companyProfile').doc('default').get();
 
     if (!doc.exists) {
-      // Return default empty profile
+      // Return default empty profile (simplified - all fields optional)
       return {
         id: 'default',
         companyName: '',
-        taxId: '',
         address: '',
-        bankInfo: {
-          bankName: '',
-          accountNumber: '',
-          accountName: '',
-        },
-        contactInfo: {
-          email: '',
-          phone: '',
-        },
+        email: '',
+        phone: '',
+        website: '',
       };
     }
 

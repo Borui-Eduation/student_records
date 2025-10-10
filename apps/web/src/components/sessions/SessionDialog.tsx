@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateSessionSchema, type CreateSessionInput } from '@student-record/shared';
@@ -21,15 +22,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
+import { FullscreenEditorDialog } from '@/components/ui/fullscreen-editor-dialog';
+import { Maximize2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 interface SessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  session?: any; // Existing session for edit mode
 }
 
-export function SessionDialog({ open, onOpenChange }: SessionDialogProps) {
+export function SessionDialog({ open, onOpenChange, session }: SessionDialogProps) {
   const utils = trpc.useUtils();
+  const isEditMode = !!session;
+  const [fullscreenMode, setFullscreenMode] = useState<'notes' | null>(null);
+  
 
   // Get clients list
   const { data: clients } = trpc.clients.list.useQuery({
@@ -54,6 +62,40 @@ export function SessionDialog({ open, onOpenChange }: SessionDialogProps) {
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (session && open) {
+      setValue('clientId', session.clientId);
+      setValue('sessionType', session.sessionType);
+      setValue('startTime', session.startTime);
+      setValue('endTime', session.endTime);
+      setValue('notes', session.notes || '');
+      
+      // Convert Firestore Timestamp to date string with error handling
+      if (session.date) {
+        try {
+          const date = session.date.toDate ? session.date.toDate() : new Date(session.date);
+          if (!isNaN(date.getTime())) {
+            setValue('date', date.toISOString().split('T')[0]);
+          } else {
+            setValue('date', new Date().toISOString().split('T')[0]);
+          }
+        } catch (error) {
+          console.error('Error converting date:', error);
+          setValue('date', new Date().toISOString().split('T')[0]);
+        }
+      }
+    } else if (!open) {
+      reset({
+        date: new Date().toISOString().split('T')[0],
+        sessionType: 'education',
+        startTime: '09:00',
+        endTime: '10:00',
+        notes: '',
+      });
+    }
+  }, [session, open, setValue, reset]);
+
   const createMutation = trpc.sessions.create.useMutation({
     onSuccess: () => {
       utils.sessions.list.invalidate();
@@ -62,18 +104,71 @@ export function SessionDialog({ open, onOpenChange }: SessionDialogProps) {
     },
   });
 
+  const updateMutation = trpc.sessions.update.useMutation({
+    onSuccess: () => {
+      utils.sessions.list.invalidate();
+      reset();
+      onOpenChange(false);
+    },
+  });
+
   const onSubmit = async (data: CreateSessionInput) => {
-    await createMutation.mutateAsync(data);
+    if (isEditMode) {
+      await updateMutation.mutateAsync({
+        id: session.id,
+        ...data,
+      });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
   };
 
+  const mutation = isEditMode ? updateMutation : createMutation;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <form onSubmit={handleSubmit(onSubmit)}>
+    <>
+      {/* Fullscreen Markdown Editor */}
+      <FullscreenEditorDialog
+        open={fullscreenMode === 'notes'}
+        onOpenChange={(open) => !open && setFullscreenMode(null)}
+        title="📝 笔记编辑器 / Markdown Notes Editor"
+        onSave={() => setFullscreenMode(null)}
+      >
+        <MarkdownEditor
+          value={watch('notes') || ''}
+          onChange={(value) => {
+            setValue('notes', value, { 
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true 
+            });
+          }}
+          height="100%"
+          preview="live"
+          placeholder="# 上课记录
+
+## 本节内容
+- 讨论主题 1
+- 讨论主题 2
+
+## 作业/任务
+- [ ] 任务 1
+- [ ] 任务 2
+
+## 备注
+其他补充说明..."
+        />
+      </FullscreenEditorDialog>
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Record New Session</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Session' : 'Record New Session'}</DialogTitle>
             <DialogDescription>
-              Record a teaching or consulting session with a client
+              {isEditMode
+                ? 'Update session information and class notes'
+                : 'Record a teaching or consulting session with detailed notes'}
             </DialogDescription>
           </DialogHeader>
 
@@ -164,14 +259,61 @@ export function SessionDialog({ open, onOpenChange }: SessionDialogProps) {
               )}
             </div>
 
-            {/* Info Message */}
-            <div className="rounded-lg bg-muted p-3 text-sm">
-              <p className="font-medium mb-1">💡 Note:</p>
-              <p className="text-muted-foreground">
-                The system will automatically calculate the rate and total amount based on the
-                client's configured rates. Duration is calculated from start and end times.
+            {/* Class Notes with Markdown */}
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label>上课记录 / Class Notes (Optional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFullscreenMode('notes')}
+                  className="flex items-center gap-2"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  全屏编辑 Fullscreen
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                📝 Use Markdown to record class content, homework, and notes
               </p>
+              <input type="hidden" {...register('notes')} />
+              <MarkdownEditor
+                value={watch('notes') || ''}
+                onChange={(value) => {
+                  setValue('notes', value, { 
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true 
+                  });
+                }}
+                height={200}
+                preview="live"
+                placeholder="# 上课记录
+
+## 本节内容
+- 讨论主题 1
+- 讨论主题 2
+
+## 作业/任务
+- [ ] 任务 1
+- [ ] 任务 2
+
+## 备注
+其他补充说明..."
+              />
             </div>
+
+            {/* Info Message */}
+            {!isEditMode && (
+              <div className="rounded-lg bg-muted p-3 text-sm">
+                <p className="font-medium mb-1">💡 Note:</p>
+                <p className="text-muted-foreground">
+                  The system will automatically calculate the rate and total amount based on the
+                  client's configured rates. Duration is calculated from start and end times.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -187,18 +329,24 @@ export function SessionDialog({ open, onOpenChange }: SessionDialogProps) {
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Recording...' : 'Record Session'}
+              {isSubmitting
+                ? isEditMode
+                  ? 'Updating...'
+                  : 'Recording...'
+                : isEditMode
+                  ? 'Update Session'
+                  : 'Record Session'}
             </Button>
           </DialogFooter>
 
-          {createMutation.error && (
-            <p className="mt-2 text-sm text-destructive">
-              Error: {createMutation.error.message}
-            </p>
+          {mutation.error && (
+            <p className="mt-2 text-sm text-destructive">Error: {mutation.error.message}</p>
           )}
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
 

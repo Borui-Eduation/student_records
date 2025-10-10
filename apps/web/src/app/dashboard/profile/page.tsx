@@ -54,18 +54,18 @@ export default function CompanyProfilePage() {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-6">
-            {/* Basic Information */}
+            {/* Basic Information - Simplified for personal/small business use */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="h-5 w-5" />
                   Basic Information
                 </CardTitle>
-                <CardDescription>Your company's basic details</CardDescription>
+                <CardDescription>Your business details (all fields optional)</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="companyName">Company Name</Label>
+                  <Label htmlFor="companyName">Company Name (Optional)</Label>
                   <Input
                     id="companyName"
                     placeholder="Your Company Ltd."
@@ -78,20 +78,34 @@ export default function CompanyProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="taxId">Tax ID / Business Registration Number</Label>
+                  <Label htmlFor="email">Email (Optional)</Label>
                   <Input
-                    id="taxId"
-                    placeholder="12-3456789"
-                    {...register('taxId')}
-                    className={errors.taxId ? 'border-destructive' : ''}
+                    id="email"
+                    type="email"
+                    placeholder="contact@yourcompany.com"
+                    {...register('email')}
+                    className={errors.email ? 'border-destructive' : ''}
                   />
-                  {errors.taxId && (
-                    <p className="text-sm text-destructive">{errors.taxId.message}</p>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
                   )}
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="address">Business Address</Label>
+                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    placeholder="+1 234 567 8900"
+                    {...register('phone')}
+                    className={errors.phone ? 'border-destructive' : ''}
+                  />
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="address">Business Address (Optional)</Label>
                   <Textarea
                     id="address"
                     placeholder="123 Main St, City, State, ZIP"
@@ -103,79 +117,6 @@ export default function CompanyProfilePage() {
                     <p className="text-sm text-destructive">{errors.address.message}</p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Bank Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Bank Information</CardTitle>
-                <CardDescription>For invoice payment details</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    placeholder="Bank of Example"
-                    {...register('bankInfo.bankName')}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="accountName">Account Name</Label>
-                  <Input
-                    id="accountName"
-                    placeholder="Your Company Ltd."
-                    {...register('bankInfo.accountName')}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input
-                    id="accountNumber"
-                    placeholder="1234567890"
-                    {...register('bankInfo.accountNumber')}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="swiftCode">SWIFT Code (Optional)</Label>
-                  <Input
-                    id="swiftCode"
-                    placeholder="ABCD1234"
-                    {...register('bankInfo.swiftCode')}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-                <CardDescription>How clients can reach you</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="contact@yourcompany.com"
-                    {...register('contactInfo.email')}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="+1 234 567 8900"
-                    {...register('contactInfo.phone')}
-                  />
-                </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="website">Website (Optional)</Label>
@@ -183,8 +124,12 @@ export default function CompanyProfilePage() {
                     id="website"
                     type="url"
                     placeholder="https://yourcompany.com"
-                    {...register('contactInfo.website')}
+                    {...register('website')}
+                    className={errors.website ? 'border-destructive' : ''}
                   />
+                  {errors.website && (
+                    <p className="text-sm text-destructive">{errors.website.message}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -213,4 +158,5 @@ export default function CompanyProfilePage() {
     </div>
   );
 }
+
 

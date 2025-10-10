@@ -31,8 +31,6 @@ interface InvoiceGeneratorDialogProps {
 }
 
 const GenerateInvoiceFormSchema = z.object({
-  clientId: z.string().min(1, 'Client is required'),
-  sessionIds: z.array(z.string()).min(1, 'Select at least one session'),
   notes: z.string().optional(),
 });
 
@@ -79,9 +77,20 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
       setSelectedSessionIds([]);
       onOpenChange(false);
     },
+    onError: (error) => {
+      console.error('Invoice generation error:', error);
+    },
   });
 
   const onSubmit = async (data: GenerateInvoiceFormInput) => {
+    // Validate manually since these fields are in state, not in the form
+    if (!selectedClientId) {
+      return;
+    }
+    if (selectedSessionIds.length === 0) {
+      return;
+    }
+
     await generateMutation.mutateAsync({
       clientId: selectedClientId,
       sessionIds: selectedSessionIds,
@@ -252,4 +261,5 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
     </Dialog>
   );
 }
+
 
