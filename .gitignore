@@ -56,3 +56,5 @@ Thumbs.db
 *.json
 # Service account keys
 *service-account*.json
+*.json
+vercel-service-account.json
