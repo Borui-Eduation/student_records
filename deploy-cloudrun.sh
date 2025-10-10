@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # 配置变量
 PROJECT_ID="borui-education-c6666"
 SERVICE_NAME="student-record-api"
-REGION="asia-east1"
+REGION="us-west1"
 SERVICE_ACCOUNT="student-record-api@borui-education-c6666.iam.gserviceaccount.com"
 
 echo -e "${BLUE}================================================${NC}"
@@ -80,7 +80,7 @@ echo -e "${BLUE}🚀 步骤 3/4: 构建 Docker 镜像并部署到 Cloud Run...${
 echo "这可能需要 5-10 分钟..."
 echo ""
 
-# 使用根目录的 Dockerfile 进行构建和部署
+# 使用根目录的 Dockerfile 进行构建和部署（已优化，跳过不必要的下载）
 gcloud run deploy $SERVICE_NAME \
   --source . \
   --platform managed \
@@ -88,7 +88,7 @@ gcloud run deploy $SERVICE_NAME \
   --allow-unauthenticated \
   --project $PROJECT_ID \
   --service-account $SERVICE_ACCOUNT \
-  --set-env-vars "NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_PROJECT_ID=$PROJECT_ID,GCS_BUCKET_NAME=${PROJECT_ID}-storage,KMS_KEY_RING=student-record-keyring,KMS_KEY_NAME=knowledge-base-key,KMS_LOCATION=$REGION,ADMIN_EMAILS=yao.s.1216@gmail.com" \
+  --set-env-vars "NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_PROJECT_ID=$PROJECT_ID,GCS_BUCKET_NAME=${PROJECT_ID}-storage,KMS_KEY_RING=student-record-keyring,KMS_KEY_NAME=knowledge-base-key,KMS_LOCATION=$REGION,ADMIN_EMAILS=yao.s.1216@gmail.com,PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true,PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser" \
   --memory 1Gi \
   --cpu 1 \
   --max-instances 10 \

@@ -11,7 +11,8 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/shared/package.json ./packages/shared/package.json
 COPY apps/api/package.json ./apps/api/package.json
 
-# Install pnpm and all dependencies
+# Install pnpm and all dependencies (skip Puppeteer download)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm install -g pnpm@9.12.2 && \
     pnpm install --frozen-lockfile
 

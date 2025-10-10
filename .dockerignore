@@ -15,11 +15,6 @@ specs/
 .git/
 .github/
 
-# Environment files
-.env
-.env.*
-!.env.example
-
 # Logs
 *.log
 logs/
@@ -45,15 +40,8 @@ coverage/
 **/*.spec.ts
 **/*.spec.tsx
 
-# Deployment files
-vercel.json
-vercel-service-account.json
-deploy.log
-*.sh
-
 # Other
 .turbo/
 .cache/
 tmp/
 temp/
-
