@@ -1,0 +1,59 @@
+# Node modules (will be installed in container)
+node_modules/
+**/node_modules/
+
+# Build artifacts (will be built in container)
+.next/
+dist/
+build/
+out/
+
+# Development files
+*.md
+docs/
+specs/
+.git/
+.github/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Deployment files
+vercel.json
+vercel-service-account.json
+deploy.log
+*.sh
+
+# Other
+.turbo/
+.cache/
+tmp/
+temp/
+
