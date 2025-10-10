@@ -1,0 +1,12 @@
+NODE_ENV: production
+GOOGLE_CLOUD_PROJECT: borui-education-c6666
+FIREBASE_PROJECT_ID: borui-education-c6666
+GCS_BUCKET_NAME: borui-education-c6666-storage
+KMS_KEY_RING: student-record-keyring
+KMS_KEY_NAME: knowledge-base-key
+KMS_LOCATION: us-west1
+ADMIN_EMAILS: yao.s.1216@gmail.com
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+CORS_ORIGIN: "https://record.borui.org,https://student-records-web.vercel.app"
+

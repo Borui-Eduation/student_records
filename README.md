@@ -29,17 +29,22 @@ open START_HERE.md
 
 ## ✨ 核心特性
 
+### 🔒 多租户数据隔离
+- ✅ 每个用户独立数据空间（客户、课时、发票完全隔离）
+- ✅ 基于角色的访问控制（用户/超级管理员）
+- ✅ Firestore 安全规则（数据库级权限验证）
+- ✅ 自动初始化（新用户自动创建欢迎指南）
+
 ### 💰 自动化财务管理
 - ✅ 灵活的多费率系统（按客户和服务类型）
 - ✅ 自动发票生成（INV-001 格式）
 - ✅ 精确的收入计算和报表
 - ✅ 完整的计费状态追踪（未开票/已开票/已支付）
 
-### 📝 富媒体课时记录
+### 📝 课时记录管理
 - ✅ 块编辑器（结构化内容）
-- ✅ 白板绘图（存储到 Cloud Storage）
-- ✅ 课时录音（存储到 Cloud Storage）
 - ✅ 自动时长和金额计算
+- ✅ 笔记和内容管理
 
 ### 🔐 安全知识库
 - ✅ Google Cloud KMS 加密（AES-256-GCM）
@@ -58,6 +63,12 @@ open START_HERE.md
 - ✅ Top 客户排名
 - ✅ 最近活动展示
 
+### 📱 响应式设计
+- ✅ 移动端优化（375px+）
+- ✅ 对话框自动滚动（支持小屏幕）
+- ✅ 触摸友好的 UI 交互
+- ✅ 适配各种设备尺寸
+
 ---
 
 ## 🏗️ 技术架构
@@ -73,7 +84,6 @@ open START_HERE.md
 - **运行时**: Node.js + Express + TypeScript
 - **API**: tRPC（类型安全）
 - **数据库**: Google Firestore（NoSQL）
-- **存储**: Google Cloud Storage
 - **加密**: Google Cloud KMS
 - **部署**: Google Cloud Run（Serverless）
 
@@ -109,42 +119,14 @@ student_record/
 │       │   ├── types/          # TypeScript 接口
 │       │   └── schemas/        # Zod 验证模式
 │       └── package.json
-├── docs/                       # 完整文档
-│   ├── DEPLOY_AND_TEST.md      # 部署测试指南 ⭐
-│   ├── GOOGLE_CLOUD_SETUP.md   # GCP 设置
-│   ├── DEPLOYMENT.md           # 部署流程
-│   └── TEST_CHECKLIST.md       # 测试清单
 ├── scripts/                    # 自动化脚本
 │   ├── quick-deploy.sh         # 一键部署 ⭐
 │   └── run-tests.sh            # 自动化测试 ⭐
-├── specs/                      # 产品规格
-│   └── 001-/                   # 核心功能规格
-│       ├── spec.md             # 详细规格
-│       ├── plan.md             # 实现计划
-│       ├── tasks.md            # 任务列表
-│       └── docs/               # 设计文档
-├── START_HERE.md               # 项目启动指引 ⭐⭐⭐
-├── QUICKSTART_CN.md            # 快速开始（中文）⭐⭐⭐
-├── GETTING_STARTED.md          # 本地开发指南
-└── PROJECT_COMPLETE.md         # 项目完成报告
+└── README.md                   # 项目说明
 ```
 
 ---
 
-## 📖 完整文档索引
-
-| 文档 | 说明 | 推荐度 |
-|------|------|--------|
-| **START_HERE.md** | 🎯 项目启动指引 | ⭐⭐⭐⭐⭐ |
-| **QUICKSTART_CN.md** | 🚀 快速开始（中文） | ⭐⭐⭐⭐⭐ |
-| **GETTING_STARTED.md** | 💻 本地开发指南 | ⭐⭐⭐⭐⭐ |
-| **docs/DEPLOY_AND_TEST.md** | 📦 部署测试完整指南 | ⭐⭐⭐⭐⭐ |
-| docs/GOOGLE_CLOUD_SETUP.md | ☁️ Google Cloud 设置 | ⭐⭐⭐⭐ |
-| docs/DEPLOYMENT.md | 🚢 完整部署流程 | ⭐⭐⭐⭐ |
-| docs/TEST_CHECKLIST.md | ✅ 功能测试清单 | ⭐⭐⭐⭐ |
-| PROJECT_COMPLETE.md | 📊 项目完成报告 | ⭐⭐⭐ |
-| specs/001-/spec.md | 📝 产品规格说明 | ⭐⭐⭐ |
-| specs/001-/plan.md | 🗓️ 实现计划 | ⭐⭐⭐ |
 
 ---
 
@@ -172,12 +154,26 @@ cd apps/api && pnpm dev
 ### 部署
 
 ```bash
+# Firestore 配置（必须先执行）
+firebase use borui-education-c6666
+firebase deploy --only firestore:indexes
+firebase deploy --only firestore:rules
+
 # 一键部署（推荐）
 ./scripts/quick-deploy.sh
+
+# 手动部署
+./deploy-cloudrun.sh  # 后端 API
+./deploy-vercel.sh    # 前端 Web
 
 # 运行测试
 ./scripts/run-tests.sh
 ```
+
+**📍 重要配置：**
+- 所有服务统一使用 **us-west1** region
+- 详细配置文档：[ENV_CONFIG.md](./ENV_CONFIG.md)
+- 多租户实施文档：[MULTI_TENANT_IMPLEMENTATION.md](./MULTI_TENANT_IMPLEMENTATION.md)
 
 ### 代码质量
 
@@ -196,12 +192,12 @@ pnpm lint
 
 ## 🎨 设计原则
 
-基于 [Project Constitution](./.specify/memory/constitution.md) 的 7 大核心原则：
+核心设计原则：
 
 1. **浅色极简主义** - 清晰、直观的界面
 2. **代码清晰可读** - 可维护、文档完善
 3. **多费率财务自动化** - 灵活、精确的计费
-4. **富媒体课时记录** - 全面的文档功能
+4. **结构化课时记录** - 全面的内容管理
 5. **安全与加密优先** - 全方位数据保护
 6. **高效运营** - 优化的工作流程
 7. **专业服务交付** - 面向客户的高质量
@@ -215,7 +211,6 @@ pnpm lint
 - ✅ **Google Cloud KMS**: AES-256-GCM 加密敏感数据
 - ✅ **HTTPS 强制**: 所有连接使用 HTTPS
 - ✅ **CORS 保护**: 严格的跨域访问策略
-- ✅ **审计日志**: 记录所有敏感操作
 - ✅ **Firestore 安全规则**: 数据库级别的访问控制
 
 ---
@@ -227,7 +222,6 @@ pnpm lint
 - **Vercel**: $0（Hobby 计划）
 - **Cloud Run**: $0（2M 请求/月）
 - **Firestore**: $0（50K 读取/天）
-- **Cloud Storage**: $0（5GB 存储）
 - **Cloud KMS**: $0（20K 操作/月）
 - **Firebase Auth**: $0（无限用户）
 
@@ -310,40 +304,21 @@ gcloud run services logs tail student-record-api --region asia-east1
 # 查看终端输出
 ```
 
-### 文档
-
-- 📖 完整部署指南: [`docs/DEPLOY_AND_TEST.md`](./docs/DEPLOY_AND_TEST.md)
-- 🔧 GCP 设置: [`docs/GOOGLE_CLOUD_SETUP.md`](./docs/GOOGLE_CLOUD_SETUP.md)
-- ✅ 测试清单: [`docs/TEST_CHECKLIST.md`](./docs/TEST_CHECKLIST.md)
-
 ---
 
 ## 🎯 推荐部署流程
 
-### 新手用户（45分钟）
+### 快速部署
 
-```
-1. 阅读 START_HERE.md（3分钟）
-   ↓
-2. 本地测试: ./scripts/quick-deploy.sh 选项1（5分钟）
-   ↓
-3. 云端部署: ./scripts/quick-deploy.sh 选项2（30分钟）
-   ↓
-4. 运行测试: ./scripts/run-tests.sh（5分钟）
-   ↓
-5. 手动测试核心功能（10分钟）
-```
+```bash
+# 1. 本地测试
+./scripts/quick-deploy.sh  # 选项 1
 
-### 有经验用户（40分钟）
+# 2. 云端部署
+./scripts/quick-deploy.sh  # 选项 2
 
-```
-1. 阅读 QUICKSTART_CN.md（2分钟）
-   ↓
-2. 云端部署: ./scripts/quick-deploy.sh 选项2（30分钟）
-   ↓
-3. 运行测试: ./scripts/run-tests.sh（5分钟）
-   ↓
-4. 完成部署验证（3分钟）
+# 3. 运行测试
+./scripts/run-tests.sh
 ```
 
 ---
@@ -353,9 +328,8 @@ gcloud run services logs tail student-record-api --region asia-east1
 现在您可以：
 
 1. **立即部署**: 运行 `./scripts/quick-deploy.sh`
-2. **本地开发**: 查看 [`GETTING_STARTED.md`](./GETTING_STARTED.md)
-3. **查看文档**: 浏览 `docs/` 文件夹
-4. **阅读规格**: 查看 `specs/001-/spec.md`
+2. **本地开发**: 运行 `pnpm install && pnpm dev`
+3. **运行测试**: 运行 `./scripts/run-tests.sh`
 
 ---
 
@@ -367,19 +341,16 @@ gcloud run services logs tail student-record-api --region asia-east1
 - **安全**: WAF、DDoS 防护
 - **监控**: Cloud Monitoring 仪表板
 - **备份**: Firestore 定期导出
-- **功能**: PDF 导出、邮件通知、移动端适配
-
-详见: [`START_HERE.md`](./START_HERE.md) 的"后续优化建议"章节
+- **功能**: 邮件通知、移动端适配
 
 ---
 
 ## 🤝 贡献
 
-1. 阅读 [Project Constitution](./.specify/memory/constitution.md)
-2. 创建 feature 分支
-3. 遵循代码清晰原则
-4. 编写测试
-5. 提交 Pull Request
+1. 创建 feature 分支
+2. 遵循代码清晰原则
+3. 编写测试
+4. 提交 Pull Request
 
 ---
 
@@ -401,7 +372,5 @@ gcloud run services logs tail student-record-api --region asia-east1
 
 ---
 
-**🎊 恭喜！您的系统已完全开发完成，现在可以开始部署测试了！**
-
-**从这里开始**: [`START_HERE.md`](./START_HERE.md) 📖
+**🎊 恭喜！您的系统已完全开发完成，现在可以开始部署使用了！**
 

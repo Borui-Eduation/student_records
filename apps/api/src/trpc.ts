@@ -76,6 +76,19 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 /**
+ * Helper function to get user role from Firestore
+ */
+async function getUserRole(uid: string, db: admin.firestore.Firestore): Promise<'user' | 'superadmin'> {
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    return userDoc.data()?.role || 'user';
+  } catch (error) {
+    console.error('Error fetching user role:', error);
+    return 'user';
+  }
+}
+
+/**
  * Admin procedure - requires authentication + admin check
  */
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
@@ -89,10 +102,14 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     });
   }
 
+  // Get user role from Firestore
+  const role = await getUserRole(ctx.user.uid, ctx.db);
+
   return next({
     ctx: {
       ...ctx,
       user: ctx.user,
+      userRole: role,
     },
   });
 });

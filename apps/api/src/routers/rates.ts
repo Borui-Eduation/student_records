@@ -13,6 +13,7 @@ export const ratesRouter = router({
 
     const rateData = {
       ...input,
+      userId: ctx.user.uid,
       currency: input.currency || 'CNY',
       effectiveDate:
         typeof input.effectiveDate === 'string'
@@ -60,10 +61,16 @@ export const ratesRouter = router({
         clientType: z.enum(['institution', 'individual', 'project']).optional(),
         limit: z.number().min(1).max(100).optional().default(50),
         cursor: z.string().optional(),
+        viewAllUsers: z.boolean().optional(), // Super admin only
       })
     )
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('rates');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Filter by clientId
       if (input.clientId) {
@@ -110,11 +117,16 @@ export const ratesRouter = router({
    * Get rates for a specific client
    */
   getByClient: adminProcedure.input(z.object({ clientId: z.string() })).query(async ({ ctx, input }) => {
-    const snapshot = await ctx.db
+    let query: admin.firestore.Query = ctx.db
       .collection('rates')
-      .where('clientId', '==', input.clientId)
-      .orderBy('effectiveDate', 'desc')
-      .get();
+      .where('clientId', '==', input.clientId);
+
+    // Apply userId filter (unless superadmin)
+    if (ctx.userRole !== 'superadmin') {
+      query = query.where('userId', '==', ctx.user.uid);
+    }
+
+    const snapshot = await query.orderBy('effectiveDate', 'desc').get();
 
     return snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -135,6 +147,16 @@ export const ratesRouter = router({
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Rate not found',
+      });
+    }
+
+    const data = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to update this rate',
       });
     }
 
@@ -170,6 +192,16 @@ export const ratesRouter = router({
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Rate not found',
+      });
+    }
+
+    const data = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to delete this rate',
       });
     }
 

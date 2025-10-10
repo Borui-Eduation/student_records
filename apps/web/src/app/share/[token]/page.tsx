@@ -120,53 +120,8 @@ export default function SharedSessionPage() {
           </Card>
         )}
 
-        {/* Whiteboards */}
-        {session?.whiteboardUrls && session.whiteboardUrls.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Whiteboards ({session.whiteboardUrls.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {session.whiteboardUrls.map((url: string, idx: number) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`Whiteboard ${idx + 1}`}
-                    className="rounded-lg border"
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Audio Recordings */}
-        {session?.audioUrls && session.audioUrls.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Audio Recordings ({session.audioUrls.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {session.audioUrls.map((url: string, idx: number) => (
-                  <div key={idx} className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">Recording {idx + 1}:</span>
-                    <audio controls className="flex-1">
-                      <source src={url} type="audio/webm" />
-                      Your browser does not support audio playback.
-                    </audio>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Empty State */}
-        {(!session?.contentBlocks || session.contentBlocks.length === 0) &&
-          (!session?.whiteboardUrls || session.whiteboardUrls.length === 0) &&
-          (!session?.audioUrls || session.audioUrls.length === 0) && (
+        {(!session?.contentBlocks || session.contentBlocks.length === 0) && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />

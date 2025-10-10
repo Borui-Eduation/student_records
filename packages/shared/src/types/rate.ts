@@ -3,6 +3,7 @@ import { ClientType } from './client';
 
 export interface Rate {
   id: string;
+  userId: string; // Owner of this rate
   clientId?: string;
   clientType?: ClientType;
   amount: number;

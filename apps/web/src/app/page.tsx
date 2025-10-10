@@ -81,7 +81,7 @@ export default function Home() {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">📝 课时日志</h3>
-                <p className="text-sm text-gray-600">富媒体记录，白板与录音</p>
+                <p className="text-sm text-gray-600">结构化内容记录</p>
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">🔐 知识库</h3>

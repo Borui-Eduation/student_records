@@ -12,12 +12,22 @@ export const sharingLinksRouter = router({
   create: auditedProcedure.input(CreateSharingLinkSchema).mutation(async ({ ctx, input }) => {
     const now = admin.firestore.Timestamp.now();
 
-    // Verify session exists
+    // Verify session exists and user owns it
     const sessionDoc = await ctx.db.collection('sessions').doc(input.sessionId).get();
     if (!sessionDoc.exists) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Session not found',
+      });
+    }
+
+    const sessionData = sessionDoc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && sessionData?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to share this session',
       });
     }
 
@@ -30,6 +40,7 @@ export const sharingLinksRouter = router({
     expirationDate.setDate(expirationDate.getDate() + expiresInDays);
 
     const linkData = {
+      userId: ctx.user.uid,
       token,
       sessionId: input.sessionId,
       createdAt: now,
@@ -116,8 +127,6 @@ export const sharingLinksRouter = router({
           durationHours: sessionData.durationHours,
           sessionType: sessionData.sessionType,
           contentBlocks: sessionData.contentBlocks,
-          whiteboardUrls: sessionData.whiteboardUrls,
-          audioUrls: sessionData.audioUrls,
         },
         link: {
           accessCount: linkData.accessCount + 1,
@@ -136,10 +145,16 @@ export const sharingLinksRouter = router({
         includeRevoked: z.boolean().optional().default(false),
         limit: z.number().min(1).max(100).optional().default(50),
         cursor: z.string().optional(),
+        viewAllUsers: z.boolean().optional(), // Super admin only
       })
     )
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('sharingLinks');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Filter by sessionId
       if (input.sessionId) {
@@ -211,6 +226,16 @@ export const sharingLinksRouter = router({
         });
       }
 
+      const data = doc.data();
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to revoke this sharing link',
+        });
+      }
+
       await docRef.update({
         revoked: true,
         revokedAt: admin.firestore.Timestamp.now(),
@@ -242,6 +267,15 @@ export const sharingLinksRouter = router({
       }
 
       const data = doc.data()!;
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && data.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to extend this sharing link',
+        });
+      }
+
       const currentExpiration = data.expiresAt.toDate();
       const newExpiration = new Date(currentExpiration);
       newExpiration.setDate(newExpiration.getDate() + input.additionalDays);

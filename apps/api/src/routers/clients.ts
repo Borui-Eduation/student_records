@@ -19,6 +19,7 @@ export const clientsRouter = router({
 
       const clientData = {
         ...input,
+        userId: ctx.user.uid,
         active: true,
         defaultRateIds: [],
         createdAt: now,
@@ -38,22 +39,47 @@ export const clientsRouter = router({
    * Get a client by ID
    */
   get: adminProcedure
-    .input(CreateClientSchema.pick({ name: true }))
-    .query(async ({ ctx, input: _input }) => {
-      // Placeholder implementation
-      throw new TRPCError({
-        code: 'NOT_IMPLEMENTED',
-        message: 'This endpoint is not yet implemented',
-      });
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const doc = await ctx.db.collection('clients').doc(input.id).get();
+
+      if (!doc.exists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Client not found',
+        });
+      }
+
+      const data = doc.data();
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this client',
+        });
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+      };
     }),
 
   /**
    * List clients with filtering
    */
   list: adminProcedure
-    .input(ListClientsSchema)
+    .input(ListClientsSchema.extend({
+      viewAllUsers: z.boolean().optional(), // Super admin only
+    }))
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('clients');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Apply filters
       if (input.type) {
@@ -118,6 +144,16 @@ export const clientsRouter = router({
         });
       }
 
+      const data = doc.data();
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to update this client',
+        });
+      }
+
       await docRef.update({
         ...updates,
         updatedAt: admin.firestore.Timestamp.now(),
@@ -147,6 +183,16 @@ export const clientsRouter = router({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Client not found',
+        });
+      }
+
+      const data = doc.data();
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to delete this client',
         });
       }
 

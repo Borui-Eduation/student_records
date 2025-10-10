@@ -46,6 +46,7 @@ export const knowledgeBaseRouter = router({
     }
 
     const entryData: any = {
+      userId: ctx.user.uid,
       title: input.title,
       type: input.type,
       content,
@@ -89,6 +90,14 @@ export const knowledgeBaseRouter = router({
 
     const data = doc.data()!;
 
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have access to this entry',
+      });
+    }
+
     // Update access tracking
     await doc.ref.update({
       accessedAt: admin.firestore.Timestamp.now(),
@@ -127,10 +136,16 @@ export const knowledgeBaseRouter = router({
         category: z.string().optional(),
         limit: z.number().min(1).max(100).optional().default(50),
         cursor: z.string().optional(),
+        viewAllUsers: z.boolean().optional(), // Super admin only
       })
     )
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('knowledgeBase');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Filter by type
       if (input.type) {
@@ -199,6 +214,15 @@ export const knowledgeBaseRouter = router({
     }
 
     const data = doc.data()!;
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to update this entry',
+      });
+    }
+
     const updateData: any = {
       ...updates,
       updatedAt: admin.firestore.Timestamp.now(),
@@ -248,6 +272,16 @@ export const knowledgeBaseRouter = router({
       });
     }
 
+    const data = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to delete this entry',
+      });
+    }
+
     await docRef.delete();
 
     return { success: true };
@@ -256,8 +290,15 @@ export const knowledgeBaseRouter = router({
   /**
    * Search knowledge base
    */
-  search: adminProcedure.input(SearchKnowledgeSchema).query(async ({ ctx, input }) => {
+  search: adminProcedure.input(SearchKnowledgeSchema.extend({
+    viewAllUsers: z.boolean().optional(), // Super admin only
+  })).query(async ({ ctx, input }) => {
     let query: admin.firestore.Query = ctx.db.collection('knowledgeBase');
+
+    // Apply userId filter (unless superadmin with viewAllUsers flag)
+    if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+      query = query.where('userId', '==', ctx.user.uid);
+    }
 
     // Filter by type if provided
     if (input.type) {
@@ -296,7 +337,14 @@ export const knowledgeBaseRouter = router({
    * Get all categories (for filtering)
    */
   getCategories: adminProcedure.query(async ({ ctx }) => {
-    const snapshot = await ctx.db.collection('knowledgeBase').get();
+    let query: admin.firestore.Query = ctx.db.collection('knowledgeBase');
+
+    // Apply userId filter (unless superadmin)
+    if (ctx.userRole !== 'superadmin') {
+      query = query.where('userId', '==', ctx.user.uid);
+    }
+
+    const snapshot = await query.get();
 
     const categories = new Set<string>();
     snapshot.docs.forEach((doc) => {
@@ -313,7 +361,14 @@ export const knowledgeBaseRouter = router({
    * Get all tags (for filtering)
    */
   getTags: adminProcedure.query(async ({ ctx }) => {
-    const snapshot = await ctx.db.collection('knowledgeBase').get();
+    let query: admin.firestore.Query = ctx.db.collection('knowledgeBase');
+
+    // Apply userId filter (unless superadmin)
+    if (ctx.userRole !== 'superadmin') {
+      query = query.where('userId', '==', ctx.user.uid);
+    }
+
+    const snapshot = await query.get();
 
     const tagsSet = new Set<string>();
     snapshot.docs.forEach((doc) => {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { trpc } from '@/lib/trpc';
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,21 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  // Get or create current user
+  const { data: currentUser } = trpc.users.getCurrentUser.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  // Initialize user mutation
+  const initializeUserMutation = trpc.users.initializeUser.useMutation();
+
+  // Auto-initialize user if needed
+  useEffect(() => {
+    if (currentUser && !currentUser.isInitialized) {
+      initializeUserMutation.mutate();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (!loading && !user) {

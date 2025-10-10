@@ -108,6 +108,7 @@ export const sessionsRouter = router({
     const totalAmount = durationHours * applicableRate.amount;
 
     const sessionData = {
+      userId: ctx.user.uid,
       clientId: input.clientId,
       clientName,
       date: admin.firestore.Timestamp.fromDate(new Date(input.date)),
@@ -122,8 +123,6 @@ export const sessionsRouter = router({
       billingStatus: 'unbilled' as const,
       contentBlocks: input.contentBlocks || [],
       notes: input.notes || '',
-      whiteboardUrls: [],
-      audioUrls: [],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.user.uid,
@@ -150,17 +149,34 @@ export const sessionsRouter = router({
       });
     }
 
+    const data = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have access to this session',
+      });
+    }
+
     return {
       id: doc.id,
-      ...doc.data(),
+      ...data,
     };
   }),
 
   /**
    * List sessions with filtering
    */
-  list: adminProcedure.input(ListSessionsSchema).query(async ({ ctx, input }) => {
+  list: adminProcedure.input(ListSessionsSchema.extend({
+    viewAllUsers: z.boolean().optional(), // Super admin only
+  })).query(async ({ ctx, input }) => {
     let query: admin.firestore.Query = ctx.db.collection('sessions');
+
+    // Apply userId filter (unless superadmin with viewAllUsers flag)
+    if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+      query = query.where('userId', '==', ctx.user.uid);
+    }
 
     // Filter by clientId
     if (input.clientId) {
@@ -231,6 +247,16 @@ export const sessionsRouter = router({
       });
     }
 
+    const sessionData = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && sessionData?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to update this session',
+      });
+    }
+
     const updateData: any = {
       ...updates,
       updatedAt: admin.firestore.Timestamp.now(),
@@ -286,6 +312,14 @@ export const sessionsRouter = router({
 
     const sessionData = doc.data();
 
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && sessionData?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to delete this session',
+      });
+    }
+
     // Don't allow deletion if already billed
     if (sessionData?.billingStatus === 'billed' || sessionData?.billingStatus === 'paid') {
       throw new TRPCError({
@@ -299,58 +333,5 @@ export const sessionsRouter = router({
     return { success: true };
   }),
 
-  /**
-   * Add audio URL to session
-   */
-  addAudio: adminProcedure
-    .input(z.object({ sessionId: z.string(), audioUrl: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const docRef = ctx.db.collection('sessions').doc(input.sessionId);
-      const doc = await docRef.get();
-
-      if (!doc.exists) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Session not found',
-        });
-      }
-
-      const sessionData = doc.data();
-      const audioUrls = sessionData?.audioUrls || [];
-
-      await docRef.update({
-        audioUrls: [...audioUrls, input.audioUrl],
-        updatedAt: admin.firestore.Timestamp.now(),
-      });
-
-      return { success: true };
-    }),
-
-  /**
-   * Add whiteboard URL to session
-   */
-  addWhiteboard: adminProcedure
-    .input(z.object({ sessionId: z.string(), whiteboardUrl: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const docRef = ctx.db.collection('sessions').doc(input.sessionId);
-      const doc = await docRef.get();
-
-      if (!doc.exists) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Session not found',
-        });
-      }
-
-      const sessionData = doc.data();
-      const whiteboardUrls = sessionData?.whiteboardUrls || [];
-
-      await docRef.update({
-        whiteboardUrls: [...whiteboardUrls, input.whiteboardUrl],
-        updatedAt: admin.firestore.Timestamp.now(),
-      });
-
-      return { success: true };
-    }),
 });
 

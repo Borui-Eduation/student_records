@@ -10,6 +10,7 @@ export interface ContactInfo {
 
 export interface Client {
   id: string;
+  userId: string; // Owner of this client
   name: string;
   type: ClientType;
   contactInfo?: ContactInfo;

@@ -22,6 +22,9 @@ export type { CompanyProfile } from './companyProfile';
 // Audit Log types
 export * from './auditLog';
 
+// User types
+export * from './user';
+
 // Common types
 export * from './common';
 

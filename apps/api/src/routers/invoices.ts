@@ -84,6 +84,7 @@ export const invoicesRouter = router({
 
     // Create invoice
     const invoiceData = {
+      userId: ctx.user.uid,
       invoiceNumber,
       clientId,
       clientName,
@@ -137,9 +138,19 @@ export const invoicesRouter = router({
       });
     }
 
+    const data = doc.data();
+
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && data?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have access to this invoice',
+      });
+    }
+
     return {
       id: doc.id,
-      ...doc.data(),
+      ...data,
     };
   }),
 
@@ -159,10 +170,16 @@ export const invoicesRouter = router({
           .optional(),
         limit: z.number().min(1).max(100).optional().default(50),
         cursor: z.string().optional(),
+        viewAllUsers: z.boolean().optional(), // Super admin only
       })
     )
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('invoices');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Filter by clientId
       if (input.clientId) {
@@ -230,6 +247,16 @@ export const invoicesRouter = router({
         });
       }
 
+      const invoiceData = doc.data();
+
+      // Check ownership (unless superadmin)
+      if (ctx.userRole !== 'superadmin' && invoiceData?.userId !== ctx.user.uid) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to update this invoice',
+        });
+      }
+
       const updateData: any = {
         status,
         updatedAt: admin.firestore.Timestamp.now(),
@@ -245,7 +272,6 @@ export const invoicesRouter = router({
 
       // If marking as paid, update all associated sessions
       if (status === 'paid') {
-        const invoiceData = doc.data();
         const sessionIds = invoiceData?.lineItems.map((item: any) => item.sessionId) || [];
 
         const batch = ctx.db.batch();
@@ -284,6 +310,14 @@ export const invoicesRouter = router({
 
     const invoiceData = doc.data();
 
+    // Check ownership (unless superadmin)
+    if (ctx.userRole !== 'superadmin' && invoiceData?.userId !== ctx.user.uid) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to delete this invoice',
+      });
+    }
+
     // Only allow deletion if draft
     if (invoiceData?.status !== 'draft') {
       throw new TRPCError({
@@ -314,9 +348,16 @@ export const invoicesRouter = router({
    * Get revenue report
    */
   getRevenueReport: adminProcedure
-    .input(GetRevenueReportSchema)
+    .input(GetRevenueReportSchema.extend({
+      viewAllUsers: z.boolean().optional(), // Super admin only
+    }))
     .query(async ({ ctx, input }) => {
       let query: admin.firestore.Query = ctx.db.collection('sessions');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
 
       // Filter by date range
       query = query

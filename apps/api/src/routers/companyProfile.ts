@@ -8,15 +8,16 @@ export const companyProfileRouter = router({
    * Get company profile
    */
   get: adminProcedure.query(async ({ ctx }) => {
-    const doc = await ctx.db.collection('companyProfile').doc('default').get();
+    // Each user has their own company profile (document ID is userId)
+    const doc = await ctx.db.collection('companyProfile').doc(ctx.user.uid).get();
 
     if (!doc.exists) {
       // Return default empty profile (simplified - all fields optional)
       return {
-        id: 'default',
+        id: ctx.user.uid,
         companyName: '',
         address: '',
-        email: '',
+        email: ctx.user.email || '',
         phone: '',
         website: '',
       };
@@ -32,7 +33,8 @@ export const companyProfileRouter = router({
    * Update company profile
    */
   update: auditedProcedure.input(UpdateCompanyProfileSchema).mutation(async ({ ctx, input }) => {
-    const docRef = ctx.db.collection('companyProfile').doc('default');
+    // Each user has their own company profile (document ID is userId)
+    const docRef = ctx.db.collection('companyProfile').doc(ctx.user.uid);
 
     const updateData = {
       ...input,

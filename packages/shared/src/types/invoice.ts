@@ -13,6 +13,7 @@ export interface InvoiceLineItem {
 
 export interface Invoice {
   id: string;
+  userId: string; // Owner of this invoice
   invoiceNumber: string;
   clientId: string;
   clientName: string;

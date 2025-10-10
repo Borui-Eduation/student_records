@@ -13,6 +13,7 @@ export interface ContentBlock {
 
 export interface Session {
   id: string;
+  userId: string; // Owner of this session
   clientId: string;
   clientName: string;
   date: Timestamp;
@@ -27,8 +28,7 @@ export interface Session {
   billingStatus: BillingStatus;
   invoiceId?: string;
   contentBlocks: ContentBlock[];
-  whiteboardUrls: string[];
-  audioUrls: string[];
+  notes?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;

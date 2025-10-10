@@ -1,4 +1,5 @@
 import { router } from '../trpc';
+import { usersRouter } from './users';
 import { clientsRouter } from './clients';
 import { ratesRouter } from './rates';
 import { sessionsRouter } from './sessions';
@@ -14,6 +15,7 @@ import { healthRouter } from './health';
  */
 export const appRouter = router({
   health: healthRouter,
+  users: usersRouter,
   clients: clientsRouter,
   rates: ratesRouter,
   sessions: sessionsRouter,

@@ -1,4 +1,5 @@
 // Export all Zod schemas
+export * from './user';
 export * from './client';
 export * from './rate';
 export * from './session';

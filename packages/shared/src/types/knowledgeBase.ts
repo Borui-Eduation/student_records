@@ -9,6 +9,7 @@ export interface EncryptionMetadata {
 
 export interface KnowledgeEntry {
   id: string;
+  userId: string; // Owner of this entry
   title: string;
   type: KnowledgeType;
   content: string;

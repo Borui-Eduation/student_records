@@ -241,16 +241,6 @@ export default function SessionsPage() {
                       📝 {session.contentBlocks.length} content block(s)
                     </div>
                   )}
-                  {session.audioUrls && session.audioUrls.length > 0 && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      🎤 {session.audioUrls.length} audio recording(s)
-                    </div>
-                  )}
-                  {session.whiteboardUrls && session.whiteboardUrls.length > 0 && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      📊 {session.whiteboardUrls.length} whiteboard(s)
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))

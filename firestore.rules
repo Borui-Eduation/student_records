@@ -6,17 +6,75 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Helper function to check if user is admin
-    function isAdmin() {
+    // Helper function to check if user is super admin
+    function isSuperAdmin() {
       return isAuthenticated() && 
-             request.auth.token.email in ['yao.s.1216@gmail.com'];
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
     
-    // All collections require authentication
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isSuperAdmin();
+    }
+    
+    // Data collections with userId field
+    match /clients/{document} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    match /sessions/{document} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    match /rates/{document} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    match /invoices/{document} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    match /knowledgeBase/{document} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    match /companyProfile/{userId} {
+      allow read, write: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
+    }
+    
+    // Sharing links (public read when valid)
+    match /sharingLinks/{document} {
+      allow read: if true;  // Public access for sharing
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isSuperAdmin());
+    }
+    
+    // Audit logs (super admin only)
+    match /auditLogs/{document} {
+      allow read: if isSuperAdmin();
+      allow write: if false;  // Only server can write
+    }
+    
+    // Counters (server only)
+    match /_counters/{document} {
+      allow read: if isAuthenticated();
+      allow write: if false;  // Only server can write
     }
   }
 }
-
-
