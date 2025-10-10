@@ -1,5 +1,5 @@
 {
   "buildCommand": "cd ../../packages/shared && pnpm build && cd ../../apps/web && pnpm build",
-  "installCommand": "cd ../.. && pnpm install --filter=web..."
+  "installCommand": "cd ../.. && PUPPETEER_SKIP_DOWNLOAD=true pnpm install"
 }
 
