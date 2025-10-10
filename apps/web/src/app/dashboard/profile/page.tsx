@@ -21,13 +21,12 @@ export default function CompanyProfilePage() {
     formState: { errors, isSubmitting },
   } = useForm<UpdateCompanyProfileInput>({
     resolver: zodResolver(UpdateCompanyProfileSchema),
-    values: (profile && 'companyName' in profile) ? {
-      companyName: profile.companyName,
-      email: profile.email,
-      phone: profile.phone,
-      address: profile.address,
-      website: profile.website,
-      logoUrl: profile.logoUrl,
+    defaultValues: (profile && 'companyName' in profile) ? {
+      companyName: profile.companyName || '',
+      email: profile.email || '',
+      phone: profile.phone || '',
+      address: profile.address || '',
+      website: profile.website || '',
     } : undefined,
   });
 
