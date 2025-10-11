@@ -88,7 +88,7 @@ gcloud run deploy $SERVICE_NAME \
   --allow-unauthenticated \
   --project $PROJECT_ID \
   --service-account $SERVICE_ACCOUNT \
-  --set-env-vars "NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_PROJECT_ID=$PROJECT_ID,GCS_BUCKET_NAME=${PROJECT_ID}-storage,KMS_KEY_RING=student-record-keyring,KMS_KEY_NAME=knowledge-base-key,KMS_LOCATION=$REGION,ADMIN_EMAILS=yao.s.1216@gmail.com,PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true,PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser" \
+  --set-env-vars "NODE_ENV=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_PROJECT_ID=$PROJECT_ID,GCS_BUCKET_NAME=${PROJECT_ID}-storage,KMS_KEY_RING=student-record-keyring,KMS_KEY_NAME=knowledge-base-key,KMS_LOCATION=$REGION,ADMIN_EMAILS=yao.s.1216@gmail.com,PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true,PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser,CORS_ORIGIN=https://record.borui.org^:^https://student-records-web.vercel.app" \
   --memory 1Gi \
   --cpu 1 \
   --max-instances 10 \

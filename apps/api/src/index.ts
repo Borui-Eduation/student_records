@@ -12,8 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // Middleware - Support multiple CORS origins
+// Support both comma and ^:^ as separators (gcloud uses ^:^ for list values)
 const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  ? process.env.CORS_ORIGIN.split(/,|\^:\^/).map(origin => origin.trim())
   : ['http://localhost:3000'];
 
 app.use(cors({
