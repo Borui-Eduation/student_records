@@ -5,6 +5,8 @@
   "description": "Multi-Business Management Platform for Education & Technical Services",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:start": "./dev-start.sh",
+    "dev:stop": "./dev-stop.sh",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",

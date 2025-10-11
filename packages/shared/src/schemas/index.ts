@@ -14,3 +14,9 @@ export {
   type UpdateCompanyProfileInput,
 } from './companyProfile';
 
+// Export expense schemas
+export * from './expense';
+
+// Export expense category schemas
+export * from './expenseCategory';
+

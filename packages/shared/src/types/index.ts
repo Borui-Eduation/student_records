@@ -28,3 +28,10 @@ export * from './user';
 // Common types
 export * from './common';
 
+// Expense types
+export * from './expense';
+
+// Expense Category types
+export * from './expenseCategory';
+export { PRESET_CATEGORIES } from './expenseCategory';
+

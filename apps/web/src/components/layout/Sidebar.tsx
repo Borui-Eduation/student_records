@@ -13,6 +13,7 @@ import {
   Share2,
   Building2,
   DollarSign,
+  Receipt,
 } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
@@ -41,6 +42,11 @@ const navItems = [
     title: 'Invoices',
     href: '/dashboard/invoices',
     icon: FileText,
+  },
+  {
+    title: 'Expenses',
+    href: '/dashboard/expenses',
+    icon: Receipt,
   },
   {
     title: 'Knowledge Base',

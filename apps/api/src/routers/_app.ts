@@ -8,6 +8,9 @@ import { knowledgeBaseRouter } from './knowledgeBase';
 import { sharingLinksRouter } from './sharingLinks';
 import { companyProfileRouter } from './companyProfile';
 import { healthRouter } from './health';
+import { expensesRouter } from './expenses';
+import { expenseCategoriesRouter } from './expenseCategories';
+import { expenseExportRouter } from './expenseExport';
 
 /**
  * Main tRPC application router
@@ -23,6 +26,9 @@ export const appRouter = router({
   knowledgeBase: knowledgeBaseRouter,
   sharingLinks: sharingLinksRouter,
   companyProfile: companyProfileRouter,
+  expenses: expensesRouter,
+  expenseCategories: expenseCategoriesRouter,
+  expenseExport: expenseExportRouter,
 });
 
 export type AppRouter = typeof appRouter;

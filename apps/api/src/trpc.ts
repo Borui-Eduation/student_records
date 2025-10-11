@@ -4,9 +4,30 @@ import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
+  // Use US-WEST1 bucket for best performance in Vancouver
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'borui-education-c6666';
+  const storageBucket = 'borui-education-c6666-storage-usw1'; // US-WEST1 region
+  
+  // For local development with signed URLs, use service account key
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const serviceAccountKeyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || 
+    (isDevelopment ? require('path').join(__dirname, '../../../service-account-key.json') : undefined);
+  
+  console.log('🔥 Initializing Firebase Admin with:', {
+    projectId,
+    storageBucket,
+    region: 'us-west1',
+    usingServiceAccountKey: !!serviceAccountKeyPath,
+  });
+  
+  const credential = serviceAccountKeyPath && isDevelopment
+    ? admin.credential.cert(serviceAccountKeyPath)
+    : admin.credential.applicationDefault();
+  
   admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID,
+    credential,
+    projectId,
+    storageBucket,
   });
 }
 

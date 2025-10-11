@@ -31,7 +31,8 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+// Increase body size limit for image uploads (base64 images can be large)
+app.use(express.json({ limit: '15mb' }));
 
 // Legacy health check endpoint (for load balancers)
 app.get('/health', (req, res) => {
