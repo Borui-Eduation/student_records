@@ -4,8 +4,8 @@ import {
   CreateExpenseCategorySchema,
   UpdateExpenseCategorySchema,
   ListExpenseCategoriesSchema,
-  PRESET_CATEGORIES,
 } from '@student-record/shared';
+import { PRESET_CATEGORIES } from '@student-record/shared/dist/types/expenseCategory';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
