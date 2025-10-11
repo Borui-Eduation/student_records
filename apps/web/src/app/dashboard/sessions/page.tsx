@@ -51,10 +51,16 @@ export default function SessionsPage() {
     }
   };
 
-  const getSessionTypeColor = (type: string) => {
+  const getSessionTypeColor = (type: string | undefined) => {
+    if (!type) return 'text-gray-600 bg-gray-50';
     return type === 'education'
       ? 'text-purple-600 bg-purple-50'
       : 'text-orange-600 bg-orange-50';
+  };
+
+  const getSessionTypeLabel = (type: string | undefined) => {
+    if (!type) return 'Unknown';
+    return type === 'education' ? 'Education' : 'Technical';
   };
 
   return (
@@ -154,9 +160,7 @@ export default function SessionsPage() {
                       <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {session.date?.toDate
-                            ? format(session.date.toDate(), 'yyyy-MM-dd')
-                            : 'N/A'}
+                          {session.date ? format(new Date(session.date), 'yyyy-MM-dd') : 'N/A'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
@@ -177,7 +181,7 @@ export default function SessionsPage() {
                             session.sessionType
                           )}`}
                         >
-                          {session.sessionType === 'education' ? 'Education' : 'Technical'}
+                          {getSessionTypeLabel(session.sessionType)}
                         </span>
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${getBillingStatusColor(

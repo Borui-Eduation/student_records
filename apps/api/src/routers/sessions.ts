@@ -133,6 +133,10 @@ export const sessionsRouter = router({
     return {
       id: docRef.id,
       ...sessionData,
+      // Convert Firestore Timestamp to ISO string for proper serialization
+      date: sessionData.date.toDate().toISOString(),
+      createdAt: sessionData.createdAt.toDate().toISOString(),
+      updatedAt: sessionData.updatedAt.toDate().toISOString(),
     };
   }),
 
@@ -162,6 +166,10 @@ export const sessionsRouter = router({
     return {
       id: doc.id,
       ...data,
+      // Convert Firestore Timestamp to ISO string for proper serialization
+      date: data?.date?.toDate ? data.date.toDate().toISOString() : data?.date,
+      createdAt: data?.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data?.createdAt,
+      updatedAt: data?.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data?.updatedAt,
     };
   }),
 
@@ -215,10 +223,17 @@ export const sessionsRouter = router({
 
     const snapshot = await query.get();
 
-    const items = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const items = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamp to ISO string for proper serialization
+        date: data.date?.toDate ? data.date.toDate().toISOString() : data.date,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      };
+    });
 
     return {
       items,
@@ -290,9 +305,14 @@ export const sessionsRouter = router({
     await docRef.update(updateData);
 
     const updated = await docRef.get();
+    const updatedData = updated.data();
     return {
       id: updated.id,
-      ...updated.data(),
+      ...updatedData,
+      // Convert Firestore Timestamp to ISO string for proper serialization
+      date: updatedData?.date?.toDate ? updatedData.date.toDate().toISOString() : updatedData?.date,
+      createdAt: updatedData?.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString() : updatedData?.createdAt,
+      updatedAt: updatedData?.updatedAt?.toDate ? updatedData.updatedAt.toDate().toISOString() : updatedData?.updatedAt,
     };
   }),
 

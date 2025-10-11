@@ -65,3 +65,5 @@ export function useMobileDetect(): MobileDetect {
   return deviceInfo;
 }
 
+
+

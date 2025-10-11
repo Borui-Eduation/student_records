@@ -125,3 +125,5 @@ If backend returns errors:
 2. Ensure Firebase credentials are configured
 3. Check `http://localhost:8080/health` for API status
 
+
+

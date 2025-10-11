@@ -29,3 +29,5 @@ export const ListExpenseCategoriesSchema = z.object({
 
 export type ListExpenseCategoriesInput = z.infer<typeof ListExpenseCategoriesSchema>;
 
+
+

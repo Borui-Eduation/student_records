@@ -13,6 +13,7 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
   const router = useRouter();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const utils = trpc.useUtils();
 
   // 获取费用详情
   const { data: expense, isLoading } = trpc.expenses.get.useQuery({ id: params.id }) as any;
@@ -20,6 +21,11 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
   // 更新mutation
   const updateMutation = trpc.expenses.update.useMutation({
     onSuccess: () => {
+      // Invalidate queries to refresh the list
+      utils.expenses.list.invalidate();
+      utils.expenses.getStatistics.invalidate();
+      utils.expenses.get.invalidate({ id: params.id });
+      
       toast({
         title: '更新成功',
         description: '费用记录已更新',
@@ -39,6 +45,10 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
   // 删除mutation
   const deleteMutation = trpc.expenses.delete.useMutation({
     onSuccess: () => {
+      // Invalidate queries to refresh the list
+      utils.expenses.list.invalidate();
+      utils.expenses.getStatistics.invalidate();
+      
       toast({
         title: '删除成功',
         description: '费用记录已删除',

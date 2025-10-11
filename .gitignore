@@ -33,6 +33,10 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
+# Dev logs
+.logs/
+*.log
+
 # IDE
 .idea/
 .vscode/*

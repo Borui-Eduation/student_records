@@ -11,9 +11,14 @@ import { useToast } from '@/components/ui/use-toast';
 export default function NewExpensePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.expenses.create.useMutation({
     onSuccess: () => {
+      // Invalidate queries to refresh the list
+      utils.expenses.list.invalidate();
+      utils.expenses.getStatistics.invalidate();
+      
       toast({
         title: 'Success',
         description: 'Expense record saved',

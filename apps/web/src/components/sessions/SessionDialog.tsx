@@ -71,19 +71,10 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
       setValue('endTime', session.endTime);
       setValue('notes', session.notes || '');
       
-      // Convert Firestore Timestamp to date string with error handling
+      // Convert ISO date string to date input format (YYYY-MM-DD)
       if (session.date) {
-        try {
-          const date = session.date.toDate ? session.date.toDate() : new Date(session.date);
-          if (!isNaN(date.getTime())) {
-            setValue('date', date.toISOString().split('T')[0]);
-          } else {
-            setValue('date', new Date().toISOString().split('T')[0]);
-          }
-        } catch (error) {
-          console.error('Error converting date:', error);
-          setValue('date', new Date().toISOString().split('T')[0]);
-        }
+        const date = new Date(session.date);
+        setValue('date', date.toISOString().split('T')[0]);
       }
     } else if (!open) {
       reset({
