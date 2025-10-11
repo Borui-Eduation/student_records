@@ -1,6 +1,6 @@
 import { router, adminProcedure, auditedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchema } from '@student-record/shared';
+import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchema, GetMonthlyRevenueSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
@@ -420,6 +420,96 @@ export const invoicesRouter = router({
         paidRevenue,
         averageRate: totalHours > 0 ? totalRevenue / totalHours : 0,
         byClient: Object.values(byClient),
+      };
+    }),
+
+  /**
+   * Get monthly revenue trend
+   */
+  getMonthlyRevenue: adminProcedure
+    .input(GetMonthlyRevenueSchema.extend({
+      viewAllUsers: z.boolean().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      let query: admin.firestore.Query = ctx.db.collection('sessions');
+
+      // Apply userId filter (unless superadmin with viewAllUsers flag)
+      if (ctx.userRole !== 'superadmin' || !input.viewAllUsers) {
+        query = query.where('userId', '==', ctx.user.uid);
+      }
+
+      // Filter by date range
+      query = query
+        .where('date', '>=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.start)))
+        .where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.end)));
+
+      // Filter by clientId if provided
+      if (input.clientId) {
+        query = query.where('clientId', '==', input.clientId);
+      }
+
+      // Filter by sessionType if provided
+      if (input.sessionType) {
+        query = query.where('sessionType', '==', input.sessionType);
+      }
+
+      const snapshot = await query.get();
+      const sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      // Group by month (YYYY-MM format)
+      const byMonth: Record<string, {
+        month: string;
+        revenue: number;
+        hours: number;
+        sessionCount: number;
+        unbilledRevenue: number;
+        billedRevenue: number;
+        paidRevenue: number;
+      }> = {};
+
+      sessions.forEach((session: any) => {
+        const sessionDate = session.date.toDate();
+        const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!byMonth[monthKey]) {
+          byMonth[monthKey] = {
+            month: monthKey,
+            revenue: 0,
+            hours: 0,
+            sessionCount: 0,
+            unbilledRevenue: 0,
+            billedRevenue: 0,
+            paidRevenue: 0,
+          };
+        }
+
+        byMonth[monthKey].revenue += session.totalAmount;
+        byMonth[monthKey].hours += session.durationHours;
+        byMonth[monthKey].sessionCount += 1;
+
+        // Categorize by billing status
+        if (session.billingStatus === 'unbilled') {
+          byMonth[monthKey].unbilledRevenue += session.totalAmount;
+        } else if (session.billingStatus === 'billed') {
+          byMonth[monthKey].billedRevenue += session.totalAmount;
+        } else if (session.billingStatus === 'paid') {
+          byMonth[monthKey].paidRevenue += session.totalAmount;
+        }
+      });
+
+      // Sort by month and return as array
+      const monthlyData = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+
+      // Calculate totals
+      const totalRevenue = sessions.reduce((sum: number, s: any) => sum + s.totalAmount, 0);
+      const totalHours = sessions.reduce((sum: number, s: any) => sum + s.durationHours, 0);
+
+      return {
+        monthlyData,
+        totalRevenue,
+        totalHours,
+        sessionCount: sessions.length,
+        averageRate: totalHours > 0 ? totalRevenue / totalHours : 0,
       };
     }),
 });

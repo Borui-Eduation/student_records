@@ -24,9 +24,19 @@ export const GetRevenueReportSchema = z.object({
   sessionType: z.enum(['education', 'technical']).optional(),
 });
 
+export const GetMonthlyRevenueSchema = z.object({
+  dateRange: z.object({
+    start: z.string().or(z.date()),
+    end: z.string().or(z.date()),
+  }),
+  clientId: z.string().optional(),
+  sessionType: z.enum(['education', 'technical']).optional(),
+});
+
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;
 export type GenerateInvoiceInput = z.infer<typeof GenerateInvoiceSchema>;
 export type UpdateInvoiceStatusInput = z.infer<typeof UpdateInvoiceStatusSchema>;
 export type GetRevenueReportInput = z.infer<typeof GetRevenueReportSchema>;
+export type GetMonthlyRevenueInput = z.infer<typeof GetMonthlyRevenueSchema>;
 
 

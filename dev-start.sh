@@ -67,6 +67,17 @@ echo -e "${YELLOW}⚙️  配置系统限制...${NC}"
 ulimit -n 65536
 echo -e "${GREEN}✅ 文件描述符限制: $(ulimit -n)${NC}"
 
+# 检查并安装依赖（如果需要）
+echo ""
+echo -e "${YELLOW}📦 检查依赖...${NC}"
+if [ ! -d "node_modules" ] || [ ! -d "apps/web/node_modules" ]; then
+    echo -e "${YELLOW}⏳ 安装依赖...${NC}"
+    pnpm install
+    echo -e "${GREEN}✅ 依赖安装完成${NC}"
+else
+    echo -e "${GREEN}✅ 依赖已存在${NC}"
+fi
+
 # 编译 shared 包
 echo ""
 echo -e "${BLUE}=== 📦 编译共享包 ===${NC}"

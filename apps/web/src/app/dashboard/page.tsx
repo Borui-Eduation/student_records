@@ -1,43 +1,108 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Calendar, Lock, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Wallet, BarChart3, Receipt } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { format, subDays } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import Link from 'next/link';
+import { RevenueTrendChart } from '@/components/dashboard/RevenueTrendChart';
 
 export default function DashboardPage() {
   // Get current month date range
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const currentMonthStart = startOfMonth(now);
+  const currentMonthEnd = endOfMonth(now);
+
+  // Get last 6 months for trend
+  const sixMonthsAgo = subMonths(currentMonthStart, 5);
 
   // Fetch data
   const { data: clients } = trpc.clients.list.useQuery({ active: true, limit: 100 });
   const { data: sessions } = trpc.sessions.list.useQuery({
     dateRange: {
-      start: startOfMonth.toISOString(),
-      end: endOfMonth.toISOString(),
+      start: currentMonthStart.toISOString(),
+      end: currentMonthEnd.toISOString(),
     },
     limit: 100,
   });
   const { data: invoices } = trpc.invoices.list.useQuery({ limit: 100 });
-  const { data: knowledge } = trpc.knowledgeBase.list.useQuery({ limit: 100 });
   const { data: recentSessions } = trpc.sessions.list.useQuery({ limit: 5 });
   const { data: revenue } = trpc.invoices.getRevenueReport.useQuery({
     dateRange: {
-      start: startOfMonth.toISOString(),
-      end: endOfMonth.toISOString(),
+      start: currentMonthStart.toISOString(),
+      end: currentMonthEnd.toISOString(),
     },
   });
 
+  // Fetch expense data
+  const { data: expenseStats } = trpc.expenses.getStatistics.useQuery({
+    dateRange: {
+      start: currentMonthStart.toISOString().split('T')[0],
+      end: currentMonthEnd.toISOString().split('T')[0],
+    },
+  });
+
+  const { data: recentExpenses } = trpc.expenses.list.useQuery({
+    limit: 5,
+    sortBy: 'date',
+    sortOrder: 'desc',
+  });
+
+  // Fetch 6-month trend data using new monthly endpoint
+  const { data: sixMonthRevenue, isLoading: revenueLoading } = trpc.invoices.getMonthlyRevenue.useQuery({
+    dateRange: {
+      start: sixMonthsAgo.toISOString(),
+      end: currentMonthEnd.toISOString(),
+    },
+  });
+
+  const { data: sixMonthExpenses, isLoading: expensesLoading } = trpc.expenses.getStatistics.useQuery({
+    dateRange: {
+      start: sixMonthsAgo.toISOString().split('T')[0],
+      end: currentMonthEnd.toISOString().split('T')[0],
+    },
+  });
+
+  // Calculate net income
+  const totalRevenue = revenue?.totalRevenue || 0;
+  const totalExpenses = expenseStats?.totalAmount || 0;
+  const netIncome = totalRevenue - totalExpenses;
+
   const stats = [
     {
-      title: 'Total Clients',
+      title: 'Total Revenue',
+      value: `¥${totalRevenue.toLocaleString()}`,
+      description: 'This month',
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      href: '/dashboard/sessions',
+    },
+    {
+      title: 'Total Expenses',
+      value: `¥${totalExpenses.toLocaleString()}`,
+      description: 'This month',
+      icon: Receipt,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      href: '/dashboard/expenses',
+    },
+    {
+      title: 'Net Income',
+      value: `¥${netIncome.toLocaleString()}`,
+      description: netIncome >= 0 ? 'Profit' : 'Loss',
+      icon: netIncome >= 0 ? TrendingUp : TrendingDown,
+      color: netIncome >= 0 ? 'text-blue-600' : 'text-orange-600',
+      bgColor: netIncome >= 0 ? 'bg-blue-50' : 'bg-orange-50',
+      href: '/dashboard',
+    },
+    {
+      title: 'Active Clients',
       value: clients?.items.length || 0,
-      description: 'Active clients',
+      description: 'Total clients',
       icon: Users,
-      color: 'text-blue-600',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
       href: '/dashboard/clients',
     },
     {
@@ -45,24 +110,18 @@ export default function DashboardPage() {
       value: sessions?.items.length || 0,
       description: 'This month',
       icon: Calendar,
-      color: 'text-green-600',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
       href: '/dashboard/sessions',
     },
     {
-      title: 'Invoices',
+      title: 'Pending Invoices',
       value: invoices?.items.filter((i: any) => i.status !== 'paid').length || 0,
-      description: 'Pending payment',
+      description: 'Awaiting payment',
       icon: FileText,
-      color: 'text-orange-600',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
       href: '/dashboard/invoices',
-    },
-    {
-      title: 'Knowledge Base',
-      value: knowledge?.items.length || 0,
-      description: 'Entries',
-      icon: Lock,
-      color: 'text-purple-600',
-      href: '/dashboard/knowledge',
     },
   ];
 
@@ -71,23 +130,25 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
         <p className="text-sm sm:text-base text-muted-foreground">
-          Welcome to Student Record Management System
+          Welcome to your Business Management System
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Cards - 6 cards in grid */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Link key={stat.title} href={stat.href}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                  <CardTitle className="text-xs sm:text-sm font-medium">{stat.title}</CardTitle>
+                  <div className={`${stat.bgColor} p-2 rounded-lg`}>
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
                   <p className="text-xs text-muted-foreground">{stat.description}</p>
                 </CardContent>
               </Card>
@@ -96,113 +157,58 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Revenue & Recent Sessions */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
-        {/* Revenue Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
-              Revenue Overview
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">This month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {revenue ? (
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <p className="text-2xl sm:text-3xl font-bold">¥{revenue.totalRevenue?.toLocaleString() || 0}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {revenue.sessionCount || 0} sessions, {revenue.totalHours?.toFixed(1) || 0} hours
-                  </p>
-                </div>
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Unbilled</p>
-                    <p className="font-semibold text-yellow-600">
-                      ¥{revenue.unbilledRevenue?.toLocaleString() || 0}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Billed</p>
-                    <p className="font-semibold text-blue-600">
-                      ¥{revenue.billedRevenue?.toLocaleString() || 0}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Paid</p>
-                    <p className="font-semibold text-green-600">
-                      ¥{revenue.paidRevenue?.toLocaleString() || 0}
-                    </p>
-                  </div>
-                </div>
-                {revenue.averageRate > 0 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="text-muted-foreground">
-                      Average rate: ¥{revenue.averageRate?.toFixed(0)}/hour
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <p className="text-2xl font-bold">¥0</p>
-                <p className="text-xs text-muted-foreground mt-1">No sessions recorded yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Revenue vs Expenses Trend - Enhanced Chart */}
+      <RevenueTrendChart
+        monthlyRevenue={sixMonthRevenue?.monthlyData || []}
+        monthlyExpenses={sixMonthExpenses?.monthlyTrend || []}
+        isLoading={revenueLoading || expensesLoading}
+      />
 
-        {/* Recent Sessions */}
+      {/* Recent Activities */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
+        {/* Recent Expenses */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Recent Sessions</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Last 5 sessions</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Recent Expenses</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 5 expenses</CardDescription>
           </CardHeader>
           <CardContent>
-            {recentSessions && recentSessions.items.length > 0 ? (
+            {recentExpenses && recentExpenses.items.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">
-                {recentSessions.items.slice(0, 5).map((session: any) => (
-                  <Link
-                    key={session.id}
-                    href="/dashboard/sessions"
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{session.clientName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.date?.toDate
-                          ? format(session.date.toDate(), 'MMM d, yyyy')
-                          : 'N/A'}{' '}
-                        • {session.durationHours}h
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-sm">
-                        ¥{session.totalAmount?.toLocaleString()}
-                      </p>
-                      <p
-                        className={`text-xs ${
-                          session.billingStatus === 'paid'
-                            ? 'text-green-600'
-                            : session.billingStatus === 'billed'
-                            ? 'text-blue-600'
-                            : 'text-yellow-600'
-                        }`}
-                      >
-                        {session.billingStatus}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                {recentExpenses.items.slice(0, 5).map((expense: any) => {
+                  const date = expense.date instanceof Date
+                    ? expense.date
+                    : expense.date?.toDate?.() || new Date();
+                  return (
+                    <Link
+                      key={expense.id}
+                      href="/dashboard/expenses"
+                      className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{expense.description || 'Expense'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(date, 'MMM d, yyyy')} • {expense.categoryName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm text-red-600">
+                          -¥{expense.amount?.toLocaleString()}
+                        </p>
+                        {expense.merchant && (
+                          <p className="text-xs text-muted-foreground">{expense.merchant}</p>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">No sessions recorded yet</p>
-                <Link href="/dashboard/sessions">
+                <p className="text-sm text-muted-foreground">No expenses recorded yet</p>
+                <Link href="/dashboard/expenses">
                   <span className="text-sm text-primary hover:underline mt-2 inline-block">
-                    Record your first session →
+                    Add your first expense →
                   </span>
                 </Link>
               </div>
@@ -211,33 +217,79 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Top Clients by Revenue */}
-      {revenue && revenue.byClient && revenue.byClient.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Top Clients by Revenue</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">This month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 sm:space-y-3">
-              {revenue.byClient
-                .sort((a: any, b: any) => b.revenue - a.revenue)
-                .slice(0, 5)
-                .map((client: any) => (
-                  <div key={client.clientId} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium">{client.clientName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {client.sessionCount} session(s), {client.hours.toFixed(1)} hours
-                      </p>
+      {/* Bottom Section: Top Clients & Expense Categories */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+        {/* Top Clients by Revenue */}
+        {revenue && revenue.byClient && revenue.byClient.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Top Clients by Revenue</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">This month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {revenue.byClient
+                  .sort((a: any, b: any) => b.revenue - a.revenue)
+                  .slice(0, 5)
+                  .map((client: any) => (
+                    <div key={client.clientId} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{client.clientName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {client.sessionCount} session(s), {client.hours.toFixed(1)} hours
+                          </p>
+                        </div>
+                        <p className="text-base font-bold text-green-600">¥{client.revenue.toLocaleString()}</p>
+                      </div>
                     </div>
-                    <p className="text-lg font-bold">¥{client.revenue.toLocaleString()}</p>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Expense Category Breakdown */}
+        {expenseStats && expenseStats.categoryBreakdown && expenseStats.categoryBreakdown.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Expense Categories</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">This month breakdown</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {expenseStats.categoryBreakdown
+                  .sort((a: any, b: any) => b.amount - a.amount)
+                  .slice(0, 5)
+                  .map((category: any) => (
+                    <div key={category.category} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{category.categoryName}</span>
+                          <span className="text-xs text-muted-foreground">{category.count} items</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-red-600">
+                            ¥{category.amount.toFixed(0)}
+                          </span>
+                          <span className="text-xs text-muted-foreground min-w-[2.5rem] text-right">
+                            {category.percentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-red-400 to-red-500 h-full rounded-full transition-all"
+                          style={{ width: `${category.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
