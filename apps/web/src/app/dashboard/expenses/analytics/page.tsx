@@ -6,7 +6,6 @@ import { ArrowLeft, Download, TrendingUp, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 export default function AnalyticsPage() {
   const router = useRouter();

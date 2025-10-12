@@ -1,6 +1,9 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import * as admin from 'firebase-admin';
+import { createLogger } from '@student-record/shared';
+
+const logger = createLogger('trpc');
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
@@ -13,7 +16,7 @@ if (!admin.apps.length) {
   const serviceAccountKeyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || 
     (isDevelopment ? require('path').join(__dirname, '../../../service-account-key.json') : undefined);
   
-  console.log('🔥 Initializing Firebase Admin with:', {
+  logger.info('Initializing Firebase Admin', {
     projectId,
     storageBucket,
     region: 'us-west1',
@@ -45,7 +48,7 @@ export const createContext = async ({ req, res }: CreateExpressContextOptions) =
     try {
       user = await admin.auth().verifyIdToken(token);
     } catch (error) {
-      console.error('Token verification failed:', error);
+      logger.warn('Token verification failed', { error: error instanceof Error ? error.message : String(error) });
       // Don't throw here, let procedures handle auth
     }
   }
@@ -104,7 +107,7 @@ async function getUserRole(uid: string, db: admin.firestore.Firestore): Promise<
     const userDoc = await db.collection('users').doc(uid).get();
     return userDoc.data()?.role || 'user';
   } catch (error) {
-    console.error('Error fetching user role:', error);
+    logger.error('Error fetching user role', { uid }, error instanceof Error ? error : new Error(String(error)));
     return 'user';
   }
 }
@@ -150,7 +153,7 @@ export const auditedProcedure = adminProcedure.use(async ({ ctx, path, next }) =
     ipAddress: ctx.req.ip,
     userAgent: ctx.req.headers['user-agent'],
   }).catch((error) => {
-    console.error('Audit log failed:', error);
+    logger.error('Audit log failed', { userId: ctx.user.uid, path }, error instanceof Error ? error : new Error(String(error)));
   });
 
   return result;

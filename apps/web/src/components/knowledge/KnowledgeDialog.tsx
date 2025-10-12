@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -30,8 +29,8 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for Markdown preview to avoid SSR issues
-const MDPreview = dynamic(
-  () => import('@uiw/react-markdown-preview').then((mod) => mod.default),
+const MDPreview = dynamic<any>(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default.Markdown),
   { ssr: false }
 );
 
@@ -55,6 +54,20 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
     { enabled: !!entryId }
   );
 
+  // Type guard for entry with full properties
+  const isFullEntry = (entry: any): entry is { 
+    id: string; 
+    title: string; 
+    type: string; 
+    content: string;
+    category?: string;
+    tags?: string[];
+    isEncrypted?: boolean;
+    accessCount?: number;
+  } => {
+    return entry && typeof entry.title === 'string';
+  };
+
   useEffect(() => {
     setIsEditing(editMode);
   }, [editMode, entryId]);
@@ -77,9 +90,9 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
 
   // Populate form when editing
   useEffect(() => {
-    if (entry && open && isEditing) {
+    if (entry && isFullEntry(entry) && open && isEditing) {
       setValue('title', entry.title);
-      setValue('type', entry.type);
+      setValue('type', entry.type as 'note' | 'api-key' | 'ssh-record' | 'password' | 'memo');
       setValue('content', entry.content);
       setValue('category', entry.category || '');
       setValue('tags', entry.tags || []);
@@ -130,14 +143,14 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {entry.isEncrypted && <Lock className="h-5 w-5 text-red-500" />}
-              {entry.title}
+              {isFullEntry(entry) && entry.isEncrypted && <Lock className="h-5 w-5 text-red-500" />}
+              {isFullEntry(entry) && entry.title}
             </DialogTitle>
             <DialogDescription>
               <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                {entry.type}
+                {isFullEntry(entry) && entry.type}
               </span>
-              {entry.category && <span className="ml-2">{entry.category}</span>}
+              {isFullEntry(entry) && entry.category && <span className="ml-2">{entry.category}</span>}
             </DialogDescription>
           </DialogHeader>
 
@@ -145,7 +158,7 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
             <div>
               <Label>Content</Label>
               <div className="relative mt-2">
-                {entry.isEncrypted && (
+                {isFullEntry(entry) && entry.isEncrypted && (
                   <Button
                     type="button"
                     size="sm"
@@ -166,23 +179,23 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
                     )}
                   </Button>
                 )}
-                {entry.isEncrypted && !showContent ? (
+                {isFullEntry(entry) && entry.isEncrypted && !showContent ? (
                   <div className="p-3 rounded-md border font-mono min-h-[200px]">
                     ••••••••••••••••
                   </div>
                 ) : (
                   <div data-color-mode="light" className="rounded-md border">
-                    <MDPreview source={entry.content} style={{ padding: 16 }} />
+                    {isFullEntry(entry) && <MDPreview source={entry.content as any} style={{ padding: 16 } as any} />}
                   </div>
                 )}
               </div>
             </div>
 
-            {entry.tags && entry.tags.length > 0 && (
+            {isFullEntry(entry) && entry.tags && entry.tags.length > 0 && (
               <div>
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {entry.tags.map((tag: string) => (
+                  {isFullEntry(entry) && entry.tags?.map((tag: string) => (
                     <span key={tag} className="text-sm px-2 py-1 bg-muted rounded">
                       {tag}
                     </span>
@@ -194,9 +207,9 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Accessed:</span>
-                <span className="ml-2 font-medium">{entry.accessCount || 0} times</span>
+                <span className="ml-2 font-medium">{isFullEntry(entry) ? (entry.accessCount || 0) : 0} times</span>
               </div>
-              {entry.isEncrypted && (
+              {isFullEntry(entry) && entry.isEncrypted && (
                 <div>
                   <span className="text-muted-foreground">Encryption:</span>
                   <span className="ml-2 font-medium text-green-600">

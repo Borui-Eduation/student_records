@@ -1,7 +1,6 @@
 import { router, protectedProcedure, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import * as admin from 'firebase-admin';
-import { z } from 'zod';
 
 export const usersRouter = router({
   /**

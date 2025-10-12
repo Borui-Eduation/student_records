@@ -132,7 +132,7 @@ export const expensesRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    const docRef = await ctx.db.collection('expenses').doc(expenseId).set(expenseData);
+    await ctx.db.collection('expenses').doc(expenseId).set(expenseData);
 
     return {
       id: expenseId,

@@ -76,12 +76,15 @@ export function ShareLinkDialog({ open, onOpenChange }: ShareLinkDialogProps) {
   };
 
   const copyToClipboard = async () => {
-    if (!generatedLink) return;
+    if (!generatedLink) {
+      return;
+    }
     try {
       await navigator.clipboard.writeText(generatedLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to copy:', error);
     }
   };

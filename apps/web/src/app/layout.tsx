@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { TRPCProvider } from '@/components/providers/TRPCProvider'
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,11 +20,13 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
-        <TRPCProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </TRPCProvider>
+        <ErrorBoundary>
+          <TRPCProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </TRPCProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

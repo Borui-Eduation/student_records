@@ -44,14 +44,18 @@ export default function RatesPage() {
     },
   });
 
-  const getClientName = (clientId?: string) => {
-    if (!clientId || !clients) return null;
-    const client = clients.items.find((c: any) => c.id === clientId);
-    return client?.name;
+  const getClientName = (clientId?: string): string | null => {
+    if (!clientId || !clients) {
+      return null;
+    }
+    const client = clients.items.find((c) => c.id === clientId);
+    return client && 'name' in client ? (client.name as string) : null;
   };
 
   const getClientType = (clientType?: string) => {
-    if (!clientType) return null;
+    if (!clientType) {
+      return null;
+    }
     return clientType.charAt(0).toUpperCase() + clientType.slice(1);
   };
 

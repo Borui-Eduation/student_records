@@ -13,6 +13,14 @@ export type {
   AuditLog,
 } from './types';
 
+// Export expense category utilities
+export { PRESET_CATEGORIES } from './types/expenseCategory';
+export type { PresetCategory, ExpenseCategory } from './types/expenseCategory';
+
+// Export utilities
+export * from './logger';
+export * from './env';
+
 // Re-export commonly used utilities
 export { z } from 'zod';
 

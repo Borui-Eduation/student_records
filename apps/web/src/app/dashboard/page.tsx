@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Wallet, BarChart3, Receipt } from 'lucide-react';
+import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Receipt } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import Link from 'next/link';
@@ -26,7 +26,6 @@ export default function DashboardPage() {
     limit: 100,
   });
   const { data: invoices } = trpc.invoices.list.useQuery({ limit: 100 });
-  const { data: recentSessions } = trpc.sessions.list.useQuery({ limit: 5 });
   const { data: revenue } = trpc.invoices.getRevenueReport.useQuery({
     dateRange: {
       start: currentMonthStart.toISOString(),
@@ -159,7 +158,7 @@ export default function DashboardPage() {
 
       {/* Revenue vs Expenses Trend - Enhanced Chart */}
       <RevenueTrendChart
-        monthlyRevenue={sixMonthRevenue?.monthlyData || []}
+        monthlyRevenue={(sixMonthRevenue?.monthlyData || []).map(item => ({ ...item, expenses: 0 }))}
         monthlyExpenses={sixMonthExpenses?.monthlyTrend || []}
         isLoading={revenueLoading || expensesLoading}
       />

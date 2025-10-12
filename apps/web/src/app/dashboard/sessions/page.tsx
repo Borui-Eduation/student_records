@@ -52,14 +52,18 @@ export default function SessionsPage() {
   };
 
   const getSessionTypeColor = (type: string | undefined) => {
-    if (!type) return 'text-gray-600 bg-gray-50';
+    if (!type) {
+      return 'text-gray-600 bg-gray-50';
+    }
     return type === 'education'
       ? 'text-purple-600 bg-purple-50'
       : 'text-orange-600 bg-orange-50';
   };
 
   const getSessionTypeLabel = (type: string | undefined) => {
-    if (!type) return 'Unknown';
+    if (!type) {
+      return 'Unknown';
+    }
     return type === 'education' ? 'Education' : 'Technical';
   };
 

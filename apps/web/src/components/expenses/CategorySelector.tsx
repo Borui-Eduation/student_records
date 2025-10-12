@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { PRESET_CATEGORIES } from '@student-record/shared';
 
 interface CategorySelectorProps {
   value?: string;

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
 export interface Toast {
   id?: string;
@@ -8,10 +8,7 @@ export interface Toast {
 }
 
 // Simple toast implementation
-let toastCallback: ((toast: Toast) => void) | null = null;
-
 export function useToast() {
-  const [, setToasts] = useState<Toast[]>([]);
 
   const toast = useCallback((options: Toast) => {
     // Simple alert for now - can be enhanced with proper UI component
@@ -20,9 +17,11 @@ export function useToast() {
       : options.title;
     
     if (options.variant === 'destructive') {
+      // eslint-disable-next-line no-console
       console.error(message);
       alert(`错误: ${message}`);
     } else {
+      // eslint-disable-next-line no-console
       console.log(message);
       alert(message);
     }

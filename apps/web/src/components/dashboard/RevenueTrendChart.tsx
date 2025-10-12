@@ -4,10 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,

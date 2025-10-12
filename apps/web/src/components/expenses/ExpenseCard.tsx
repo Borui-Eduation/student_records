@@ -83,7 +83,7 @@ export function ExpenseCard({ expense, onClick, className }: ExpenseCardProps) {
           {/* 标签 */}
           {expense.tags && expense.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {expense.tags.slice(0, 3).map((tag, idx) => (
+              {expense.tags.slice(0, 3).map((tag: string, idx: number) => (
                 <span
                   key={idx}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
@@ -132,7 +132,7 @@ function getCategoryIcon(categoryName?: string): string {
   return iconMap[categoryName || ''] || '📋';
 }
 
-function getCategoryColor(category?: string): string {
+function getCategoryColor(_category?: string): string {
   // 默认颜色
   return '#BDB2FF';
 }

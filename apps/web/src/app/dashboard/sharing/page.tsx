@@ -31,24 +31,35 @@ export default function SharingPage() {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to copy:', error);
     }
   };
 
   const isExpired = (expiresAt: any) => {
-    if (!expiresAt?.toDate) return false;
+    if (!expiresAt?.toDate) {
+      return false;
+    }
     return expiresAt.toDate() < new Date();
   };
 
   const getStatusColor = (link: any) => {
-    if (link.revoked) return 'text-red-600 bg-red-100';
-    if (isExpired(link.expiresAt)) return 'text-gray-600 bg-gray-100';
+    if (link.revoked) {
+      return 'text-red-600 bg-red-100';
+    }
+    if (isExpired(link.expiresAt)) {
+      return 'text-gray-600 bg-gray-100';
+    }
     return 'text-green-600 bg-green-100';
   };
 
   const getStatusText = (link: any) => {
-    if (link.revoked) return 'Revoked';
-    if (isExpired(link.expiresAt)) return 'Expired';
+    if (link.revoked) {
+      return 'Revoked';
+    }
+    if (isExpired(link.expiresAt)) {
+      return 'Expired';
+    }
     return 'Active';
   };
 

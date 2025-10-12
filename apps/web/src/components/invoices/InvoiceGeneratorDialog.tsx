@@ -62,7 +62,7 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
     reset,
   } = useForm<GenerateInvoiceFormInput>({
     resolver: zodResolver(GenerateInvoiceFormSchema),
@@ -78,6 +78,7 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
       onOpenChange(false);
     },
     onError: (error) => {
+      // eslint-disable-next-line no-console
       console.error('Invoice generation error:', error);
     },
   });
@@ -130,20 +131,17 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                   setSelectedSessionIds([]); // Reset selected sessions
                 }}
               >
-                <SelectTrigger className={!selectedClientId && errors.clientId ? 'border-destructive' : ''}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients?.items.map((client: any) => (
+                  {clients?.items.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
-                      {client.name}
+                      {'name' in client ? String(client.name) : 'Unknown'}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {!selectedClientId && errors.clientId && (
-                <p className="text-sm text-destructive">{errors.clientId.message}</p>
-              )}
             </div>
 
             {/* Sessions Selection */}
@@ -196,9 +194,6 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                       </div>
                     ))}
                   </div>
-                )}
-                {selectedSessionIds.length === 0 && errors.sessionIds && (
-                  <p className="text-sm text-destructive">{errors.sessionIds.message}</p>
                 )}
               </div>
             )}

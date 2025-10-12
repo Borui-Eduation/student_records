@@ -1,0 +1,114 @@
+# Cloud Run Service Configuration
+# This file can be used with: gcloud run services replace cloudrun.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: student-record-api
+  labels:
+    cloud.googleapis.com/location: us-west1
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+spec:
+  template:
+    metadata:
+      annotations:
+        # Auto-scaling configuration
+        autoscaling.knative.dev/minScale: '1'  # Prevent cold starts
+        autoscaling.knative.dev/maxScale: '10'
+        
+        # Resource allocation
+        run.googleapis.com/cpu-throttling: 'false'  # Always allocate CPU
+        run.googleapis.com/startup-cpu-boost: 'true'  # Faster cold starts
+        
+        # Execution environment
+        run.googleapis.com/execution-environment: gen2
+        
+        # Cloud SQL connections (if needed)
+        # run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:INSTANCE_NAME
+        
+    spec:
+      containerConcurrency: 80  # Max concurrent requests per instance
+      timeoutSeconds: 300  # 5 minutes timeout
+      serviceAccountName: student-record-api-sa@PROJECT_ID.iam.gserviceaccount.com
+      
+      containers:
+      - image: gcr.io/PROJECT_ID/student-record-api:latest
+        
+        ports:
+        - name: http1
+          containerPort: 8080
+        
+        resources:
+          limits:
+            cpu: '2'
+            memory: 1Gi
+        
+        env:
+        # Firebase
+        - name: FIREBASE_PROJECT_ID
+          value: "borui-education-c6666"
+        
+        # Google Cloud
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "borui-education-c6666"
+        
+        - name: KMS_LOCATION
+          value: "global"
+        
+        - name: KMS_KEYRING
+          value: "student-record-keyring"
+        
+        - name: KMS_KEY
+          value: "sensitive-data-key"
+        
+        # Server
+        - name: NODE_ENV
+          value: "production"
+        
+        - name: PORT
+          value: "8080"
+        
+        - name: LOG_LEVEL
+          value: "info"
+        
+        # CORS (update with your frontend URLs)
+        - name: CORS_ORIGIN
+          value: "https://your-app.vercel.app,https://your-custom-domain.com"
+        
+        # Admin emails (update with actual admin emails)
+        - name: ADMIN_EMAILS
+          value: "admin@example.com,admin2@example.com"
+        
+        # Sensitive values should use Secret Manager
+        # - name: FIREBASE_PRIVATE_KEY
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: firebase-private-key
+        #       key: latest
+        
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 0
+          timeoutSeconds: 1
+          periodSeconds: 3
+          successThreshold: 1
+          failureThreshold: 10
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 0
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+
+  traffic:
+  - percent: 100
+    latestRevision: true
+

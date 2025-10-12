@@ -1,5 +1,4 @@
 import { router, adminProcedure, auditedProcedure } from '../trpc';
-import { TRPCError } from '@trpc/server';
 import { UpdateCompanyProfileSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 

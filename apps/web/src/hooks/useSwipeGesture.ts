@@ -28,7 +28,9 @@ export function useSwipeGesture<T extends HTMLElement>(
 
   useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
@@ -40,7 +42,9 @@ export function useSwipeGesture<T extends HTMLElement>(
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!touchStart.current) return;
+      if (!touchStart.current) {
+        return;
+      }
 
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStart.current.x;

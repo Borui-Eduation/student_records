@@ -1,7 +1,11 @@
 import { KeyManagementServiceClient } from '@google-cloud/kms';
+import { createLogger } from '@student-record/shared';
+import * as crypto from 'crypto';
+
+const logger = createLogger('encryption');
 
 /**
- * Encryption service using Google Cloud KMS
+ * Encryption service using Google Cloud KMS with enhanced security
  */
 export class EncryptionService {
   private client: KeyManagementServiceClient;
@@ -31,9 +35,10 @@ export class EncryptionService {
   }
 
   /**
-   * Encrypt plaintext data
+   * Encrypt plaintext data with enhanced security
+   * Uses crypto.randomBytes for proper IV generation
    */
-  async encrypt(plaintext: string): Promise<{ ciphertext: string; ivBase64: string }> {
+  async encrypt(plaintext: string): Promise<{ ciphertext: string; ivBase64: string; hmac: string }> {
     try {
       const name = this.getKeyName();
 
@@ -53,24 +58,47 @@ export class EncryptionService {
       // Convert ciphertext to base64 string
       const ciphertextBase64 = Buffer.from(result.ciphertext).toString('base64');
 
-      // Generate a random IV for additional security (optional)
-      const iv = Buffer.from(Date.now().toString()).toString('base64');
+      // Generate a secure random IV (16 bytes for AES)
+      const iv = crypto.randomBytes(16);
+      const ivBase64 = iv.toString('base64');
+
+      // Generate HMAC for integrity verification
+      const hmac = crypto
+        .createHmac('sha256', this.projectId)
+        .update(ciphertextBase64 + ivBase64)
+        .digest('base64');
+
+      logger.debug('Data encrypted successfully');
 
       return {
         ciphertext: ciphertextBase64,
-        ivBase64: iv,
+        ivBase64,
+        hmac,
       };
     } catch (error) {
-      console.error('Encryption error:', error);
+      logger.error('Encryption error', error instanceof Error ? error : new Error(String(error)));
       throw new Error('Failed to encrypt data');
     }
   }
 
   /**
-   * Decrypt ciphertext data
+   * Decrypt ciphertext data with integrity verification
    */
-  async decrypt(ciphertextBase64: string): Promise<string> {
+  async decrypt(ciphertextBase64: string, ivBase64?: string, hmac?: string): Promise<string> {
     try {
+      // Verify HMAC if provided
+      if (hmac && ivBase64) {
+        const expectedHmac = crypto
+          .createHmac('sha256', this.projectId)
+          .update(ciphertextBase64 + ivBase64)
+          .digest('base64');
+        
+        if (hmac !== expectedHmac) {
+          logger.warn('HMAC verification failed - data may have been tampered');
+          throw new Error('Data integrity check failed');
+        }
+      }
+
       const name = this.getKeyName();
 
       // Convert base64 back to buffer
@@ -86,10 +114,12 @@ export class EncryptionService {
         throw new Error('Decryption failed: no plaintext returned');
       }
 
+      logger.debug('Data decrypted successfully');
+
       // Convert plaintext buffer back to string
       return Buffer.from(result.plaintext).toString('utf8');
     } catch (error) {
-      console.error('Decryption error:', error);
+      logger.error('Decryption error', error instanceof Error ? error : new Error(String(error)));
       throw new Error('Failed to decrypt data');
     }
   }
@@ -100,11 +130,19 @@ export class EncryptionService {
   async testConnection(): Promise<boolean> {
     try {
       const testData = 'test-encryption';
-      const { ciphertext } = await this.encrypt(testData);
-      const decrypted = await this.decrypt(ciphertext);
-      return decrypted === testData;
+      const { ciphertext, ivBase64, hmac } = await this.encrypt(testData);
+      const decrypted = await this.decrypt(ciphertext, ivBase64, hmac);
+      const isValid = decrypted === testData;
+      
+      if (isValid) {
+        logger.info('KMS connection test successful');
+      } else {
+        logger.error('KMS connection test failed - decryption mismatch');
+      }
+      
+      return isValid;
     } catch (error) {
-      console.error('KMS connection test failed:', error);
+      logger.error('KMS connection test failed', error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }

@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Edit } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { PRESET_CATEGORIES } from '@student-record/shared';
 
 const PRESET_ICONS = ['📋', '💰', '🎁', '🏋️', '🎨', '✈️', '🔧', '📱', '💻', '🎵', '📚', '🍿'];
 const PRESET_COLORS = [
@@ -22,7 +21,6 @@ export default function CategoriesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     icon: '📋',
@@ -38,10 +36,12 @@ export default function CategoriesPage() {
   // 初始化预设分类mutation
   const initPresetsMutation = trpc.expenseCategories.initializePresets.useMutation({
     onSuccess: () => {
+      // eslint-disable-next-line no-console
       console.log('✅ Preset categories initialized');
       refetch();
     },
     onError: (error) => {
+      // eslint-disable-next-line no-console
       console.error('❌ Failed to initialize presets:', error);
     },
   });

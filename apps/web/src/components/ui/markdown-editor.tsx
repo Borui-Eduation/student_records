@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues
@@ -13,7 +12,7 @@ interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  height?: number;
+  height?: number | string;
   preview?: 'live' | 'edit' | 'preview';
   className?: string;
 }
@@ -23,10 +22,9 @@ export function MarkdownEditor({
   onChange,
   placeholder = 'Enter your content here...',
   height = 400,
-  preview = 'live',
+  preview: _preview = 'live',
   className,
 }: MarkdownEditorProps) {
-  const [previewMode, setPreviewMode] = useState<'live' | 'edit' | 'preview'>(preview);
 
   return (
     <div className={className} data-color-mode="light">
@@ -34,7 +32,7 @@ export function MarkdownEditor({
         value={value}
         onChange={(val) => onChange(val || '')}
         height={height}
-        preview={previewMode}
+        preview={_preview}
         hideToolbar={false}
         enableScroll={true}
         visibleDragbar={false}

@@ -25,7 +25,7 @@ export default function DashboardLayout({
 
   // Auto-initialize user if needed
   useEffect(() => {
-    if (currentUser && !currentUser.isInitialized) {
+    if (currentUser && 'isInitialized' in currentUser && !currentUser.isInitialized) {
       initializeUserMutation.mutate();
     }
   }, [currentUser]);

@@ -86,6 +86,7 @@ export function useImageCompression() {
           base64,
         };
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Image compression error:', err);
         setError(err instanceof Error ? err.message : 'Compression failed');
         setIsCompressing(false);

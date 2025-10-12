@@ -213,7 +213,7 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
               <div>
                 <div className="text-sm text-gray-600 mb-2">标签</div>
                 <div className="flex flex-wrap gap-2">
-                  {expense.tags.map((tag, idx) => (
+                  {expense.tags.map((tag: string, idx: number) => (
                     <span
                       key={idx}
                       className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700"

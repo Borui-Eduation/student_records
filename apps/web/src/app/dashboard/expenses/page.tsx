@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Filter, Download } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';

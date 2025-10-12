@@ -31,7 +31,9 @@ export function SwipeActions({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping) return;
+    if (!isSwiping) {
+      return;
+    }
 
     currentX.current = e.touches[0].clientX;
     const deltaX = currentX.current - startX.current;
