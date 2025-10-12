@@ -14,7 +14,9 @@ import {
   Building2,
   DollarSign,
   Receipt,
+  Shield,
 } from 'lucide-react';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navItems = [
@@ -63,6 +65,12 @@ const navItems = [
     href: '/dashboard/profile',
     icon: Building2,
   },
+  {
+    title: 'User Management',
+    href: '/dashboard/users',
+    icon: Shield,
+    superAdminOnly: true,
+  },
 ];
 
 // Context for sidebar state
@@ -90,10 +98,19 @@ export function useSidebar() {
 
 function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const { userRole } = useAuth();
+
+  // Filter nav items based on user role
+  const visibleNavItems = navItems.filter((item) => {
+    if ('superAdminOnly' in item && item.superAdminOnly) {
+      return userRole === 'superadmin';
+    }
+    return true;
+  });
 
   return (
     <nav className="flex-1 space-y-1 p-4">
-      {navItems.map((item) => {
+      {visibleNavItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;
         return (

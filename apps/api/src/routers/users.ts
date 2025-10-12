@@ -1,6 +1,7 @@
 import { router, protectedProcedure, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import * as admin from 'firebase-admin';
+import { z } from 'zod';
 
 export const usersRouter = router({
   /**
@@ -357,5 +358,56 @@ $$
       total: users.length,
     };
   }),
+
+  /**
+   * Update user role (super admin only)
+   */
+  updateUserRole: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        role: z.enum(['user', 'superadmin']),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is super admin
+      const currentUserDoc = await ctx.db.collection('users').doc(ctx.user.uid).get();
+      const currentUserData = currentUserDoc.data();
+
+      if (currentUserData?.role !== 'superadmin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Super admin access required',
+        });
+      }
+
+      // Prevent self-demotion
+      if (input.userId === ctx.user.uid && input.role !== 'superadmin') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot change your own role',
+        });
+      }
+
+      // Check if target user exists
+      const targetUserDoc = await ctx.db.collection('users').doc(input.userId).get();
+      if (!targetUserDoc.exists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Update the role
+      await ctx.db.collection('users').doc(input.userId).update({
+        role: input.role,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+
+      return {
+        success: true,
+        message: 'User role updated successfully',
+      };
+    }),
 });
 
