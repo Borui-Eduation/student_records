@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const UserSchema = z.object({
   email: z.string().email(),
-  role: z.enum(['user', 'superadmin']),
+  role: z.enum(['user', 'admin', 'superadmin']),
   isInitialized: z.boolean(),
 });
 

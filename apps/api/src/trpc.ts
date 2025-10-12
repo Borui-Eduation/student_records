@@ -102,7 +102,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 /**
  * Helper function to get user role from Firestore
  */
-async function getUserRole(uid: string, db: admin.firestore.Firestore): Promise<'user' | 'superadmin'> {
+async function getUserRole(uid: string, db: admin.firestore.Firestore): Promise<'user' | 'admin' | 'superadmin'> {
   try {
     const userDoc = await db.collection('users').doc(uid).get();
     return userDoc.data()?.role || 'user';
@@ -113,21 +113,19 @@ async function getUserRole(uid: string, db: admin.firestore.Firestore): Promise<
 }
 
 /**
- * Admin procedure - requires authentication + admin check
+ * Admin procedure - requires authentication + admin/superadmin role
  */
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  // Check if user is admin (whitelist by email)
-  const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim());
+  // Get user role from Firestore
+  const role = await getUserRole(ctx.user.uid, ctx.db);
 
-  if (!adminEmails.includes(ctx.user.email || '')) {
+  // Only allow admin and superadmin roles
+  if (role !== 'admin' && role !== 'superadmin') {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Admin access required',
     });
   }
-
-  // Get user role from Firestore
-  const role = await getUserRole(ctx.user.uid, ctx.db);
 
   return next({
     ctx: {

@@ -1,6 +1,6 @@
 import { Timestamp } from './common';
 
-export type UserRole = 'user' | 'superadmin';
+export type UserRole = 'user' | 'admin' | 'superadmin';
 
 export interface User {
   id: string; // Firebase UID

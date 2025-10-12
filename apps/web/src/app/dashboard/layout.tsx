@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const router = useRouter();
 
   // Get or create current user
@@ -34,7 +34,11 @@ export default function DashboardLayout({
     if (!loading && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+    // Redirect non-admin users back to login
+    if (!loading && user && userRole && userRole !== 'admin' && userRole !== 'superadmin') {
+      router.push('/login');
+    }
+  }, [user, userRole, loading, router]);
 
   if (loading) {
     return (

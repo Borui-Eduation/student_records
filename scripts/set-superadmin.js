@@ -1,6 +1,8 @@
 /**
- * Set a user as superadmin
- * Usage: node scripts/set-superadmin.js <email>
+ * Set a user role (admin or superadmin)
+ * Usage: 
+ *   node scripts/set-superadmin.js <email> [role]
+ *   role can be 'admin' or 'superadmin' (default: 'admin')
  */
 
 const admin = require('firebase-admin');
@@ -16,8 +18,16 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function setSuperAdmin(email) {
+async function setUserRole(email, role = 'admin') {
   try {
+    // Validate role
+    const validRoles = ['user', 'admin', 'superadmin'];
+    if (!validRoles.includes(role)) {
+      console.log(`❌ Invalid role: ${role}`);
+      console.log(`   Valid roles: ${validRoles.join(', ')}`);
+      process.exit(1);
+    }
+
     console.log(`🔍 Looking for user with email: ${email}`);
     
     // Find user by email
@@ -37,21 +47,30 @@ async function setSuperAdmin(email) {
     console.log(`✅ Found user: ${userData.email}`);
     console.log(`   Current role: ${userData.role || 'user'}`);
     
-    if (userData.role === 'superadmin') {
-      console.log(`✨ User is already a superadmin!`);
+    if (userData.role === role) {
+      console.log(`✨ User already has role: ${role}`);
       process.exit(0);
     }
 
-    // Update role to superadmin
+    // Update role
     await userDoc.ref.update({
-      role: 'superadmin',
+      role: role,
       updatedAt: admin.firestore.Timestamp.now(),
     });
 
-    console.log(`🎉 Successfully set ${email} as superadmin!`);
-    console.log(`\n📝 Next steps:`);
+    console.log(`🎉 Successfully set ${email} as ${role}!`);
+    console.log(`\n📝 Role Permissions:`);
+    console.log(`   • user: Cannot access dashboard`);
+    console.log(`   • admin: Can access dashboard and manage own data`);
+    console.log(`   • superadmin: Full access, can manage all users`);
+    console.log(`\n🔄 Next steps:`);
     console.log(`   1. Refresh your browser`);
-    console.log(`   2. You should now see "User Management" in the sidebar`);
+    if (role === 'admin' || role === 'superadmin') {
+      console.log(`   2. You should now be able to access the dashboard`);
+    }
+    if (role === 'superadmin') {
+      console.log(`   3. You should see "User Management" in the sidebar`);
+    }
     
     process.exit(0);
   } catch (error) {
@@ -60,14 +79,23 @@ async function setSuperAdmin(email) {
   }
 }
 
-// Get email from command line arguments
+// Get email and role from command line arguments
 const email = process.argv[2];
+const role = process.argv[3] || 'admin';
 
 if (!email) {
-  console.log('Usage: node scripts/set-superadmin.js <email>');
-  console.log('Example: node scripts/set-superadmin.js yao.s.1216@gmail.com');
+  console.log('Usage: node scripts/set-superadmin.js <email> [role]');
+  console.log('');
+  console.log('Examples:');
+  console.log('  node scripts/set-superadmin.js user@example.com admin');
+  console.log('  node scripts/set-superadmin.js user@example.com superadmin');
+  console.log('');
+  console.log('Roles:');
+  console.log('  user        - Default role, cannot access dashboard');
+  console.log('  admin       - Can access dashboard and manage own data');
+  console.log('  superadmin  - Full system access, can manage all users');
   process.exit(1);
 }
 
-setSuperAdmin(email);
+setUserRole(email, role);
 

@@ -65,7 +65,7 @@ export default function UsersPage() {
     },
   });
 
-  const handleRoleChange = (userId: string, newRole: 'user' | 'superadmin') => {
+  const handleRoleChange = (userId: string, newRole: 'user' | 'admin' | 'superadmin') => {
     updateRoleMutation.mutate({ userId, role: newRole });
   };
 
@@ -140,13 +140,18 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={userRole === 'superadmin' ? 'default' : 'secondary'}
+                            variant={userRole === 'superadmin' ? 'default' : userRole === 'admin' ? 'default' : 'secondary'}
                             className="flex items-center gap-1 w-fit"
                           >
                             {userRole === 'superadmin' ? (
                               <>
                                 <Shield className="h-3 w-3" />
                                 Super Admin
+                              </>
+                            ) : userRole === 'admin' ? (
+                              <>
+                                <Shield className="h-3 w-3 opacity-70" />
+                                Admin
                               </>
                             ) : (
                               <>
@@ -175,7 +180,7 @@ export default function UsersPage() {
                           <Select
                             value={userRole}
                             onValueChange={(value) =>
-                              handleRoleChange(userData.id, value as 'user' | 'superadmin')
+                              handleRoleChange(userData.id, value as 'user' | 'admin' | 'superadmin')
                             }
                             disabled={isCurrentUser || updateRoleMutation.isLoading}
                           >
@@ -187,6 +192,12 @@ export default function UsersPage() {
                                 <div className="flex items-center gap-2">
                                   <UserIcon className="h-3 w-3" />
                                   User
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="admin">
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3 w-3 opacity-70" />
+                                  Admin
                                 </div>
                               </SelectItem>
                               <SelectItem value="superadmin">
@@ -222,8 +233,9 @@ export default function UsersPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
-          <p>• <strong>Super Admin</strong> can manage all users and have full system access</p>
-          <p>• <strong>Regular Users</strong> can only access their own data</p>
+          <p>• <strong>User</strong>: Default role for new users. Cannot access the dashboard.</p>
+          <p>• <strong>Admin</strong>: Can access dashboard and manage their own data.</p>
+          <p>• <strong>Super Admin</strong>: Full access. Can manage all users and view all data.</p>
           <p>• You cannot change your own role (security measure)</p>
           <p>• Any user can login with Google, but needs admin role to access the dashboard</p>
           <p>• Role changes take effect immediately</p>

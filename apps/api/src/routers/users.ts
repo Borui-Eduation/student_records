@@ -366,7 +366,7 @@ $$
     .input(
       z.object({
         userId: z.string(),
-        role: z.enum(['user', 'superadmin']),
+        role: z.enum(['user', 'admin', 'superadmin']),
       })
     )
     .mutation(async ({ ctx, input }) => {

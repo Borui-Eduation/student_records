@@ -5,7 +5,7 @@ import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut 
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
-type UserRole = 'user' | 'superadmin';
+type UserRole = 'user' | 'admin' | 'superadmin';
 
 interface AuthContextType {
   user: User | null;
