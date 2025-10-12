@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +10,8 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import type { UpdateExpenseInput, CreateExpenseInput } from '@student-record/shared';
 
-export default function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function ExpenseDetailPage({ params }: { params: { id: string } }) {
+  const resolvedParams = params;
   const router = useRouter();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);

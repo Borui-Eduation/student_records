@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { trpc, getTRPCClient } from '@/lib/trpc';
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
@@ -27,12 +27,15 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       })
   );
 
-  const [trpcClient] = useState(() => getTRPCClient());
+  // Use useMemo instead of useState to ensure stable client reference
+  const trpcClient = useMemo(() => getTRPCClient(), []);
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
+    <QueryClientProvider client={queryClient}>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        {children}
+      </trpc.Provider>
+    </QueryClientProvider>
   );
 }
 
