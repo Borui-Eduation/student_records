@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client } from '@student-record/shared';
@@ -48,6 +48,9 @@ interface RateDialogProps {
 export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
   const utils = trpc.useUtils();
   const isEditMode = !!rate;
+  
+  // Track assignment type separately
+  const [assignmentType, setAssignmentType] = useState<'none' | 'specific' | 'type'>('none');
 
   // Get clients list for dropdown
   const { data: clients } = trpc.clients.list.useQuery({
@@ -79,6 +82,15 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
       setValue('clientId', rate.clientId || undefined);
       setValue('clientType', rate.clientType || undefined);
       
+      // Set assignment type based on existing rate
+      if (rate.clientId) {
+        setAssignmentType('specific');
+      } else if (rate.clientType) {
+        setAssignmentType('type');
+      } else {
+        setAssignmentType('none');
+      }
+      
       // Convert Firestore Timestamp to date string
       if (rate.effectiveDate) {
         const effectiveDate = toDate(rate.effectiveDate);
@@ -96,6 +108,7 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
         currency: 'CNY',
         effectiveDate: new Date().toISOString().split('T')[0],
       });
+      setAssignmentType('none');
     }
   }, [rate, open, setValue, reset]);
 
@@ -129,8 +142,6 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
   };
 
   const mutation = isEditMode ? updateMutation : createMutation;
-
-  const assignmentType = watch('clientId') ? 'specific' : watch('clientType') ? 'type' : 'none';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -167,7 +178,8 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
               <Label>Assign to</Label>
               <Select
                 value={assignmentType}
-                onValueChange={(value) => {
+                onValueChange={(value: 'none' | 'specific' | 'type') => {
+                  setAssignmentType(value);
                   if (value === 'none') {
                     setValue('clientId', undefined);
                     setValue('clientType', undefined);

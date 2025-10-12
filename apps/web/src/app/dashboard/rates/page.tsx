@@ -7,6 +7,7 @@ import { Plus, DollarSign, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { RateDialog } from '@/components/rates/RateDialog';
 import { format } from 'date-fns';
+import { toDate } from '@/lib/utils';
 import type { Rate } from '@student-record/shared';
 import {
   AlertDialog,
@@ -176,29 +177,15 @@ export default function RatesPage() {
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Effective Date:</span>
+                      <span className="text-muted-foreground">Effective Date: </span>
                       <span className="font-medium">
-                        {rate.effectiveDate
-                          ? format(
-                              typeof (rate.effectiveDate as any)?.toDate === 'function'
-                                ? (rate.effectiveDate as any).toDate()
-                                : new Date(rate.effectiveDate as any),
-                              'yyyy-MM-dd'
-                            )
-                          : 'N/A'}
+                        {rate.effectiveDate ? format(toDate(rate.effectiveDate), 'yyyy-MM-dd') : 'N/A'}
                       </span>
                     </div>
                     <div className="text-sm">
-                      <span className="text-muted-foreground">End Date:</span>
+                      <span className="text-muted-foreground">End Date: </span>
                       <span className="font-medium">
-                        {rate.endDate
-                          ? format(
-                              typeof (rate.endDate as any)?.toDate === 'function'
-                                ? (rate.endDate as any).toDate()
-                                : new Date(rate.endDate as any),
-                              'yyyy-MM-dd'
-                            )
-                          : 'N/A'}
+                        {rate.endDate ? format(toDate(rate.endDate), 'yyyy-MM-dd') : 'N/A'}
                       </span>
                     </div>
                     {rate.description && (

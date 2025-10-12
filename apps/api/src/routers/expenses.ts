@@ -21,6 +21,27 @@ import {
 } from '../services/storageService';
 import { nanoid } from 'nanoid';
 
+// Helper function to format date based on granularity
+// Uses UTC to avoid timezone issues
+function formatDateKey(date: Date, granularity: 'day' | 'week' | 'month'): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+
+  switch (granularity) {
+    case 'day':
+      return `${year}-${month}-${day}`;
+    case 'week':
+      // Get ISO week number using UTC
+      const onejan = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNum = Math.ceil(((date.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7);
+      return `${year}-W${String(weekNum).padStart(2, '0')}`;
+    case 'month':
+    default:
+      return `${year}-${month}`;
+  }
+}
+
 export const expensesRouter = router({
   /**
    * 创建费用记录
@@ -525,26 +546,33 @@ export const expensesRouter = router({
       percentage: totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0,
     }));
 
-    // 月度趋势
-    const monthMap = new Map<string, { amount: number; count: number }>();
+    // 趋势数据 (按 granularity 分组)
+    const granularity = input.granularity || 'month';
+    const periodMap = new Map<string, { amount: number; count: number }>();
     expenses.forEach(exp => {
       const date = exp.date?.toDate();
-      if (date) {
-        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const existing = monthMap.get(month) || { amount: 0, count: 0 };
+      if (date && date instanceof Date && !isNaN(date.getTime())) {
+        const periodKey = formatDateKey(date, granularity);
+        const existing = periodMap.get(periodKey) || { amount: 0, count: 0 };
         existing.amount += exp.amount || 0;
         existing.count += 1;
-        monthMap.set(month, existing);
+        periodMap.set(periodKey, existing);
       }
     });
 
-    const monthlyTrend = Array.from(monthMap.entries())
+    const monthlyTrend = Array.from(periodMap.entries())
       .map(([month, data]) => ({
         month,
         amount: data.amount,
         count: data.count,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
+    
+    console.log('API getStatistics result:', {
+      granularity,
+      months: monthlyTrend.map(d => d.month),
+      dataPoints: monthlyTrend.length,
+    });
 
     // 支付方式统计
     const paymentMethodMap = new Map<string, { amount: number; count: number }>();

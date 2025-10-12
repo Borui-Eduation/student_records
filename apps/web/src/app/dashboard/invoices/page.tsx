@@ -7,6 +7,7 @@ import { Plus, FileText, Download, Trash2, Send, CheckCircle } from 'lucide-reac
 import { trpc } from '@/lib/trpc';
 import { InvoiceGeneratorDialog } from '@/components/invoices/InvoiceGeneratorDialog';
 import { format } from 'date-fns';
+import { toDate } from '@/lib/utils';
 import type { Invoice } from '@student-record/shared';
 import {
   AlertDialog,
@@ -191,31 +192,14 @@ export default function InvoicesPage() {
                     <div>
                       <span className="text-muted-foreground">Issue Date:</span>
                       <span className="ml-2 font-medium">
-                        {invoice.issueDate
-                          ? format(
-                              typeof (invoice.issueDate as any)?.toDate === 'function'
-                                ? (invoice.issueDate as any).toDate()
-                                : new Date(invoice.issueDate as any),
-                              'yyyy-MM-dd'
-                            )
-                          : 'N/A'}
+                        {invoice.issueDate ? format(toDate(invoice.issueDate), 'yyyy-MM-dd') : 'N/A'}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Billing Period:</span>
                       <span className="ml-2 font-medium">
                         {invoice.billingPeriodStart && invoice.billingPeriodEnd
-                          ? `${format(
-                              typeof (invoice.billingPeriodStart as any)?.toDate === 'function'
-                                ? (invoice.billingPeriodStart as any).toDate()
-                                : new Date(invoice.billingPeriodStart as any),
-                              'MMM d'
-                            )} - ${format(
-                              typeof (invoice.billingPeriodEnd as any)?.toDate === 'function'
-                                ? (invoice.billingPeriodEnd as any).toDate()
-                                : new Date(invoice.billingPeriodEnd as any),
-                              'MMM d, yyyy'
-                            )}`
+                          ? `${format(toDate(invoice.billingPeriodStart), 'MMM d')} - ${format(toDate(invoice.billingPeriodEnd), 'MMM d, yyyy')}`
                           : 'N/A'}
                       </span>
                     </div>
@@ -242,15 +226,7 @@ export default function InvoicesPage() {
 
                   {invoice.paidDate && (
                     <div className="mt-4 text-sm text-green-600">
-                      ✓ Paid on{' '}
-                      {invoice.paidDate
-                        ? format(
-                            typeof (invoice.paidDate as any)?.toDate === 'function'
-                              ? (invoice.paidDate as any).toDate()
-                              : new Date(invoice.paidDate as any),
-                            'yyyy-MM-dd'
-                          )
-                        : 'N/A'}
+                      ✓ Paid on {format(toDate(invoice.paidDate), 'yyyy-MM-dd')}
                     </div>
                   )}
 

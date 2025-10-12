@@ -4,6 +4,27 @@ import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchem
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
+// Helper function to format date based on granularity
+// Uses UTC to avoid timezone issues
+function formatDateKey(date: Date, granularity: 'day' | 'week' | 'month'): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+
+  switch (granularity) {
+    case 'day':
+      return `${year}-${month}-${day}`;
+    case 'week':
+      // Get ISO week number using UTC
+      const onejan = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNum = Math.ceil(((date.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7);
+      return `${year}-W${String(weekNum).padStart(2, '0')}`;
+    case 'month':
+    default:
+      return `${year}-${month}`;
+  }
+}
+
 export const invoicesRouter = router({
   /**
    * Generate invoice from selected sessions
@@ -456,8 +477,16 @@ export const invoicesRouter = router({
       const snapshot = await query.get();
       const sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-      // Group by month (YYYY-MM format)
-      const byMonth: Record<string, {
+      const granularity = input.granularity || 'month';
+      
+      console.log('API getMonthlyRevenue:', {
+        granularity,
+        dateRange: input.dateRange,
+        sessionCount: sessions.length,
+      });
+
+      // Group by granularity (day/week/month)
+      const byPeriod: Record<string, {
         month: string;
         revenue: number;
         hours: number;
@@ -468,12 +497,21 @@ export const invoicesRouter = router({
       }> = {};
 
       sessions.forEach((session: any) => {
+        // Skip sessions without valid dates
+        if (!session.date || !session.date.toDate) {
+          return;
+        }
+        
         const sessionDate = session.date.toDate();
-        const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!sessionDate || isNaN(sessionDate.getTime())) {
+          return;
+        }
+        
+        const periodKey = formatDateKey(sessionDate, granularity);
 
-        if (!byMonth[monthKey]) {
-          byMonth[monthKey] = {
-            month: monthKey,
+        if (!byPeriod[periodKey]) {
+          byPeriod[periodKey] = {
+            month: periodKey,
             revenue: 0,
             hours: 0,
             sessionCount: 0,
@@ -483,22 +521,27 @@ export const invoicesRouter = router({
           };
         }
 
-        byMonth[monthKey].revenue += session.totalAmount;
-        byMonth[monthKey].hours += session.durationHours;
-        byMonth[monthKey].sessionCount += 1;
+        byPeriod[periodKey].revenue += session.totalAmount;
+        byPeriod[periodKey].hours += session.durationHours;
+        byPeriod[periodKey].sessionCount += 1;
 
         // Categorize by billing status
         if (session.billingStatus === 'unbilled') {
-          byMonth[monthKey].unbilledRevenue += session.totalAmount;
+          byPeriod[periodKey].unbilledRevenue += session.totalAmount;
         } else if (session.billingStatus === 'billed') {
-          byMonth[monthKey].billedRevenue += session.totalAmount;
+          byPeriod[periodKey].billedRevenue += session.totalAmount;
         } else if (session.billingStatus === 'paid') {
-          byMonth[monthKey].paidRevenue += session.totalAmount;
+          byPeriod[periodKey].paidRevenue += session.totalAmount;
         }
       });
 
-      // Sort by month and return as array
-      const monthlyData = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+      // Sort by period and return as array
+      const monthlyData = Object.values(byPeriod).sort((a, b) => a.month.localeCompare(b.month));
+
+      console.log('API getMonthlyRevenue result:', {
+        months: monthlyData.map(d => d.month),
+        dataPoints: monthlyData.length,
+      });
 
       // Calculate totals
       const totalRevenue = sessions.reduce((sum: number, s: any) => sum + s.totalAmount, 0);

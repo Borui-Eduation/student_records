@@ -7,6 +7,7 @@ import { trpc } from '@/lib/trpc';
 import { format, subMonths, startOfMonth, endOfMonth, subDays, subWeeks } from 'date-fns';
 import Link from 'next/link';
 import { RevenueTrendChart } from '@/components/dashboard/RevenueTrendChart';
+import { toDate } from '@/lib/utils';
 import type { Invoice, Expense, ClientRevenueData, CategoryBreakdownData } from '@/types';
 
 export default function DashboardPage() {
@@ -15,27 +16,47 @@ export default function DashboardPage() {
   // Calculate date range based on time range selection - memoize to prevent unnecessary re-renders
   const dateRange = useMemo(() => {
     const now = new Date();
-    const currentMonthStart = startOfMonth(now);
-    const currentMonthEnd = endOfMonth(now);
     
+    let result;
     switch (timeRange) {
       case 'day':
-        return {
+        result = {
           start: subDays(now, 29), // Last 30 days
           end: now,
         };
+        break;
       case 'week':
-        return {
+        result = {
           start: subWeeks(now, 11), // Last 12 weeks
           end: now,
         };
+        break;
       case 'month':
       default:
-        return {
-          start: subMonths(currentMonthStart, 5), // Last 6 months
-          end: currentMonthEnd,
+        // Use middle of the day to avoid timezone edge cases
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        
+        // Start: first day of 6 months ago at noon
+        const startMonth = new Date(currentYear, currentMonth - 5, 1, 12, 0, 0);
+        
+        // End: use current date to ensure current month is included
+        result = {
+          start: startMonth,
+          end: now,
         };
+        break;
     }
+    
+    console.log('Dashboard dateRange:', {
+      timeRange,
+      start: result.start.toISOString(),
+      end: result.end.toISOString(),
+      startLocal: result.start.toString(),
+      endLocal: result.end.toString(),
+    });
+    
+    return result;
   }, [timeRange]);
 
   // Get current month date range for stats
@@ -83,6 +104,7 @@ export default function DashboardPage() {
       start: dateRange.start.toISOString(),
       end: dateRange.end.toISOString(),
     },
+    granularity: timeRange,
   });
 
   const { data: trendExpenses, isLoading: expensesLoading } = trpc.expenses.getStatistics.useQuery({
@@ -90,6 +112,7 @@ export default function DashboardPage() {
       start: dateRange.start.toISOString(),
       end: dateRange.end.toISOString(),
     },
+    granularity: timeRange,
   });
 
   // Calculate net income
@@ -192,6 +215,7 @@ export default function DashboardPage() {
         monthlyExpenses={trendExpenses?.monthlyTrend || []}
         isLoading={revenueLoading || expensesLoading}
         onRangeChange={setTimeRange}
+        dateRange={dateRange}
       />
 
       {/* Recent Activities */}
@@ -206,10 +230,6 @@ export default function DashboardPage() {
             {recentExpenses && recentExpenses.items.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">
                 {typedRecentExpenses.slice(0, 5).map((expense: Expense) => {
-                  const date =
-                    (expense.date as any)?.toDate?.() instanceof Date
-                      ? (expense.date as any).toDate()
-                      : new Date();
                   return (
                     <Link
                       key={expense.id}
@@ -219,7 +239,7 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="font-medium text-sm">{expense.description || 'Expense'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(date, 'MMM d, yyyy')} • {expense.categoryName}
+                          {expense.date ? format(toDate(expense.date), 'MMM d, yyyy') : 'N/A'} • {expense.categoryName}
                         </p>
                       </div>
                       <div className="text-right">

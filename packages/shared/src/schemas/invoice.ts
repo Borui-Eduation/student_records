@@ -31,6 +31,7 @@ export const GetMonthlyRevenueSchema = z.object({
   }),
   clientId: z.string().optional(),
   sessionType: z.enum(['education', 'technical']).optional(),
+  granularity: z.enum(['day', 'week', 'month']).optional().default('month'),
 });
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;

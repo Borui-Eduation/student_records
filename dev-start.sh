@@ -95,9 +95,8 @@ mkdir -p .logs
 
 # 启动 API 服务
 echo -e "${YELLOW}🔧 启动 API 服务 (端口 8080)...${NC}"
-cd apps/api && pnpm dev > ../../.logs/api.log 2>&1 &
+(cd apps/api && pnpm dev > ../../.logs/api.log 2>&1) &
 API_PID=$!
-cd ../..
 sleep 3
 
 # 检查 API 是否启动成功
@@ -110,9 +109,8 @@ fi
 
 # 启动 Web 服务
 echo -e "${YELLOW}🌐 启动 Web 服务 (端口 3000)...${NC}"
-cd apps/web && pnpm dev > ../../.logs/web.log 2>&1 &
+(cd apps/web && pnpm dev > ../../.logs/web.log 2>&1) &
 WEB_PID=$!
-cd ../..
 
 # 等待 Web 服务编译
 echo -e "${YELLOW}⏳ 等待 Web 服务编译...${NC}"

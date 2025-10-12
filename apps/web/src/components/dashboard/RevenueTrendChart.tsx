@@ -27,9 +27,10 @@ interface RevenueTrendChartProps {
   monthlyExpenses: { month: string; amount: number }[];
   isLoading?: boolean;
   onRangeChange?: (range: 'day' | 'week' | 'month') => void;
+  dateRange?: { start: Date; end: Date };
 }
 
-export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, onRangeChange }: RevenueTrendChartProps) {
+export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, onRangeChange, dateRange }: RevenueTrendChartProps) {
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('month');
 
   // Handle range change
@@ -39,8 +40,8 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
     onRangeChange?.(newRange);
   };
 
-  // Merge revenue and expense data
-  const chartData = prepareTrendData(monthlyRevenue, monthlyExpenses);
+  // Merge revenue and expense data with date range filling
+  const chartData = prepareTrendData(monthlyRevenue, monthlyExpenses, timeRange, dateRange);
 
   // Calculate statistics
   const stats = calculateStats(chartData);
@@ -175,17 +176,25 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                 fontSize={12}
                 tickLine={false}
                 tickFormatter={(value) => {
-                  if (timeRange === 'day') {
-                    // Assume value is like "2024-10-12"
-                    const date = new Date(value);
-                    return format(date, 'MMM d');
-                  } else if (timeRange === 'week') {
-                    // Assume value is like "2024-W42"
-                    return value.split('-W')[1] ? `W${value.split('-W')[1]}` : value;
-                  } else {
-                    // month: value is like "2024-10"
-                    const date = new Date(value + '-01');
-                    return format(date, 'MMM');
+                  try {
+                    if (timeRange === 'day') {
+                      // value is like "2025-10-12" (UTC)
+                      const [year, month, day] = value.split('-').map(Number);
+                      const date = new Date(Date.UTC(year, month - 1, day));
+                      if (isNaN(date.getTime())) return value;
+                      return format(date, 'MMM d');
+                    } else if (timeRange === 'week') {
+                      // value is like "2025-W42"
+                      return value.split('-W')[1] ? `W${value.split('-W')[1]}` : value;
+                    } else {
+                      // month: value is like "2025-10" (UTC)
+                      const [year, month] = value.split('-').map(Number);
+                      const date = new Date(Date.UTC(year, month - 1, 1));
+                      if (isNaN(date.getTime())) return value;
+                      return format(date, 'MMM');
+                    }
+                  } catch {
+                    return value;
                   }
                 }}
               />
@@ -204,14 +213,25 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                 }}
                 formatter={(value: number) => [`¥${value.toLocaleString()}`, '']}
                 labelFormatter={(label) => {
-                  if (timeRange === 'day') {
-                    const date = new Date(label);
-                    return format(date, 'MMMM d, yyyy');
-                  } else if (timeRange === 'week') {
-                    return label.split('-W')[1] ? `Week ${label.split('-W')[1]} of ${label.split('-W')[0]}` : label;
-                  } else {
-                    const date = new Date(label + '-01');
-                    return format(date, 'MMMM yyyy');
+                  try {
+                    if (timeRange === 'day') {
+                      // label is like "2025-10-12" (UTC)
+                      const [year, month, day] = label.split('-').map(Number);
+                      const date = new Date(Date.UTC(year, month - 1, day));
+                      if (isNaN(date.getTime())) return label;
+                      return format(date, 'MMMM d, yyyy');
+                    } else if (timeRange === 'week') {
+                      // label is like "2025-W42"
+                      return label.split('-W')[1] ? `Week ${label.split('-W')[1]} of ${label.split('-W')[0]}` : label;
+                    } else {
+                      // month: label is like "2025-10" (UTC)
+                      const [year, month] = label.split('-').map(Number);
+                      const date = new Date(Date.UTC(year, month - 1, 1));
+                      if (isNaN(date.getTime())) return label;
+                      return format(date, 'MMMM yyyy');
+                    }
+                  } catch {
+                    return label;
                   }
                 }}
               />
@@ -279,14 +299,16 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
 // Helper functions
 function prepareTrendData(
   monthlyRevenue: MonthlyData[],
-  monthlyExpenses: { month: string; amount: number }[]
+  monthlyExpenses: { month: string; amount: number }[],
+  timeRange: 'day' | 'week' | 'month',
+  dateRange?: { start: Date; end: Date }
 ) {
-  // Create a map of all unique months
-  const monthsMap = new Map<string, { revenue: number; expenses: number }>();
+  // Create a map of all data
+  const dataMap = new Map<string, { revenue: number; expenses: number }>();
 
   // Add revenue data
   monthlyRevenue.forEach((item) => {
-    monthsMap.set(item.month, {
+    dataMap.set(item.month, {
       revenue: item.revenue,
       expenses: 0,
     });
@@ -294,28 +316,88 @@ function prepareTrendData(
 
   // Add expense data
   monthlyExpenses.forEach((item) => {
-    const existing = monthsMap.get(item.month);
+    const existing = dataMap.get(item.month);
     if (existing) {
       existing.expenses = item.amount;
     } else {
-      monthsMap.set(item.month, {
+      dataMap.set(item.month, {
         revenue: 0,
         expenses: item.amount,
       });
     }
   });
 
-  // Convert to array and sort by month
-  const sortedData = Array.from(monthsMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, data]) => ({
-      date: month,
+  // Generate complete date range
+  const completeRange = generateDateRange(timeRange, dateRange);
+  
+  // Fill in missing dates with zero values
+  const sortedData = completeRange.map(dateKey => {
+    const data = dataMap.get(dateKey) || { revenue: 0, expenses: 0 };
+    return {
+      date: dateKey,
       revenue: data.revenue,
       expenses: data.expenses,
       net: data.revenue - data.expenses,
-    }));
+    };
+  });
 
   return sortedData;
+}
+
+// Generate complete date range based on granularity
+// Converts to UTC to match backend processing
+function generateDateRange(
+  timeRange: 'day' | 'week' | 'month',
+  dateRange?: { start: Date; end: Date }
+): string[] {
+  if (!dateRange) {
+    return [];
+  }
+
+  const result: string[] = [];
+  
+  // Convert local dates to UTC midnight to match backend
+  const startUTC = new Date(Date.UTC(
+    dateRange.start.getFullYear(),
+    dateRange.start.getMonth(),
+    dateRange.start.getDate()
+  ));
+  const endUTC = new Date(Date.UTC(
+    dateRange.end.getFullYear(),
+    dateRange.end.getMonth(),
+    dateRange.end.getDate()
+  ));
+  
+  const current = new Date(startUTC.getTime());
+
+  while (current <= endUTC) {
+    const year = current.getUTCFullYear();
+    const month = String(current.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(current.getUTCDate()).padStart(2, '0');
+
+    switch (timeRange) {
+      case 'day':
+        result.push(`${year}-${month}-${day}`);
+        current.setUTCDate(current.getUTCDate() + 1);
+        break;
+      case 'week':
+        // Get ISO week number using UTC
+        const onejan = new Date(Date.UTC(current.getUTCFullYear(), 0, 1));
+        const weekNum = Math.ceil(((current.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7);
+        const weekKey = `${year}-W${String(weekNum).padStart(2, '0')}`;
+        if (!result.includes(weekKey)) {
+          result.push(weekKey);
+        }
+        current.setUTCDate(current.getUTCDate() + 7);
+        break;
+      case 'month':
+        result.push(`${year}-${month}`);
+        current.setUTCMonth(current.getUTCMonth() + 1);
+        break;
+    }
+  }
+
+  return result;
 }
 
 interface ChartDataPoint {
@@ -371,8 +453,20 @@ function getMoMComparison(data: ChartDataPoint[]) {
         ? ((current.expenses - previous.expenses) / previous.expenses) * 100
         : 0;
 
+    let monthLabel = current.date;
+    try {
+      // current.date is like "2025-10" (UTC)
+      const [year, month] = current.date.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, 1));
+      if (!isNaN(date.getTime())) {
+        monthLabel = format(date, 'MMM');
+      }
+    } catch {
+      // Keep original date string if formatting fails
+    }
+
     comparisons.push({
-      month: format(new Date(current.date + '-01'), 'MMM'),
+      month: monthLabel,
       revenueChange,
       expenseChange,
     });

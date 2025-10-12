@@ -74,6 +74,7 @@ export const GetStatisticsSchema = z.object({
   }),
   category: z.string().optional(),
   groupBy: z.enum(['category', 'month', 'paymentMethod']).optional(),
+  granularity: z.enum(['day', 'week', 'month']).optional().default('month'),
 });
 
 export type GetStatisticsInput = z.infer<typeof GetStatisticsSchema>;
