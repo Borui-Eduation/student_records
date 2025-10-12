@@ -29,7 +29,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for Markdown preview to avoid SSR issues
-const MDPreview = dynamic<{ source: string; style?: React.CSSProperties }>(
+const MDPreview = dynamic<{ source?: string; style?: React.CSSProperties }>(
   () => import('@uiw/react-md-editor').then((mod) => mod.default.Markdown),
   { ssr: false }
 );
