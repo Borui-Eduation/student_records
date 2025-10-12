@@ -168,7 +168,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
-                placeholder="+86 138 0000 0000"
+                placeholder="+1 (604) 123-4567"
                 {...register('contactInfo.phone')}
               />
               {errors.contactInfo?.phone && (
