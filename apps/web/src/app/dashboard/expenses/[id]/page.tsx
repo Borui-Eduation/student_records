@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,15 +9,22 @@ import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import type { UpdateExpenseInput, CreateExpenseInput } from '@student-record/shared';
 
-export default function ExpenseDetailPage({ params }: { params: { id: string } }) {
+export default function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const utils = trpc.useUtils();
 
   // 获取费用详情
-  const { data: expense, isLoading } = trpc.expenses.get.useQuery({ id: params.id }) as any;
+  const queryResult = trpc.expenses.get.useQuery({ id: resolvedParams.id });
+  const { data: expense, isLoading } = queryResult;
+  
+  // tRPC 类型推断问题的临时解决方案
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const expenseData = expense as any;
 
   // 更新mutation
   const updateMutation = trpc.expenses.update.useMutation({
@@ -24,7 +32,7 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
       // Invalidate queries to refresh the list
       utils.expenses.list.invalidate();
       utils.expenses.getStatistics.invalidate();
-      utils.expenses.get.invalidate({ id: params.id });
+      utils.expenses.get.invalidate({ id: resolvedParams.id });
       
       toast({
         title: '更新成功',
@@ -64,16 +72,16 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
     },
   });
 
-  const handleUpdate = (data: any) => {
+  const handleUpdate = (data: CreateExpenseInput | UpdateExpenseInput) => {
     updateMutation.mutate({
-      id: params.id,
       ...data,
-    });
+      id: resolvedParams.id,
+    } as UpdateExpenseInput);
   };
 
   const handleDelete = () => {
     if (confirm('确定要删除这条费用记录吗？此操作不可恢复。')) {
-      deleteMutation.mutate({ id: params.id });
+      deleteMutation.mutate({ id: resolvedParams.id });
     }
   };
 
@@ -131,7 +139,7 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
               variant="outline"
               size="icon"
               onClick={handleDelete}
-              disabled={deleteMutation.isLoading}
+              disabled={deleteMutation.isPending}
             >
               <Trash2 className="h-4 w-4 text-red-600" />
             </Button>
@@ -143,18 +151,18 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
       <div className="bg-white rounded-lg border p-4 sm:p-6">
         {isEditing ? (
           <ExpenseForm
-            initialData={expense}
+            initialData={expenseData}
             onSubmit={handleUpdate}
             onCancel={() => setIsEditing(false)}
-            isSubmitting={updateMutation.isLoading}
+            isSubmitting={updateMutation.isPending}
           />
         ) : (
           <div className="space-y-6">
             {/* 图片 */}
-            {expense.imageUrl && (
+            {expenseData?.imageUrl && (
               <div className="rounded-lg overflow-hidden border">
                 <img
-                  src={expense.imageUrl}
+                  src={expenseData.imageUrl}
                   alt="Receipt"
                   className="w-full h-auto max-h-96 object-contain bg-gray-50"
                 />
@@ -167,9 +175,11 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
                 <div className="text-sm text-gray-600 mb-1">日期</div>
                 <div className="font-medium">
                   {format(
-                    expense.date instanceof Date 
-                      ? expense.date 
-                      : (expense.date as any)?.toDate?.() || new Date(),
+                    expenseData.date instanceof Date 
+                      ? expenseData.date 
+                      : (expenseData.date && typeof expenseData.date === 'object' && 'toDate' in expenseData.date && typeof expenseData.date.toDate === 'function')
+                        ? expenseData.date.toDate()
+                        : new Date(),
                     'yyyy年MM月dd日'
                   )}
                 </div>
@@ -177,18 +187,18 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
               <div>
                 <div className="text-sm text-gray-600 mb-1">金额</div>
                 <div className="text-2xl font-bold text-red-600">
-                  ¥{expense.amount.toFixed(2)}
+                  ¥{expenseData.amount.toFixed(2)}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-gray-600 mb-1">分类</div>
-                <div className="font-medium">{expense.categoryName}</div>
+                <div className="font-medium">{expenseData.categoryName}</div>
               </div>
-              {expense.paymentMethod && (
+              {expenseData.paymentMethod && (
                 <div>
                   <div className="text-sm text-gray-600 mb-1">支付方式</div>
                   <div className="font-medium">
-                    {getPaymentMethodLabel(expense.paymentMethod)}
+                    {getPaymentMethodLabel(expenseData.paymentMethod)}
                   </div>
                 </div>
               )}
@@ -197,23 +207,23 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
             {/* 描述 */}
             <div>
               <div className="text-sm text-gray-600 mb-1">描述</div>
-              <div className="font-medium">{expense.description}</div>
+              <div className="font-medium">{expenseData.description}</div>
             </div>
 
             {/* 商家 */}
-            {expense.merchant && (
+              {expenseData.merchant && (
               <div>
                 <div className="text-sm text-gray-600 mb-1">商家/地点</div>
-                <div className="font-medium">{expense.merchant}</div>
+                  <div className="font-medium">{expenseData.merchant}</div>
               </div>
             )}
 
             {/* 标签 */}
-            {expense.tags && expense.tags.length > 0 && (
+            {expenseData.tags && expenseData.tags.length > 0 && (
               <div>
                 <div className="text-sm text-gray-600 mb-2">标签</div>
                 <div className="flex flex-wrap gap-2">
-                  {expense.tags.map((tag: string, idx: number) => (
+                  {expenseData.tags.map((tag: string, idx: number) => (
                     <span
                       key={idx}
                       className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700"
@@ -226,10 +236,10 @@ export default function ExpenseDetailPage({ params }: { params: { id: string } }
             )}
 
             {/* 备注 */}
-            {expense.notes && (
+            {expenseData.notes && (
               <div>
                 <div className="text-sm text-gray-600 mb-1">备注</div>
-                <div className="text-gray-700 whitespace-pre-wrap">{expense.notes}</div>
+                <div className="text-gray-700 whitespace-pre-wrap">{expenseData.notes}</div>
               </div>
             )}
           </div>

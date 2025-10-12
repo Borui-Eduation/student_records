@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import type { ExpenseCategory } from '@student-record/shared';
 
 interface CategorySelectorProps {
   value?: string;
@@ -21,7 +22,7 @@ export function CategorySelector({ value, onChange, className }: CategorySelecto
   const { data: categoriesData, isLoading } = trpc.expenseCategories.list.useQuery({
     includeSystemPresets: true,
     sortBy: 'order',
-  }) as any;
+  });
 
   // 初始化分类mutation
   const initCategories = trpc.expenseCategories.initializePresets.useMutation();
@@ -40,9 +41,9 @@ export function CategorySelector({ value, onChange, className }: CategorySelecto
   ];
 
   // 从后端数据中筛选系统预设和自定义分类
-  const backendCategories = categoriesData?.items || [];
-  const backendSystemCategories = backendCategories.filter((c: any) => c.isSystemPreset);
-  const customCategories = backendCategories.filter((c: any) => !c.isSystemPreset);
+  const backendCategories = (categoriesData?.items || []) as ExpenseCategory[];
+  const backendSystemCategories = backendCategories.filter(c => c.isSystemPreset);
+  const customCategories = backendCategories.filter(c => !c.isSystemPreset);
 
   // 如果后端没有系统预设分类，使用硬编码的预设
   const systemCategories = backendSystemCategories.length > 0 
@@ -54,11 +55,11 @@ export function CategorySelector({ value, onChange, className }: CategorySelecto
 
   // 如果后端没有分类且还没初始化，自动触发初始化
   useEffect(() => {
-    if (backendCategories.length === 0 && !isLoading && !initCategories.isLoading) {
+    if (backendCategories.length === 0 && !isLoading && !initCategories.isPending) {
       initCategories.mutate();
     }
   }, [backendCategories.length, isLoading]);
-  const selectedCategory = categories.find((c: any) => c.id === value);
+  const selectedCategory = categories.find((c: ExpenseCategory | typeof DEFAULT_SYSTEM_CATEGORIES[number]) => c.id === value);
 
   const handleSelect = (categoryId: string, categoryName: string) => {
     onChange(categoryId, categoryName);
@@ -67,7 +68,7 @@ export function CategorySelector({ value, onChange, className }: CategorySelecto
 
   const renderCategoryGrid = () => (
     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-      {categories.map((category: any) => (
+      {categories.map((category: ExpenseCategory | typeof DEFAULT_SYSTEM_CATEGORIES[number]) => (
         <button
           key={category.id}
           type="button"

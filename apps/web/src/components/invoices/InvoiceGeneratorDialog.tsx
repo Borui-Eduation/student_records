@@ -24,6 +24,21 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { format } from 'date-fns';
+import type { Session, Timestamp } from '@student-record/shared';
+
+// Helper function to convert Timestamp to Date
+function toDate(timestamp: Timestamp): Date {
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  return new Date();
+}
 
 interface InvoiceGeneratorDialogProps {
   open: boolean;
@@ -105,9 +120,10 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
     );
   };
 
-  const selectedTotal = sessions?.items
-    .filter((s: any) => selectedSessionIds.includes(s.id))
-    .reduce((sum: number, s: any) => sum + s.totalAmount, 0) || 0;
+  const sessionItems = (sessions?.items || []) as Session[];
+  const selectedTotal = sessionItems
+    .filter((s) => selectedSessionIds.includes(s.id))
+    .reduce((sum, s) => sum + s.totalAmount, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,13 +164,13 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
             {selectedClientId && (
               <div className="grid gap-2">
                 <Label>Unbilled Sessions *</Label>
-                {!sessions || sessions.items.length === 0 ? (
+                {sessionItems.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No unbilled sessions for this client
                   </p>
                 ) : (
                   <div className="border rounded-md p-3 max-h-[300px] overflow-y-auto">
-                    {sessions.items.map((session: any) => (
+                    {sessionItems.map((session) => (
                       <div
                         key={session.id}
                         className={`flex items-start gap-3 p-3 rounded cursor-pointer hover:bg-muted transition-colors ${
@@ -172,8 +188,8 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-medium">
-                                {session.date?.toDate
-                                  ? format(session.date.toDate(), 'yyyy-MM-dd')
+                                {session.date
+                                  ? format(toDate(session.date), 'yyyy-MM-dd')
                                   : 'N/A'}
                               </div>
                               <div className="text-sm text-muted-foreground">

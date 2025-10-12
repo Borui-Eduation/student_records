@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateKnowledgeEntrySchema, type CreateKnowledgeEntryInput } from '@student-record/shared';
+import { CreateKnowledgeEntrySchema, type CreateKnowledgeEntryInput, type KnowledgeEntry } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for Markdown preview to avoid SSR issues
-const MDPreview = dynamic<any>(
+const MDPreview = dynamic<{ source: string; style?: React.CSSProperties }>(
   () => import('@uiw/react-md-editor').then((mod) => mod.default.Markdown),
   { ssr: false }
 );
@@ -50,22 +50,13 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
 
   // Fetch entry details if viewing existing entry
   const { data: entry } = trpc.knowledgeBase.get.useQuery(
-    { id: entryId! },
+    { id: entryId || '' },
     { enabled: !!entryId }
   );
 
   // Type guard for entry with full properties
-  const isFullEntry = (entry: any): entry is { 
-    id: string; 
-    title: string; 
-    type: string; 
-    content: string;
-    category?: string;
-    tags?: string[];
-    isEncrypted?: boolean;
-    accessCount?: number;
-  } => {
-    return entry && typeof entry.title === 'string';
+  const isFullEntry = (entry: Partial<KnowledgeEntry>): entry is KnowledgeEntry => {
+    return entry && typeof entry.title === 'string' && typeof entry.type === 'string';
   };
 
   useEffect(() => {
@@ -185,7 +176,7 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
                   </div>
                 ) : (
                   <div data-color-mode="light" className="rounded-md border">
-                    {isFullEntry(entry) && <MDPreview source={entry.content as any} style={{ padding: 16 } as any} />}
+                    {isFullEntry(entry) && <MDPreview source={entry.content} style={{ padding: 16 }} />}
                   </div>
                 )}
               </div>
@@ -301,7 +292,7 @@ Use Markdown syntax:
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={watch('type')}
-                onValueChange={(value) => setValue('type', value as any)}
+                onValueChange={(value) => setValue('type', value as import('@student-record/shared').KnowledgeType)}
               >
                 <SelectTrigger>
                   <SelectValue />

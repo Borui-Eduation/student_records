@@ -11,6 +11,15 @@ export type {
   SharingLink,
   CompanyProfile,
   AuditLog,
+  Expense,
+  ExpenseStatistics,
+  ExpenseCategoryType,
+  PaymentMethod,
+  Timestamp,
+  ContentBlock,
+  ClientType,
+  KnowledgeType,
+  SessionType,
 } from './types';
 
 // Export expense category utilities

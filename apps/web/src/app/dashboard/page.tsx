@@ -1,20 +1,47 @@
 'use client';
 
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Receipt } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, subDays, subWeeks } from 'date-fns';
 import Link from 'next/link';
 import { RevenueTrendChart } from '@/components/dashboard/RevenueTrendChart';
+import type { Invoice, Expense, ClientRevenueData, CategoryBreakdownData } from '@/types';
 
 export default function DashboardPage() {
-  // Get current month date range
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('month');
+
+  // Calculate date range based on time range selection - memoize to prevent unnecessary re-renders
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    
+    switch (timeRange) {
+      case 'day':
+        return {
+          start: subDays(now, 29), // Last 30 days
+          end: now,
+        };
+      case 'week':
+        return {
+          start: subWeeks(now, 11), // Last 12 weeks
+          end: now,
+        };
+      case 'month':
+      default:
+        return {
+          start: subMonths(currentMonthStart, 5), // Last 6 months
+          end: currentMonthEnd,
+        };
+    }
+  }, [timeRange]);
+
+  // Get current month date range for stats
   const now = new Date();
   const currentMonthStart = startOfMonth(now);
   const currentMonthEnd = endOfMonth(now);
-
-  // Get last 6 months for trend
-  const sixMonthsAgo = subMonths(currentMonthStart, 5);
 
   // Fetch data
   const { data: clients } = trpc.clients.list.useQuery({ active: true, limit: 100 });
@@ -36,8 +63,8 @@ export default function DashboardPage() {
   // Fetch expense data
   const { data: expenseStats } = trpc.expenses.getStatistics.useQuery({
     dateRange: {
-      start: currentMonthStart.toISOString().split('T')[0],
-      end: currentMonthEnd.toISOString().split('T')[0],
+      start: currentMonthStart.toISOString(),
+      end: currentMonthEnd.toISOString(),
     },
   });
 
@@ -47,18 +74,21 @@ export default function DashboardPage() {
     sortOrder: 'desc',
   });
 
-  // Fetch 6-month trend data using new monthly endpoint
-  const { data: sixMonthRevenue, isLoading: revenueLoading } = trpc.invoices.getMonthlyRevenue.useQuery({
+  const typedInvoices = (invoices?.items || []) as Invoice[];
+  const typedRecentExpenses = (recentExpenses?.items || []) as Expense[];
+
+  // Fetch trend data based on selected time range
+  const { data: trendRevenue, isLoading: revenueLoading } = trpc.invoices.getMonthlyRevenue.useQuery({
     dateRange: {
-      start: sixMonthsAgo.toISOString(),
-      end: currentMonthEnd.toISOString(),
+      start: dateRange.start.toISOString(),
+      end: dateRange.end.toISOString(),
     },
   });
 
-  const { data: sixMonthExpenses, isLoading: expensesLoading } = trpc.expenses.getStatistics.useQuery({
+  const { data: trendExpenses, isLoading: expensesLoading } = trpc.expenses.getStatistics.useQuery({
     dateRange: {
-      start: sixMonthsAgo.toISOString().split('T')[0],
-      end: currentMonthEnd.toISOString().split('T')[0],
+      start: dateRange.start.toISOString(),
+      end: dateRange.end.toISOString(),
     },
   });
 
@@ -115,7 +145,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Pending Invoices',
-      value: invoices?.items.filter((i: any) => i.status !== 'paid').length || 0,
+      value: typedInvoices.filter((i: Invoice) => i.status !== 'paid').length || 0,
       description: 'Awaiting payment',
       icon: FileText,
       color: 'text-amber-600',
@@ -158,9 +188,10 @@ export default function DashboardPage() {
 
       {/* Revenue vs Expenses Trend - Enhanced Chart */}
       <RevenueTrendChart
-        monthlyRevenue={(sixMonthRevenue?.monthlyData || []).map(item => ({ ...item, expenses: 0 }))}
-        monthlyExpenses={sixMonthExpenses?.monthlyTrend || []}
+        monthlyRevenue={(trendRevenue?.monthlyData || []).map(item => ({ ...item, expenses: 0 }))}
+        monthlyExpenses={trendExpenses?.monthlyTrend || []}
         isLoading={revenueLoading || expensesLoading}
+        onRangeChange={setTimeRange}
       />
 
       {/* Recent Activities */}
@@ -174,10 +205,11 @@ export default function DashboardPage() {
           <CardContent>
             {recentExpenses && recentExpenses.items.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">
-                {recentExpenses.items.slice(0, 5).map((expense: any) => {
-                  const date = expense.date instanceof Date
-                    ? expense.date
-                    : expense.date?.toDate?.() || new Date();
+                {typedRecentExpenses.slice(0, 5).map((expense: Expense) => {
+                  const date =
+                    (expense.date as any)?.toDate?.() instanceof Date
+                      ? (expense.date as any).toDate()
+                      : new Date();
                   return (
                     <Link
                       key={expense.id}
@@ -228,9 +260,9 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-3">
                 {revenue.byClient
-                  .sort((a: any, b: any) => b.revenue - a.revenue)
+                  .sort((a: ClientRevenueData, b: ClientRevenueData) => b.revenue - a.revenue)
                   .slice(0, 5)
-                  .map((client: any) => (
+                  .map((client: ClientRevenueData) => (
                     <div key={client.clientId} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -258,9 +290,9 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-3">
                 {expenseStats.categoryBreakdown
-                  .sort((a: any, b: any) => b.amount - a.amount)
+                  .sort((a: CategoryBreakdownData, b: CategoryBreakdownData) => b.amount - a.amount)
                   .slice(0, 5)
-                  .map((category: any) => (
+                  .map((category: CategoryBreakdownData) => (
                     <div key={category.category} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">

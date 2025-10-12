@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -24,14 +26,31 @@ interface RevenueTrendChartProps {
   monthlyRevenue: MonthlyData[];
   monthlyExpenses: { month: string; amount: number }[];
   isLoading?: boolean;
+  onRangeChange?: (range: 'day' | 'week' | 'month') => void;
 }
 
-export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading }: RevenueTrendChartProps) {
+export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, onRangeChange }: RevenueTrendChartProps) {
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('month');
+
+  // Handle range change
+  const handleRangeChange = (value: string) => {
+    const newRange = value as 'day' | 'week' | 'month';
+    setTimeRange(newRange);
+    onRangeChange?.(newRange);
+  };
+
   // Merge revenue and expense data
   const chartData = prepareTrendData(monthlyRevenue, monthlyExpenses);
 
   // Calculate statistics
   const stats = calculateStats(chartData);
+
+  // Get label info based on time range
+  const rangeInfo = {
+    day: { label: 'Last 30 days', count: 30 },
+    week: { label: 'Last 12 weeks', count: 12 },
+    month: { label: 'Last 6 months', count: 6 },
+  }[timeRange];
 
   if (isLoading) {
     return (
@@ -75,13 +94,24 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading }
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-          <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
-          Revenue vs Expenses Trend
-        </CardTitle>
-        <CardDescription className="text-xs sm:text-sm">
-          Last {chartData.length} months • Net: ¥{stats.netTotal.toLocaleString()}
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex-1">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+              Revenue vs Expenses Trend
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm mt-1">
+              {rangeInfo.label} • Net: ¥{stats.netTotal.toLocaleString()}
+            </CardDescription>
+          </div>
+          <Tabs value={timeRange} onValueChange={handleRangeChange} className="w-full sm:w-auto">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3">
+              <TabsTrigger value="day" className="text-xs sm:text-sm">Daily</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs sm:text-sm">Weekly</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs sm:text-sm">Monthly</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Summary Stats */}
@@ -140,13 +170,23 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading }
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
-                dataKey="month"
+                dataKey="date"
                 stroke="#6b7280"
                 fontSize={12}
                 tickLine={false}
                 tickFormatter={(value) => {
-                  const date = new Date(value + '-01');
-                  return format(date, 'MMM');
+                  if (timeRange === 'day') {
+                    // Assume value is like "2024-10-12"
+                    const date = new Date(value);
+                    return format(date, 'MMM d');
+                  } else if (timeRange === 'week') {
+                    // Assume value is like "2024-W42"
+                    return value.split('-W')[1] ? `W${value.split('-W')[1]}` : value;
+                  } else {
+                    // month: value is like "2024-10"
+                    const date = new Date(value + '-01');
+                    return format(date, 'MMM');
+                  }
                 }}
               />
               <YAxis
@@ -162,10 +202,17 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading }
                   borderRadius: '8px',
                   fontSize: '12px',
                 }}
-                formatter={(value: any) => [`¥${value.toLocaleString()}`, '']}
+                formatter={(value: number) => [`¥${value.toLocaleString()}`, '']}
                 labelFormatter={(label) => {
-                  const date = new Date(label + '-01');
-                  return format(date, 'MMMM yyyy');
+                  if (timeRange === 'day') {
+                    const date = new Date(label);
+                    return format(date, 'MMMM d, yyyy');
+                  } else if (timeRange === 'week') {
+                    return label.split('-W')[1] ? `Week ${label.split('-W')[1]} of ${label.split('-W')[0]}` : label;
+                  } else {
+                    const date = new Date(label + '-01');
+                    return format(date, 'MMMM yyyy');
+                  }
                 }}
               />
               <Legend
@@ -262,7 +309,7 @@ function prepareTrendData(
   const sortedData = Array.from(monthsMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, data]) => ({
-      month,
+      date: month,
       revenue: data.revenue,
       expenses: data.expenses,
       net: data.revenue - data.expenses,
@@ -271,7 +318,14 @@ function prepareTrendData(
   return sortedData;
 }
 
-function calculateStats(data: any[]) {
+interface ChartDataPoint {
+  date: string;
+  revenue: number;
+  expenses: number;
+  net: number;
+}
+
+function calculateStats(data: ChartDataPoint[]) {
   if (data.length === 0) {
     return {
       avgRevenue: 0,
@@ -304,7 +358,7 @@ function calculateStats(data: any[]) {
   };
 }
 
-function getMoMComparison(data: any[]) {
+function getMoMComparison(data: ChartDataPoint[]) {
   const comparisons = [];
   for (let i = 1; i < Math.min(data.length, 4); i++) {
     const current = data[data.length - i];
@@ -318,7 +372,7 @@ function getMoMComparison(data: any[]) {
         : 0;
 
     comparisons.push({
-      month: format(new Date(current.month + '-01'), 'MMM'),
+      month: format(new Date(current.date + '-01'), 'MMM'),
       revenueChange,
       expenseChange,
     });

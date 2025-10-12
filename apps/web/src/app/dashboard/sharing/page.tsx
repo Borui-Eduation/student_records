@@ -7,6 +7,21 @@ import { Plus, Share2, Copy, ExternalLink } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ShareLinkDialog } from '@/components/sharing/ShareLinkDialog';
 import { format, formatDistanceToNow } from 'date-fns';
+import type { SharingLink, Timestamp } from '@student-record/shared';
+
+// Helper function to convert Timestamp to Date
+function toDate(timestamp: Timestamp): Date {
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  return new Date();
+}
 
 export default function SharingPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -16,6 +31,8 @@ export default function SharingPage() {
   const { data, isLoading, error } = trpc.sharingLinks.list.useQuery({
     limit: 50,
   });
+
+  const sharingLinks = (data?.items || []) as unknown as SharingLink[];
 
   const revokeMutation = trpc.sharingLinks.revoke.useMutation({
     onSuccess: () => {
@@ -36,14 +53,14 @@ export default function SharingPage() {
     }
   };
 
-  const isExpired = (expiresAt: any) => {
-    if (!expiresAt?.toDate) {
+  const isExpired = (expiresAt: Timestamp) => {
+    if (!expiresAt) {
       return false;
     }
-    return expiresAt.toDate() < new Date();
+    return toDate(expiresAt) < new Date();
   };
 
-  const getStatusColor = (link: any) => {
+  const getStatusColor = (link: SharingLink) => {
     if (link.revoked) {
       return 'text-red-600 bg-red-100';
     }
@@ -53,7 +70,7 @@ export default function SharingPage() {
     return 'text-green-600 bg-green-100';
   };
 
-  const getStatusText = (link: any) => {
+  const getStatusText = (link: SharingLink) => {
     if (link.revoked) {
       return 'Revoked';
     }
@@ -117,115 +134,120 @@ export default function SharingPage() {
               </CardContent>
             </Card>
           ) : (
-            data.items.map((link: any) => (
-              <Card key={link.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {link.sessionClientName}
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(link)}`}>
+            <div className="divide-y border rounded-lg">
+              {sharingLinks.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  No sharing links created yet.
+                </div>
+              ) : (
+                sharingLinks.map((link: SharingLink) => (
+                  <Card key={link.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${getStatusColor(link)}`} />
+                            Shared Session
+                          </CardTitle>
+                          <CardDescription className="mt-1 text-xs">
+                            ID: {link.sessionId}
+                          </CardDescription>
+                        </div>
+                        <div
+                          className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
+                            link
+                          )}`}
+                        >
                           {getStatusText(link)}
-                        </span>
-                      </CardTitle>
-                      <CardDescription className="mt-2">
-                        Session:{' '}
-                        {link.sessionDate?.toDate
-                          ? format(link.sessionDate.toDate(), 'yyyy-MM-dd')
-                          : 'N/A'}
-                      </CardDescription>
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="text-muted-foreground">Access Count</div>
-                      <div className="text-2xl font-bold">{link.accessCount || 0}</div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* URL Display */}
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-sm">
-                      <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                      <div className="flex-1 truncate">{link.url}</div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyToClipboard(link.url, link.id)}
-                      >
-                        {copiedId === link.id ? (
-                          <>✓ Copied</>
-                        ) : (
-                          <>
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copy
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* Metadata */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Created:</span>
-                        <span className="ml-2 font-medium">
-                          {link.createdAt?.toDate
-                            ? formatDistanceToNow(link.createdAt.toDate(), { addSuffix: true })
-                            : 'N/A'}
-                        </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Expires:</span>
-                        <span className="ml-2 font-medium">
-                          {link.expiresAt?.toDate
-                            ? format(link.expiresAt.toDate(), 'yyyy-MM-dd')
-                            : 'N/A'}
-                          {link.expiresAt?.toDate && !isExpired(link.expiresAt) && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              ({formatDistanceToNow(link.expiresAt.toDate(), { addSuffix: true })})
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* URL Display */}
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-sm">
+                          <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                          <div className="flex-1 truncate">{link.url || 'N/A'}</div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyToClipboard(link.url || '', link.id)}
+                            disabled={!link.url}
+                          >
+                            {copiedId === link.id ? (
+                              <>✓ Copied</>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-1" />
+                                Copy
+                              </>
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Created:</span>
+                            <span className="ml-2 font-medium">
+                              {link.createdAt
+                                ? formatDistanceToNow(toDate(link.createdAt), { addSuffix: true })
+                                : 'N/A'}
                             </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Expires:</span>
+                            <span className="ml-2 font-medium">
+                              {link.expiresAt
+                                ? format(toDate(link.expiresAt), 'yyyy-MM-dd')
+                                : 'N/A'}
+                              {link.expiresAt && !isExpired(link.expiresAt) && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({formatDistanceToNow(toDate(link.expiresAt), { addSuffix: true })})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {link.lastAccessedAt && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Last Accessed:</span>
+                            <span className="ml-2 font-medium">
+                              {formatDistanceToNow(toDate(link.lastAccessedAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          {!link.revoked && !isExpired(link.expiresAt) && link.url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(link.url!, '_blank')}
+                            >
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Open Link
+                            </Button>
                           )}
-                        </span>
+                          {!link.revoked && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => revokeMutation.mutate({ id: link.id })}
+                              disabled={revokeMutation.isPending}
+                            >
+                              Revoke
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {link.lastAccessedAt && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Last Accessed:</span>
-                        <span className="ml-2 font-medium">
-                          {link.lastAccessedAt?.toDate
-                            ? formatDistanceToNow(link.lastAccessedAt.toDate(), { addSuffix: true })
-                            : 'Never'}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      {!link.revoked && !isExpired(link.expiresAt) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(link.url, '_blank')}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Open Link
-                        </Button>
-                      )}
-                      {!link.revoked && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => revokeMutation.mutate({ id: link.id })}
-                          disabled={revokeMutation.isLoading}
-                        >
-                          Revoke
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           )}
         </div>
       )}

@@ -46,11 +46,15 @@ app.use(compression());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 1000 : 100, // Limit each IP to 100 requests per windowMs in production
+  windowMs: isDevelopment ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min in dev, 15 min in prod
+  max: isDevelopment ? 500 : 100, // More relaxed in development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for localhost in development
+    return isDevelopment && (req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === 'localhost');
+  },
   handler: (req, res) => {
     logger.warn('Rate limit exceeded', { 
       ip: req.ip,

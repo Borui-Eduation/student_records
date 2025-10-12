@@ -7,6 +7,7 @@ import { Plus, DollarSign, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { RateDialog } from '@/components/rates/RateDialog';
 import { format } from 'date-fns';
+import type { Rate } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +21,8 @@ import {
 
 export default function RatesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingRate, setEditingRate] = useState<any>(null);
-  const [deletingRate, setDeletingRate] = useState<any>(null);
+  const [editingRate, setEditingRate] = useState<Rate | null>(null);
+  const [deletingRate, setDeletingRate] = useState<Rate | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -29,6 +30,8 @@ export default function RatesPage() {
   const { data, isLoading, error } = trpc.rates.list.useQuery({
     limit: 50,
   });
+
+  const rates = (data?.items || []) as Rate[];
 
   // Query clients for reference
   const { data: clients } = trpc.clients.list.useQuery({
@@ -124,7 +127,7 @@ export default function RatesPage() {
 
       {data && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {data.items.length === 0 ? (
+          {rates.length === 0 ? (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
@@ -135,7 +138,7 @@ export default function RatesPage() {
               </CardContent>
             </Card>
           ) : (
-            data.items.map((rate: any) => (
+            rates.map((rate: Rate) => (
               <Card key={rate.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -172,24 +175,32 @@ export default function RatesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                    <div className="text-sm">
                       <span className="text-muted-foreground">Effective Date:</span>
                       <span className="font-medium">
-                        {rate.effectiveDate?.toDate
-                          ? format(rate.effectiveDate.toDate(), 'yyyy-MM-dd')
+                        {rate.effectiveDate
+                          ? format(
+                              typeof (rate.effectiveDate as any)?.toDate === 'function'
+                                ? (rate.effectiveDate as any).toDate()
+                                : new Date(rate.effectiveDate as any),
+                              'yyyy-MM-dd'
+                            )
                           : 'N/A'}
                       </span>
                     </div>
-                    {rate.endDate && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">End Date:</span>
-                        <span className="font-medium">
-                          {rate.endDate?.toDate
-                            ? format(rate.endDate.toDate(), 'yyyy-MM-dd')
-                            : 'N/A'}
-                        </span>
-                      </div>
-                    )}
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">End Date:</span>
+                      <span className="font-medium">
+                        {rate.endDate
+                          ? format(
+                              typeof (rate.endDate as any)?.toDate === 'function'
+                                ? (rate.endDate as any).toDate()
+                                : new Date(rate.endDate as any),
+                              'yyyy-MM-dd'
+                            )
+                          : 'N/A'}
+                      </span>
+                    </div>
                     {rate.description && (
                       <div className="mt-3 text-muted-foreground">
                         {rate.description}

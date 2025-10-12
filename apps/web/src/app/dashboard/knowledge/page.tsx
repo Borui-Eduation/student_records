@@ -7,6 +7,7 @@ import { Plus, Lock, Search, Tag, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { KnowledgeDialog } from '@/components/knowledge/KnowledgeDialog';
 import { Input } from '@/components/ui/input';
+import type { KnowledgeEntry } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +21,9 @@ import {
 
 export default function KnowledgePage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<any>(null);
-  const [editingEntry, setEditingEntry] = useState<any>(null);
-  const [deletingEntry, setDeletingEntry] = useState<any>(null);
+  const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<KnowledgeEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const utils = trpc.useUtils();
@@ -53,7 +54,9 @@ export default function KnowledgePage() {
     return colors[type] || 'text-gray-600 bg-gray-100';
   };
 
-  const filteredItems = data?.items.filter((item: any) =>
+  const knowledgeItems = (data?.items || []) as KnowledgeEntry[];
+
+  const filteredItems = knowledgeItems.filter((item: KnowledgeEntry) =>
     searchQuery
       ? item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.tags?.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -153,7 +156,7 @@ export default function KnowledgePage() {
               </CardContent>
             </Card>
           ) : (
-            filteredItems?.map((entry: any) => (
+            filteredItems?.map((entry: KnowledgeEntry) => (
               <Card key={entry.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">

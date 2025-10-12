@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateRateSchema, type CreateRateInput } from '@student-record/shared';
+import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -25,10 +25,24 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 
+// Helper function to convert Timestamp to Date
+function toDate(timestamp: Timestamp): Date {
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  return new Date();
+}
+
 interface RateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rate?: any; // Existing rate for edit mode
+  rate?: import('@student-record/shared').Rate | null; // Existing rate for edit mode
 }
 
 export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
@@ -40,6 +54,7 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
     active: true,
     limit: 100,
   });
+  const clientItems = (clients?.items || []) as Client[];
 
   const {
     register,
@@ -66,14 +81,12 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
       
       // Convert Firestore Timestamp to date string
       if (rate.effectiveDate) {
-        const effectiveDate = rate.effectiveDate.toDate
-          ? rate.effectiveDate.toDate()
-          : new Date(rate.effectiveDate);
+        const effectiveDate = toDate(rate.effectiveDate);
         setValue('effectiveDate', effectiveDate.toISOString().split('T')[0]);
       }
       
       if (rate.endDate) {
-        const endDate = rate.endDate.toDate ? rate.endDate.toDate() : new Date(rate.endDate);
+        const endDate = toDate(rate.endDate);
         setValue('endDate', endDate.toISOString().split('T')[0]);
       }
       
@@ -188,7 +201,7 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients?.items.map((client: any) => (
+                    {clientItems.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
                       </SelectItem>
@@ -205,10 +218,10 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
             {assignmentType === 'type' && (
               <div className="grid gap-2">
                 <Label htmlFor="clientType">Client Type *</Label>
-                <Select
-                  value={watch('clientType') || ''}
-                  onValueChange={(value) => setValue('clientType', value as any)}
-                >
+              <Select
+                value={watch('clientType') || ''}
+                onValueChange={(value) => setValue('clientType', value as import('@student-record/shared').ClientType)}
+              >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client type" />
                   </SelectTrigger>

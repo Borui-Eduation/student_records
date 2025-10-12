@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
 import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
+import type { CreateExpenseInput } from '@student-record/shared';
 
 export default function NewExpensePage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function NewExpensePage() {
   });
 
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: CreateExpenseInput) => {
     createMutation.mutate(data);
   };
 
@@ -64,7 +65,7 @@ export default function NewExpensePage() {
         <ExpenseForm
           onSubmit={handleSubmit}
           onCancel={() => router.back()}
-          isSubmitting={createMutation.isLoading}
+          isSubmitting={createMutation.isPending}
         />
       </div>
     </div>

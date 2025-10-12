@@ -109,9 +109,13 @@ export const expensesRouter = router({
     }
 
     // 创建费用记录
+    // Parse date in local timezone to avoid UTC conversion issues
+    const [year, month, day] = input.date.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 12, 0, 0); // Use noon to avoid timezone edge cases
+    
     const expenseData = {
       userId: ctx.user.uid,
-      date: admin.firestore.Timestamp.fromDate(new Date(input.date)),
+      date: admin.firestore.Timestamp.fromDate(localDate),
       amount: input.amount,
       currency: input.currency || 'CNY',
       category: input.category,
@@ -278,7 +282,9 @@ export const expensesRouter = router({
 
     // 更新日期
     if (updates.date) {
-      updateData.date = admin.firestore.Timestamp.fromDate(new Date(updates.date));
+      const [year, month, day] = updates.date.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day, 12, 0, 0);
+      updateData.date = admin.firestore.Timestamp.fromDate(localDate);
     }
 
     // 更新基本字段

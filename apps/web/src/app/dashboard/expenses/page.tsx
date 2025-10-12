@@ -11,14 +11,15 @@ import { SwipeActions } from '@/components/expenses/SwipeActions';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import type { Expense } from '@student-record/shared';
 
 export default function ExpensesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [dateRange] = useState({
-    start: startOfMonth(new Date()).toISOString().split('T')[0],
-    end: endOfMonth(new Date()).toISOString().split('T')[0],
+    start: startOfMonth(new Date()).toISOString(),
+    end: endOfMonth(new Date()).toISOString(),
   });
 
   // 获取费用列表
@@ -52,13 +53,17 @@ export default function ExpensesPage() {
     },
   });
 
-  const expenses = expensesData?.items || [];
+  const expenses = (expensesData?.items || []) as Expense[];
 
   // 按日期分组
-  const groupedExpenses = expenses.reduce((acc: any, expense: any) => {
-    const date = expense.date instanceof Date
-      ? expense.date
-      : expense.date?.toDate?.() || new Date();
+  const groupedExpenses = expenses.reduce((acc: Record<string, Expense[]>, expense: Expense) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dateField = expense.date as any;
+    const date = dateField instanceof Date
+      ? dateField
+      : (dateField && typeof dateField.toDate === 'function')
+        ? dateField.toDate()
+        : new Date();
     const dateStr = format(date, 'yyyy-MM-dd');
     if (!acc[dateStr]) {
       acc[dateStr] = [];
@@ -185,9 +190,9 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedExpenses).map(([dateStr, dayExpenses]: [string, any]) => {
+          {Object.entries(groupedExpenses).map(([dateStr, dayExpenses]: [string, Expense[]]) => {
             const date = new Date(dateStr);
-            const total = dayExpenses.reduce((sum: number, exp: any) => sum + (exp.amount || 0), 0);
+            const total = dayExpenses.reduce((sum: number, exp: Expense) => sum + (exp.amount || 0), 0);
 
             return (
               <div key={dateStr} className="space-y-2">
@@ -203,7 +208,7 @@ export default function ExpensesPage() {
 
                 {/* 费用卡片 */}
                 <div className="space-y-2">
-                  {dayExpenses.map((expense: any) => (
+                  {dayExpenses.map((expense: Expense) => (
                     isMobile ? (
                       <SwipeActions
                         key={expense.id}

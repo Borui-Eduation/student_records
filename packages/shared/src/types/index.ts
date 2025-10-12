@@ -30,6 +30,7 @@ export * from './common';
 
 // Expense types
 export * from './expense';
+export type { Expense, ExpenseStatistics } from './expense';
 
 // Expense Category types
 export * from './expenseCategory';

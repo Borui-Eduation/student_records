@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateSessionSchema, type CreateSessionInput } from '@student-record/shared';
+import { CreateSessionSchema, type CreateSessionInput, type Client } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,12 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { FullscreenEditorDialog } from '@/components/ui/fullscreen-editor-dialog';
 import { Maximize2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { toDate } from '@/lib/utils';
 
 interface SessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  session?: any; // Existing session for edit mode
+  session?: import('@student-record/shared').Session | null; // Existing session for edit mode
 }
 
 export function SessionDialog({ open, onOpenChange, session }: SessionDialogProps) {
@@ -44,6 +45,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
     active: true,
     limit: 100,
   });
+  const clientItems = (clients?.items || []) as Client[];
 
   const {
     register,
@@ -73,7 +75,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
       
       // Convert ISO date string to date input format (YYYY-MM-DD)
       if (session.date) {
-        const date = new Date(session.date);
+        const date = toDate(session.date);
         setValue('date', date.toISOString().split('T')[0]);
       }
     } else if (!open) {
@@ -175,7 +177,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients?.items.map((client: any) => (
+                  {clientItems.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
                     </SelectItem>
@@ -235,7 +237,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
               <Label htmlFor="sessionType">Session Type *</Label>
               <Select
                 value={watch('sessionType')}
-                onValueChange={(value) => setValue('sessionType', value as any)}
+                onValueChange={(value) => setValue('sessionType', value as import('@student-record/shared').SessionType)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -301,7 +303,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
                 <p className="font-medium mb-1">💡 Note:</p>
                 <p className="text-muted-foreground">
                   The system will automatically calculate the rate and total amount based on the
-                  client's configured rates. Duration is calculated from start and end times.
+                  client&apos;s configured rates. Duration is calculated from start and end times.
                 </p>
               </div>
             )}

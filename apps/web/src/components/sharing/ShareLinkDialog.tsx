@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { Copy, ExternalLink } from 'lucide-react';
+import type { Session } from '@student-record/shared';
+import { toDate } from '@/lib/utils';
 
 interface ShareLinkDialogProps {
   open: boolean;
@@ -46,6 +48,7 @@ export function ShareLinkDialog({ open, onOpenChange }: ShareLinkDialogProps) {
   const { data: sessions } = trpc.sessions.list.useQuery({
     limit: 100,
   });
+  const sessionItems = (sessions?.items || []) as Session[];
 
   const {
     register,
@@ -173,13 +176,13 @@ export function ShareLinkDialog({ open, onOpenChange }: ShareLinkDialogProps) {
                   <SelectValue placeholder="Select a session" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {sessions?.items.map((session: any) => (
+                  {sessionItems.map((session) => (
                     <SelectItem key={session.id} value={session.id}>
                       <div className="flex items-center justify-between gap-4">
                         <span>{session.clientName}</span>
                         <span className="text-sm text-muted-foreground">
-                          {session.date?.toDate
-                            ? new Date(session.date.toDate()).toISOString().split('T')[0]
+                          {session.date
+                            ? toDate(session.date).toISOString().split('T')[0]
                             : 'N/A'}
                         </span>
                       </div>

@@ -12,6 +12,18 @@ export interface CompressionOptions {
   onProgress?: (progress: number) => void;
 }
 
+/**
+ * Internal options interface for browser-image-compression library
+ */
+interface BrowserImageCompressionOptions {
+  maxSizeMB: number;
+  maxWidthOrHeight: number;
+  useWebWorker: boolean;
+  fileType?: string;
+  initialQuality?: number;
+  onProgress: (progress: number) => void;
+}
+
 export interface CompressionResult {
   compressedFile: File;
   originalSize: number;
@@ -49,7 +61,7 @@ export function useImageCompression() {
         const originalSize = file.size;
 
         // Compression options
-        const compressionOptions: any = {
+        const compressionOptions: BrowserImageCompressionOptions = {
           maxSizeMB,
           maxWidthOrHeight,
           useWebWorker,

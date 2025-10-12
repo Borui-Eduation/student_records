@@ -31,3 +31,4 @@ export type ListExpenseCategoriesInput = z.infer<typeof ListExpenseCategoriesSch
 
 
 
+

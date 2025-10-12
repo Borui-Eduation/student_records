@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import type { ExpenseCategory } from '@student-record/shared';
 
 const PRESET_ICONS = ['📋', '💰', '🎁', '🏋️', '🎨', '✈️', '🔧', '📱', '💻', '🎵', '📚', '🍿'];
 const PRESET_COLORS = [
@@ -64,8 +65,8 @@ export default function CategoriesPage() {
   ];
 
   // 从后端数据中筛选系统预设和自定义分类
-  const backendSystemCategories = backendCategories.filter((c: any) => c.isSystemPreset);
-  const customCategories = backendCategories.filter((c: any) => !c.isSystemPreset);
+  const backendSystemCategories = backendCategories.filter((c) => (c as ExpenseCategory).isSystemPreset);
+  const customCategories = backendCategories.filter((c) => !(c as ExpenseCategory).isSystemPreset);
 
   // 如果后端没有系统预设分类，使用硬编码的预设
   const systemCategories = backendSystemCategories.length > 0 
@@ -74,7 +75,7 @@ export default function CategoriesPage() {
 
   // 自动初始化预设分类（仅当后端没有任何分类时）
   useEffect(() => {
-    if (!isLoading && backendCategories.length === 0 && !initPresetsMutation.isLoading) {
+    if (!isLoading && backendCategories.length === 0 && !initPresetsMutation.isPending) {
       initPresetsMutation.mutate();
     }
   }, [backendCategories.length, isLoading]);
@@ -242,8 +243,8 @@ export default function CategoriesPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isLoading}>
-                {createMutation.isLoading ? 'Creating...' : 'Create'}
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creating...' : 'Create'}
               </Button>
             </div>
           </form>
@@ -266,20 +267,24 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {systemCategories.map((category: any) => (
+            {systemCategories.map((category) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const cat = category as any;
+              return (
               <div
-                key={category.id}
+                key={cat.id}
                 className="flex flex-col items-center gap-2 p-4 rounded-lg border"
               >
                 <div
                   className="text-3xl w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${category.color}20` }}
+                  style={{ backgroundColor: `${cat.color}20` }}
                 >
-                  {category.icon}
+                  {cat.icon}
                 </div>
-                <div className="text-sm font-medium text-center">{category.name}</div>
+                <div className="text-sm font-medium text-center">{cat.name}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -303,26 +308,30 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {customCategories.map((category: any) => (
+            {customCategories.map((category) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const cat = category as any;
+              return (
               <div
-                key={category.id}
+                key={cat.id}
                 className="relative flex flex-col items-center gap-2 p-4 rounded-lg border group"
               >
                 <div
                   className="text-3xl w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${category.color}20` }}
+                  style={{ backgroundColor: `${cat.color}20` }}
                 >
-                  {category.icon}
+                  {cat.icon}
                 </div>
-                <div className="text-sm font-medium text-center">{category.name}</div>
+                <div className="text-sm font-medium text-center">{cat.name}</div>
                 <button
-                  onClick={() => handleDelete(category.id)}
+                  onClick={() => handleDelete(cat.id)}
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

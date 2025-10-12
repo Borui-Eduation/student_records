@@ -20,8 +20,8 @@ export interface SwipeOptions {
 export function useSwipeGesture<T extends HTMLElement>(
   handlers: SwipeHandlers,
   options: SwipeOptions = {}
-): RefObject<T> {
-  const ref = useRef<T>(null);
+): RefObject<T | null> {
+  const ref = useRef<T | null>(null);
   const { threshold = 50, timeout = 300 } = options;
   
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);

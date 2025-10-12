@@ -7,6 +7,7 @@ import { Plus, Calendar, Clock, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { SessionDialog } from '@/components/sessions/SessionDialog';
 import { format } from 'date-fns';
+import type { Session, Timestamp } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +19,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Helper function to convert Timestamp to Date
+function toDate(timestamp: Timestamp): Date {
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  return new Date();
+}
+
 export default function SessionsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingSession, setEditingSession] = useState<any>(null);
-  const [deletingSession, setDeletingSession] = useState<any>(null);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [deletingSession, setDeletingSession] = useState<Session | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -29,6 +44,8 @@ export default function SessionsPage() {
   const { data, isLoading, error } = trpc.sessions.list.useQuery({
     limit: 50,
   });
+
+  const sessions = (data?.items || []) as Session[];
 
   // Delete mutation
   const deleteMutation = trpc.sessions.delete.useMutation({
@@ -144,7 +161,7 @@ export default function SessionsPage() {
 
       {data && (
         <div className="grid gap-3 sm:gap-4">
-          {data.items.length === 0 ? (
+          {sessions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
@@ -155,7 +172,7 @@ export default function SessionsPage() {
               </CardContent>
             </Card>
           ) : (
-            data.items.map((session: any) => (
+            sessions.map((session: Session) => (
               <Card key={session.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -164,7 +181,7 @@ export default function SessionsPage() {
                       <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {session.date ? format(new Date(session.date), 'yyyy-MM-dd') : 'N/A'}
+                          {session.date ? format(toDate(session.date), 'yyyy-MM-dd') : 'N/A'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />

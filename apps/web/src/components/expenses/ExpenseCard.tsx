@@ -3,10 +3,10 @@
 import { format } from 'date-fns';
 import { Store, Calendar, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
-// import type { Expense } from '@student-record/shared';
+import type { Expense } from '@student-record/shared';
 
 interface ExpenseCardProps {
-  expense: any; // Expense & { id: string };
+  expense: Expense;
   onClick?: () => void;
   className?: string;
 }
@@ -23,7 +23,9 @@ const paymentMethodLabels: Record<string, string> = {
 export function ExpenseCard({ expense, onClick, className }: ExpenseCardProps) {
   const date = expense.date instanceof Date 
     ? expense.date 
-    : (expense.date as any)?.toDate?.() || new Date();
+    : (expense.date && typeof expense.date === 'object' && 'toDate' in expense.date && typeof expense.date.toDate === 'function')
+      ? expense.date.toDate()
+      : new Date();
 
   return (
     <div

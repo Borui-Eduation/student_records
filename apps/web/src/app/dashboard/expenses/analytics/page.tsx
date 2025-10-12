@@ -10,8 +10,8 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 export default function AnalyticsPage() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState({
-    start: startOfMonth(subMonths(new Date(), 2)).toISOString().split('T')[0],
-    end: endOfMonth(new Date()).toISOString().split('T')[0],
+    start: startOfMonth(subMonths(new Date(), 2)).toISOString(),
+    end: endOfMonth(new Date()).toISOString(),
   });
 
   // 获取统计数据

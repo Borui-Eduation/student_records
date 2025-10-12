@@ -11,7 +11,7 @@ import { ImageUpload } from './ImageUpload';
 import { CategorySelector } from './CategorySelector';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-// import type { Expense } from '@student-record/shared';
+import type { Expense } from '@student-record/shared';
 
 const formSchema = z.object({
   date: z.string().min(1, 'Please select a date'),
@@ -29,7 +29,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface ExpenseFormProps {
-  initialData?: any; // Partial<Expense & { id: string }>;
+  initialData?: Partial<Expense>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSubmit: (data: any) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
@@ -51,7 +52,9 @@ export function ExpenseForm({ initialData, onSubmit, onCancel, isSubmitting }: E
       date: initialData?.date 
         ? (initialData.date instanceof Date 
           ? initialData.date.toISOString().split('T')[0]
-          : (initialData.date as any)?.toDate?.().toISOString().split('T')[0] || new Date().toISOString().split('T')[0])
+          : (initialData.date && typeof initialData.date === 'object' && 'toDate' in initialData.date && typeof initialData.date.toDate === 'function')
+            ? initialData.date.toDate().toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0])
         : new Date().toISOString().split('T')[0],
       amount: initialData?.amount?.toString() || '',
       category: initialData?.category || '',

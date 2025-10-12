@@ -4,6 +4,15 @@ import { CreateSessionSchema, UpdateSessionSchema, ListSessionsSchema } from '@s
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
+// Helper function to parse date string in local timezone
+function parseLocalDate(dateInput: string | Date): Date {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  const [year, month, day] = dateInput.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
 export const sessionsRouter = router({
   /**
    * Create a new session
@@ -43,7 +52,7 @@ export const sessionsRouter = router({
     const clientRates = await ctx.db
       .collection('rates')
       .where('clientId', '==', input.clientId)
-      .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(new Date(input.date)))
+      .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
       .orderBy('effectiveDate', 'desc')
       .limit(1)
       .get();
@@ -61,7 +70,7 @@ export const sessionsRouter = router({
       const typeRates = await ctx.db
         .collection('rates')
         .where('clientType', '==', clientData?.type)
-        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(new Date(input.date)))
+        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
         .orderBy('effectiveDate', 'desc')
         .limit(1)
         .get();
@@ -79,7 +88,7 @@ export const sessionsRouter = router({
     if (!applicableRate) {
       const allRates = await ctx.db
         .collection('rates')
-        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(new Date(input.date)))
+        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
         .orderBy('effectiveDate', 'desc')
         .get();
 
@@ -111,7 +120,7 @@ export const sessionsRouter = router({
       userId: ctx.user.uid,
       clientId: input.clientId,
       clientName,
-      date: admin.firestore.Timestamp.fromDate(new Date(input.date)),
+      date: admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)),
       startTime: input.startTime,
       endTime: input.endTime,
       durationHours,
@@ -299,7 +308,7 @@ export const sessionsRouter = router({
     }
 
     if (updates.date) {
-      updateData.date = admin.firestore.Timestamp.fromDate(new Date(updates.date));
+      updateData.date = admin.firestore.Timestamp.fromDate(parseLocalDate(updates.date));
     }
 
     await docRef.update(updateData);

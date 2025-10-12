@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ClientDialog } from '@/components/clients/ClientDialog';
+import type { Client } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +20,8 @@ import {
 
 export default function ClientsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<any>(null);
-  const [deletingClient, setDeletingClient] = useState<any>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -28,7 +29,7 @@ export default function ClientsPage() {
   const { data, isLoading, error } = trpc.clients.list.useQuery({
     active: true,
     limit: 50,
-  });
+  }) as { data?: { items: Client[]; total: number; hasMore: boolean }; isLoading: boolean; error: unknown };
 
   // Delete mutation
   const deleteMutation = trpc.clients.delete.useMutation({
@@ -86,13 +87,13 @@ export default function ClientsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {error && (
+      {error ? (
         <Card className="border-destructive">
           <CardContent className="pt-6">
-            <p className="text-sm text-destructive">Error loading clients: {error.message}</p>
+            <p className="text-sm text-destructive">Error loading clients: {error instanceof Error ? error.message : 'Unknown error'}</p>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {isLoading && (
         <Card>
@@ -116,7 +117,7 @@ export default function ClientsPage() {
               </CardContent>
             </Card>
           ) : (
-            data.items.map((client: any) => (
+            data.items.map((client: Client) => (
               <Card key={client.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex items-start justify-between gap-2">

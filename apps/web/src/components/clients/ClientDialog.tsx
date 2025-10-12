@@ -25,10 +25,12 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 
+import type { Client, ClientType } from '@student-record/shared';
+
 interface ClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  client?: any; // Existing client for edit mode
+  client?: Client | null; // Existing client for edit mode
 }
 
 export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) {
@@ -129,7 +131,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={watch('type')}
-                onValueChange={(value) => setValue('type', value as any)}
+                onValueChange={(value) => setValue('type', value as ClientType)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select client type" />

@@ -7,6 +7,7 @@ import { Plus, FileText, Download, Trash2, Send, CheckCircle } from 'lucide-reac
 import { trpc } from '@/lib/trpc';
 import { InvoiceGeneratorDialog } from '@/components/invoices/InvoiceGeneratorDialog';
 import { format } from 'date-fns';
+import type { Invoice } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +21,7 @@ import {
 
 export default function InvoicesPage() {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
-  const [deletingInvoice, setDeletingInvoice] = useState<any>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -28,6 +29,8 @@ export default function InvoicesPage() {
   const { data, isLoading, error } = trpc.invoices.list.useQuery({
     limit: 50,
   });
+
+  const invoices = (data?.items || []) as Invoice[];
 
   // Update status mutation
   const updateStatusMutation = trpc.invoices.updateStatus.useMutation({
@@ -139,7 +142,7 @@ export default function InvoicesPage() {
 
       {data && (
         <div className="grid gap-3 sm:gap-4">
-          {data.items.length === 0 ? (
+          {invoices.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -154,7 +157,7 @@ export default function InvoicesPage() {
               </CardContent>
             </Card>
           ) : (
-            data.items.map((invoice: any) => (
+            invoices.map((invoice: Invoice) => (
               <Card key={invoice.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -188,18 +191,29 @@ export default function InvoicesPage() {
                     <div>
                       <span className="text-muted-foreground">Issue Date:</span>
                       <span className="ml-2 font-medium">
-                        {invoice.issueDate?.toDate
-                          ? format(invoice.issueDate.toDate(), 'yyyy-MM-dd')
+                        {invoice.issueDate
+                          ? format(
+                              typeof (invoice.issueDate as any)?.toDate === 'function'
+                                ? (invoice.issueDate as any).toDate()
+                                : new Date(invoice.issueDate as any),
+                              'yyyy-MM-dd'
+                            )
                           : 'N/A'}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Billing Period:</span>
                       <span className="ml-2 font-medium">
-                        {invoice.billingPeriodStart?.toDate &&
-                        invoice.billingPeriodEnd?.toDate
-                          ? `${format(invoice.billingPeriodStart.toDate(), 'MMM d')} - ${format(
-                              invoice.billingPeriodEnd.toDate(),
+                        {invoice.billingPeriodStart && invoice.billingPeriodEnd
+                          ? `${format(
+                              typeof (invoice.billingPeriodStart as any)?.toDate === 'function'
+                                ? (invoice.billingPeriodStart as any).toDate()
+                                : new Date(invoice.billingPeriodStart as any),
+                              'MMM d'
+                            )} - ${format(
+                              typeof (invoice.billingPeriodEnd as any)?.toDate === 'function'
+                                ? (invoice.billingPeriodEnd as any).toDate()
+                                : new Date(invoice.billingPeriodEnd as any),
                               'MMM d, yyyy'
                             )}`
                           : 'N/A'}
@@ -229,15 +243,20 @@ export default function InvoicesPage() {
                   {invoice.paidDate && (
                     <div className="mt-4 text-sm text-green-600">
                       ✓ Paid on{' '}
-                      {invoice.paidDate?.toDate
-                        ? format(invoice.paidDate.toDate(), 'yyyy-MM-dd')
+                      {invoice.paidDate
+                        ? format(
+                            typeof (invoice.paidDate as any)?.toDate === 'function'
+                              ? (invoice.paidDate as any).toDate()
+                              : new Date(invoice.paidDate as any),
+                            'yyyy-MM-dd'
+                          )
                         : 'N/A'}
                     </div>
                   )}
 
-                  {invoice.notes && (
+                  {invoice.paymentNotes && (
                     <div className="mt-4 text-sm text-muted-foreground border-t pt-4">
-                      <strong>Notes:</strong> {invoice.notes}
+                      <strong>Notes:</strong> {invoice.paymentNotes}
                     </div>
                   )}
 

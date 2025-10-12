@@ -5,6 +5,7 @@ import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import type { ContentBlock } from '@student-record/shared';
 
 export default function SharedSessionPage() {
   const params = useParams();
@@ -98,7 +99,7 @@ export default function SharedSessionPage() {
             </CardHeader>
             <CardContent>
               <div className="prose max-w-none">
-                {session.contentBlocks.map((block: any) => (
+                {session.contentBlocks.map((block: ContentBlock) => (
                   <div key={block.id} className="mb-4">
                     {block.type === 'heading' && (
                       <h3 className="text-lg font-semibold">{block.content}</h3>

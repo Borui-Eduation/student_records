@@ -11,6 +11,9 @@ export interface SharingLink {
   accessCount: number;
   lastAccessedAt?: Timestamp;
   createdBy: string;
+  url?: string; // Computed field, not stored in DB
+  sessionClientName?: string; // Included when fetching lists
+  sessionDate?: Timestamp; // Included when fetching lists
 }
 
 
