@@ -181,7 +181,9 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // value is like "2025-10-12" (UTC)
                       const [year, month, day] = value.split('-').map(Number);
                       const date = new Date(Date.UTC(year, month - 1, day));
-                      if (isNaN(date.getTime())) return value;
+                      if (isNaN(date.getTime())) {
+                        return value;
+                      }
                       return format(date, 'MMM d');
                     } else if (timeRange === 'week') {
                       // value is like "2025-W42"
@@ -190,7 +192,9 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // month: value is like "2025-10" (UTC)
                       const [year, month] = value.split('-').map(Number);
                       const date = new Date(Date.UTC(year, month - 1, 1));
-                      if (isNaN(date.getTime())) return value;
+                      if (isNaN(date.getTime())) {
+                        return value;
+                      }
                       return format(date, 'MMM');
                     }
                   } catch {
@@ -218,7 +222,9 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // label is like "2025-10-12" (UTC)
                       const [year, month, day] = label.split('-').map(Number);
                       const date = new Date(Date.UTC(year, month - 1, day));
-                      if (isNaN(date.getTime())) return label;
+                      if (isNaN(date.getTime())) {
+                        return label;
+                      }
                       return format(date, 'MMMM d, yyyy');
                     } else if (timeRange === 'week') {
                       // label is like "2025-W42"
@@ -227,7 +233,9 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // month: label is like "2025-10" (UTC)
                       const [year, month] = label.split('-').map(Number);
                       const date = new Date(Date.UTC(year, month - 1, 1));
-                      if (isNaN(date.getTime())) return label;
+                      if (isNaN(date.getTime())) {
+                        return label;
+                      }
                       return format(date, 'MMMM yyyy');
                     }
                   } catch {
@@ -380,7 +388,7 @@ function generateDateRange(
         result.push(`${year}-${month}-${day}`);
         current.setUTCDate(current.getUTCDate() + 1);
         break;
-      case 'week':
+      case 'week': {
         // Get ISO week number using UTC
         const onejan = new Date(Date.UTC(current.getUTCFullYear(), 0, 1));
         const weekNum = Math.ceil(((current.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7);
@@ -390,6 +398,7 @@ function generateDateRange(
         }
         current.setUTCDate(current.getUTCDate() + 7);
         break;
+      }
       case 'month':
         result.push(`${year}-${month}`);
         current.setUTCMonth(current.getUTCMonth() + 1);

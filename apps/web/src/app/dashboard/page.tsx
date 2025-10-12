@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Receipt } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { format, subMonths, startOfMonth, endOfMonth, subDays, subWeeks } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, subWeeks } from 'date-fns';
 import Link from 'next/link';
 import { RevenueTrendChart } from '@/components/dashboard/RevenueTrendChart';
 import { toDate } from '@/lib/utils';
@@ -32,13 +32,13 @@ export default function DashboardPage() {
         };
         break;
       case 'month':
-      default:
+      default: {
         // Use middle of the day to avoid timezone edge cases
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
         
-        // Start: first day of 6 months ago at noon
-        const startMonth = new Date(currentYear, currentMonth - 5, 1, 12, 0, 0);
+        // Start: first day of 5 months ago at noon (to show last 6 months including current)
+        const startMonth = new Date(currentYear, currentMonth - 4, 1, 12, 0, 0);
         
         // End: use current date to ensure current month is included
         result = {
@@ -46,6 +46,7 @@ export default function DashboardPage() {
           end: now,
         };
         break;
+      }
     }
     
     console.log('Dashboard dateRange:', {
