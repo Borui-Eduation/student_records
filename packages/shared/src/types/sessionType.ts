@@ -8,3 +8,4 @@ export interface SessionType {
   updatedAt: Timestamp;
 }
 
+

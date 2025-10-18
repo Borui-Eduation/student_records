@@ -20,6 +20,14 @@ export type {
   ClientType,
   KnowledgeType,
   SessionType,
+  MCPOperation,
+  MCPEntity,
+  MCPCommand,
+  MCPWorkflow,
+  MCPParseResult,
+  MCPExecutionResult,
+  MCPHistoryEntry,
+  MCPContext,
 } from './types';
 
 // Export expense category utilities

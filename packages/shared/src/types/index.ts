@@ -42,3 +42,6 @@ export type { Expense, ExpenseStatistics } from './expense';
 export * from './expenseCategory';
 export { PRESET_CATEGORIES } from './expenseCategory';
 
+// MCP (Model Context Protocol) types
+export * from './mcp';
+

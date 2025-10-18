@@ -12,3 +12,4 @@ export const UpdateSessionTypeSchema = z.object({
 export type CreateSessionTypeInput = z.infer<typeof CreateSessionTypeSchema>;
 export type UpdateSessionTypeInput = z.infer<typeof UpdateSessionTypeSchema>;
 
+

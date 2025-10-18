@@ -13,6 +13,7 @@ import { healthRouter } from './health';
 import { expensesRouter } from './expenses';
 import { expenseCategoriesRouter } from './expenseCategories';
 import { expenseExportRouter } from './expenseExport';
+import { aiRouter } from './ai';
 
 /**
  * Main tRPC application router
@@ -33,6 +34,7 @@ export const appRouter = router({
   expenses: expensesRouter,
   expenseCategories: expenseCategoriesRouter,
   expenseExport: expenseExportRouter,
+  ai: aiRouter,
 });
 
 export type AppRouter = typeof appRouter;

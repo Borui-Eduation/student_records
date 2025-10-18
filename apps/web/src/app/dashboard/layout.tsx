@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sidebar, SidebarProvider } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { trpc } from '@/lib/trpc';
+import { AIAssistantDialog } from '@/components/AIAssistant';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -14,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const { user, userRole, loading } = useAuth();
   const router = useRouter();
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   // Get or create current user
   const { data: currentUser } = trpc.users.getCurrentUser.useQuery(undefined, {
@@ -66,6 +70,22 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+
+      {/* AI Assistant Floating Button */}
+      <Button
+        onClick={() => setAiAssistantOpen(true)}
+        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-shadow"
+        size="icon"
+      >
+        <Sparkles className="w-6 h-6" />
+        <span className="sr-only">Open AI Assistant</span>
+      </Button>
+
+      {/* AI Assistant Dialog */}
+      <AIAssistantDialog
+        open={aiAssistantOpen}
+        onOpenChange={setAiAssistantOpen}
+      />
     </SidebarProvider>
   );
 }

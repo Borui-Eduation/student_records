@@ -14,3 +14,4 @@ export const UpdateClientTypeSchema = z.object({
 export type CreateClientTypeInput = z.infer<typeof CreateClientTypeSchema>;
 export type UpdateClientTypeInput = z.infer<typeof UpdateClientTypeSchema>;
 
+

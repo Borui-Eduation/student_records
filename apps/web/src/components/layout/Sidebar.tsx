@@ -17,6 +17,7 @@ import {
   Shield,
   Tag,
   Grid2X2,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -26,6 +27,11 @@ const navItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    title: 'AI Assistant',
+    href: '/dashboard/ai-assistant',
+    icon: Sparkles,
   },
   {
     title: 'Clients',

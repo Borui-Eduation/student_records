@@ -21,6 +21,9 @@ export const serverEnvSchema = z.object({
   // Authentication
   ADMIN_EMAILS: z.string().min(1),
   
+  // AI Services
+  GEMINI_API_KEY: z.string().min(1),
+  
   // Server
   PORT: z.string().default('8080'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
