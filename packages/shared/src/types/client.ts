@@ -1,7 +1,5 @@
 import { Timestamp } from './common';
 
-export type ClientType = 'institution' | 'individual' | 'project';
-
 export interface ContactInfo {
   email?: string;
   phone?: string;
@@ -12,7 +10,7 @@ export interface Client {
   id: string;
   userId: string; // Owner of this client
   name: string;
-  type: ClientType;
+  clientTypeId?: string; // Reference to custom ClientType
   contactInfo?: ContactInfo;
   billingAddress?: string;
   taxId?: string;

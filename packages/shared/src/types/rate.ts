@@ -1,11 +1,11 @@
 import { Timestamp } from './common';
-import { ClientType } from './client';
 
 export interface Rate {
   id: string;
   userId: string; // Owner of this rate
   clientId?: string;
-  clientType?: ClientType;
+  clientTypeId?: string; // Reference to custom ClientType
+  category?: string; // Custom category (e.g., "Tutoring", "Consulting", "Translation")
   amount: number;
   currency: string;
   effectiveDate: Timestamp;

@@ -47,6 +47,12 @@ export default function SessionsPage() {
 
   const sessions = (data?.items || []) as Session[];
 
+  // Query session types for reference
+  const { data: sessionTypes } = trpc.sessionTypes.list.useQuery({
+    limit: 100,
+  });
+  const sessionTypeItems = (sessionTypes?.items || []) as any[];
+
   // Delete mutation
   const deleteMutation = trpc.sessions.delete.useMutation({
     onSuccess: () => {
@@ -68,20 +74,12 @@ export default function SessionsPage() {
     }
   };
 
-  const getSessionTypeColor = (type: string | undefined) => {
-    if (!type) {
-      return 'text-gray-600 bg-gray-50';
+  const getSessionTypeName = (sessionTypeId?: string): string | undefined => {
+    if (!sessionTypeId || !sessionTypeItems) {
+      return undefined;
     }
-    return type === 'education'
-      ? 'text-purple-600 bg-purple-50'
-      : 'text-orange-600 bg-orange-50';
-  };
-
-  const getSessionTypeLabel = (type: string | undefined) => {
-    if (!type) {
-      return 'Unknown';
-    }
-    return type === 'education' ? 'Education' : 'Technical';
+    const sessionType = sessionTypeItems.find((st: any) => st.id === sessionTypeId);
+    return sessionType ? (sessionType.name as string) : undefined;
   };
 
   return (
@@ -198,11 +196,11 @@ export default function SessionsPage() {
                       </div>
                       <div className="flex gap-2">
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${getSessionTypeColor(
-                            session.sessionType
-                          )}`}
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            session.sessionTypeId ? 'bg-purple-50 text-purple-600' : 'bg-gray-50 text-gray-600'
+                          }`}
                         >
-                          {getSessionTypeLabel(session.sessionType)}
+                          {session.sessionTypeId ? getSessionTypeName(session.sessionTypeId) : 'Unknown'}
                         </span>
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${getBillingStatusColor(

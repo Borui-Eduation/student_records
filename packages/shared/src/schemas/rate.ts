@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { ClientTypeSchema } from './client';
 
 export const CreateRateSchema = z.object({
   clientId: z.string().optional(),
-  clientType: ClientTypeSchema.optional(),
+  clientTypeId: z.string().optional(),
+  category: z.string().max(50).optional(),
   amount: z.number().positive(),
   currency: z.string().default('CNY'),
   effectiveDate: z.string().or(z.date()),
@@ -13,6 +13,8 @@ export const CreateRateSchema = z.object({
 
 export const UpdateRateSchema = z.object({
   id: z.string(),
+  clientTypeId: z.string().optional(),
+  category: z.string().max(50).optional(),
   amount: z.number().positive().optional(),
   endDate: z.string().or(z.date()).optional(),
   description: z.string().max(200).optional(),

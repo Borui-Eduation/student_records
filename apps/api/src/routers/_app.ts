@@ -1,8 +1,10 @@
 import { router } from '../trpc';
 import { usersRouter } from './users';
 import { clientsRouter } from './clients';
+import { clientTypesRouter } from './clientTypes';
 import { ratesRouter } from './rates';
 import { sessionsRouter } from './sessions';
+import { sessionTypesRouter } from './sessionTypes';
 import { invoicesRouter } from './invoices';
 import { knowledgeBaseRouter } from './knowledgeBase';
 import { sharingLinksRouter } from './sharingLinks';
@@ -20,8 +22,10 @@ export const appRouter = router({
   health: healthRouter,
   users: usersRouter,
   clients: clientsRouter,
+  clientTypes: clientTypesRouter,
   rates: ratesRouter,
   sessions: sessionsRouter,
+  sessionTypes: sessionTypesRouter,
   invoices: invoicesRouter,
   knowledgeBase: knowledgeBaseRouter,
   sharingLinks: sharingLinksRouter,

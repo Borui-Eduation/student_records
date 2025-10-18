@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-export const SessionTypeSchema = z.enum(['education', 'technical']);
 export const BillingStatusSchema = z.enum(['unbilled', 'billed', 'paid']);
 
 export const ContentBlockSchema = z.object({
@@ -15,8 +14,8 @@ export const CreateSessionSchema = z.object({
   date: z.string().or(z.date()),
   startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
   endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
-  sessionType: SessionTypeSchema,
-  notes: z.string().optional(), // Markdown formatted session notes
+  sessionTypeId: z.string(),
+  notes: z.string().optional(),
   contentBlocks: z.array(ContentBlockSchema).optional(),
 });
 
@@ -25,15 +24,15 @@ export const UpdateSessionSchema = z.object({
   date: z.string().or(z.date()).optional(),
   startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
   endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  sessionType: SessionTypeSchema.optional(),
-  notes: z.string().optional(), // Markdown formatted session notes
+  sessionTypeId: z.string().optional(),
+  notes: z.string().optional(),
   contentBlocks: z.array(ContentBlockSchema).optional(),
 });
 
 export const ListSessionsSchema = z.object({
   clientId: z.string().optional(),
   billingStatus: BillingStatusSchema.optional(),
-  sessionType: SessionTypeSchema.optional(),
+  sessionTypeId: z.string().optional(),
   dateRange: z.object({
     start: z.string().or(z.date()),
     end: z.string().or(z.date()),
@@ -42,7 +41,6 @@ export const ListSessionsSchema = z.object({
   cursor: z.string().optional(),
 });
 
-export type SessionType = z.infer<typeof SessionTypeSchema>;
 export type BillingStatus = z.infer<typeof BillingStatusSchema>;
 export type ContentBlock = z.infer<typeof ContentBlockSchema>;
 export type CreateSessionInput = z.infer<typeof CreateSessionSchema>;

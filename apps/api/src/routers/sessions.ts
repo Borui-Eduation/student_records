@@ -20,7 +20,7 @@ export const sessionsRouter = router({
   create: adminProcedure.input(CreateSessionSchema).mutation(async ({ ctx, input }) => {
     const now = admin.firestore.Timestamp.now();
 
-    // Get client info
+    // Get client info (including clientTypeId for rate lookup)
     const clientDoc = await ctx.db.collection('clients').doc(input.clientId).get();
     if (!clientDoc.exists) {
       throw new TRPCError({
@@ -31,6 +31,19 @@ export const sessionsRouter = router({
 
     const clientData = clientDoc.data();
     const clientName = clientData?.name || 'Unknown Client';
+    const clientTypeId = clientData?.clientTypeId;
+
+    // Get session type name for reference
+    const sessionTypeDoc = await ctx.db
+      .collection('sessionTypes')
+      .doc(input.sessionTypeId)
+      .get();
+    if (!sessionTypeDoc.exists) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Session type not found',
+      });
+    }
 
     // Calculate duration in hours
     const start = new Date(`2000-01-01T${input.startTime}`);
@@ -47,12 +60,14 @@ export const sessionsRouter = router({
     // Get applicable rate for this client and session type
     // Priority: client-specific > client-type > general
     let applicableRate: any = null;
+    const dateTimestamp = admin.firestore.Timestamp.fromDate(parseLocalDate(input.date));
 
     // 1. Try client-specific rate
     const clientRates = await ctx.db
       .collection('rates')
+      .where('userId', '==', ctx.user.uid)
       .where('clientId', '==', input.clientId)
-      .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
+      .where('effectiveDate', '<=', dateTimestamp)
       .orderBy('effectiveDate', 'desc')
       .limit(1)
       .get();
@@ -65,12 +80,13 @@ export const sessionsRouter = router({
       }
     }
 
-    // 2. Try client-type rate
-    if (!applicableRate) {
+    // 2. Try client-type rate (if clientTypeId exists)
+    if (!applicableRate && clientTypeId) {
       const typeRates = await ctx.db
         .collection('rates')
-        .where('clientType', '==', clientData?.type)
-        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
+        .where('userId', '==', ctx.user.uid)
+        .where('clientTypeId', '==', clientTypeId)
+        .where('effectiveDate', '<=', dateTimestamp)
         .orderBy('effectiveDate', 'desc')
         .limit(1)
         .get();
@@ -84,18 +100,19 @@ export const sessionsRouter = router({
       }
     }
 
-    // 3. Try general rate (rates without clientId or clientType)
+    // 3. Try general rate (rates without clientId and without clientTypeId)
     if (!applicableRate) {
       const allRates = await ctx.db
         .collection('rates')
-        .where('effectiveDate', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)))
+        .where('userId', '==', ctx.user.uid)
+        .where('effectiveDate', '<=', dateTimestamp)
         .orderBy('effectiveDate', 'desc')
         .get();
 
-      // Filter for general rates (no clientId and no clientType)
+      // Filter for general rates (no clientId and no clientTypeId)
       const generalRates = allRates.docs.filter((doc) => {
         const data = doc.data();
-        return !data.clientId && !data.clientType;
+        return !data.clientId && !data.clientTypeId;
       });
 
       if (generalRates.length > 0) {
@@ -120,11 +137,12 @@ export const sessionsRouter = router({
       userId: ctx.user.uid,
       clientId: input.clientId,
       clientName,
-      date: admin.firestore.Timestamp.fromDate(parseLocalDate(input.date)),
+      clientTypeId,
+      date: dateTimestamp,
       startTime: input.startTime,
       endTime: input.endTime,
       durationHours,
-      sessionType: input.sessionType,
+      sessionTypeId: input.sessionTypeId,
       rateId: applicableRate.id,
       rateAmount: applicableRate.amount,
       totalAmount,
@@ -205,9 +223,9 @@ export const sessionsRouter = router({
       query = query.where('billingStatus', '==', input.billingStatus);
     }
 
-    // Filter by sessionType
-    if (input.sessionType) {
-      query = query.where('sessionType', '==', input.sessionType);
+    // Filter by sessionTypeId
+    if (input.sessionTypeId) {
+      query = query.where('sessionTypeId', '==', input.sessionTypeId);
     }
 
     // Filter by date range

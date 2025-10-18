@@ -1,11 +1,17 @@
 // Client types
 export * from './client';
 
+// Client Type definitions
+export type { ClientType } from './clientType';
+
 // Rate types
 export * from './rate';
 
 // Session types
 export * from './session';
+
+// Session Type definitions
+export type { SessionType } from './sessionType';
 
 // Invoice types
 export * from './invoice';

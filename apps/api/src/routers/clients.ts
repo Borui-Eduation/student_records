@@ -82,8 +82,8 @@ export const clientsRouter = router({
       }
 
       // Apply filters
-      if (input.type) {
-        query = query.where('type', '==', input.type);
+      if (input.clientTypeId) {
+        query = query.where('clientTypeId', '==', input.clientTypeId);
       }
 
       if (input.active !== undefined) {

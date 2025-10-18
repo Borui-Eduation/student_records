@@ -38,7 +38,7 @@ export default function DashboardPage() {
         const currentMonth = now.getMonth();
         
         // Start: first day of 5 months ago at noon (to show last 6 months including current)
-        const startMonth = new Date(currentYear, currentMonth - 4, 1, 12, 0, 0);
+        const startMonth = new Date(currentYear, currentMonth - 5, 1, 12, 0, 0);
         
         // End: use current date to ensure current month is included
         result = {

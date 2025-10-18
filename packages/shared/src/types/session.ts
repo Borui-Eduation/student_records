@@ -1,6 +1,5 @@
 import { Timestamp } from './common';
 
-export type SessionType = 'education' | 'technical';
 export type BillingStatus = 'unbilled' | 'billed' | 'paid';
 export type BlockType = 'heading' | 'paragraph' | 'bulletList' | 'orderedList' | 'codeBlock' | 'image' | 'link';
 
@@ -16,11 +15,12 @@ export interface Session {
   userId: string; // Owner of this session
   clientId: string;
   clientName: string;
+  clientTypeId?: string; // Reference to ClientType (from client, for optimized rate lookup)
   date: Timestamp;
   startTime: string;
   endTime: string;
   durationHours: number;
-  sessionType: SessionType;
+  sessionTypeId: string; // Reference to custom SessionType
   rateId: string;
   rateAmount: number;
   totalAmount: number;

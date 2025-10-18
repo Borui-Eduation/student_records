@@ -15,6 +15,8 @@ import {
   DollarSign,
   Receipt,
   Shield,
+  Tag,
+  Grid2X2,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -31,6 +33,11 @@ const navItems = [
     icon: Users,
   },
   {
+    title: 'Client Types',
+    href: '/dashboard/client-types',
+    icon: Tag,
+  },
+  {
     title: 'Rates',
     href: '/dashboard/rates',
     icon: DollarSign,
@@ -39,6 +46,11 @@ const navItems = [
     title: 'Sessions',
     href: '/dashboard/sessions',
     icon: Calendar,
+  },
+  {
+    title: 'Session Types',
+    href: '/dashboard/session-types',
+    icon: Grid2X2,
   },
   {
     title: 'Invoices',

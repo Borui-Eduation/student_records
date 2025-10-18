@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateClientSchema, type CreateClientInput } from '@student-record/shared';
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 
-import type { Client, ClientType } from '@student-record/shared';
+import type { Client } from '@student-record/shared';
 
 interface ClientDialogProps {
   open: boolean;
@@ -37,6 +37,12 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
   const utils = trpc.useUtils();
   const isEditMode = !!client;
 
+  // Get client types list
+  const { data: clientTypes } = trpc.clientTypes.list.useQuery({
+    limit: 100,
+  });
+  const clientTypeItems = (clientTypes?.items || []) as any[];
+
   const {
     register,
     handleSubmit,
@@ -47,7 +53,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
   } = useForm<CreateClientInput>({
     resolver: zodResolver(CreateClientSchema),
     defaultValues: {
-      type: 'individual',
+      clientTypeId: undefined,
     },
   });
 
@@ -55,7 +61,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
   useEffect(() => {
     if (client && open) {
       setValue('name', client.name);
-      setValue('type', client.type);
+      setValue('clientTypeId', client.clientTypeId || undefined);
       if (client.contactInfo) {
         setValue('contactInfo.email', client.contactInfo.email || '');
         setValue('contactInfo.phone', client.contactInfo.phone || '');
@@ -66,7 +72,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
       setValue('notes', client.notes || '');
     } else if (!open) {
       reset({
-        type: 'individual',
+        clientTypeId: undefined,
       });
     }
   }, [client, open, setValue, reset]);
@@ -126,24 +132,26 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
               )}
             </div>
 
-            {/* Type */}
+            {/* Client Type */}
             <div className="grid gap-2">
-              <Label htmlFor="type">Type *</Label>
+              <Label htmlFor="clientTypeId">Client Type (Optional)</Label>
               <Select
-                value={watch('type')}
-                onValueChange={(value) => setValue('type', value as ClientType)}
+                value={watch('clientTypeId') || ''}
+                onValueChange={(value) => setValue('clientTypeId', value || undefined)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select client type" />
+                  <SelectValue placeholder="Select a client type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="institution">Institution</SelectItem>
-                  <SelectItem value="individual">Individual</SelectItem>
-                  <SelectItem value="project">Project</SelectItem>
+                  {clientTypeItems.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {errors.type && (
-                <p className="text-sm text-destructive">{errors.type.message}</p>
+              {errors.clientTypeId && (
+                <p className="text-sm text-destructive">{errors.clientTypeId.message}</p>
               )}
             </div>
 

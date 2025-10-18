@@ -378,7 +378,12 @@ function generateDateRange(
   
   const current = new Date(startUTC.getTime());
 
-  while (current <= endUTC) {
+  // For month granularity, ensure we include the end month
+  const endMonth = timeRange === 'month' 
+    ? new Date(Date.UTC(endUTC.getUTCFullYear(), endUTC.getUTCMonth(), 1))
+    : endUTC;
+
+  while (current <= (timeRange === 'month' ? endMonth : endUTC)) {
     const year = current.getUTCFullYear();
     const month = String(current.getUTCMonth() + 1).padStart(2, '0');
     const day = String(current.getUTCDate()).padStart(2, '0');

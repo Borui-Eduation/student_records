@@ -40,6 +40,12 @@ export default function RatesPage() {
     limit: 100,
   });
 
+  // Query client types for reference
+  const { data: clientTypes } = trpc.clientTypes.list.useQuery({
+    active: true,
+    limit: 100,
+  });
+
   // Delete mutation
   const deleteMutation = trpc.rates.delete.useMutation({
     onSuccess: () => {
@@ -56,11 +62,12 @@ export default function RatesPage() {
     return client && 'name' in client ? (client.name as string) : null;
   };
 
-  const getClientType = (clientType?: string) => {
-    if (!clientType) {
+  const getClientTypeName = (clientTypeId?: string): string | null => {
+    if (!clientTypeId || !clientTypes) {
       return null;
     }
-    return clientType.charAt(0).toUpperCase() + clientType.slice(1);
+    const clientType = clientTypes.items.find((ct: any) => ct.id === clientTypeId);
+    return clientType ? (clientType.name as string) : null;
   };
 
   return (
@@ -150,7 +157,7 @@ export default function RatesPage() {
                       </CardTitle>
                       <CardDescription>
                         {getClientName(rate.clientId) ||
-                          getClientType(rate.clientType) ||
+                          getClientTypeName(rate.clientTypeId) ||
                           'General Rate'}
                       </CardDescription>
                     </div>
@@ -176,6 +183,12 @@ export default function RatesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
+                    {rate.category && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Category: </span>
+                        <span className="font-medium">{rate.category}</span>
+                      </div>
+                    )}
                     <div className="text-sm">
                       <span className="text-muted-foreground">Effective Date: </span>
                       <span className="font-medium">

@@ -59,6 +59,12 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
   });
   const clientItems = (clients?.items || []) as Client[];
 
+  // Get client types list
+  const { data: clientTypes } = trpc.clientTypes.list.useQuery({
+    limit: 100,
+  });
+  const clientTypeItems = (clientTypes?.items || []) as any[];
+
   const {
     register,
     handleSubmit,
@@ -80,12 +86,12 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
       setValue('amount', rate.amount);
       setValue('currency', rate.currency || 'CNY');
       setValue('clientId', rate.clientId || undefined);
-      setValue('clientType', rate.clientType || undefined);
+      setValue('clientTypeId', rate.clientTypeId || undefined);
       
       // Set assignment type based on existing rate
       if (rate.clientId) {
         setAssignmentType('specific');
-      } else if (rate.clientType) {
+      } else if (rate.clientTypeId) {
         setAssignmentType('type');
       } else {
         setAssignmentType('none');
@@ -103,6 +109,7 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
       }
       
       setValue('description', rate.description || '');
+      setValue('category', rate.category || '');
     } else if (!open) {
       reset({
         currency: 'CNY',
@@ -157,6 +164,22 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Category */}
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category (Optional)</Label>
+              <Input
+                id="category"
+                placeholder="E.g., Tutoring, Consulting, Translation"
+                {...register('category')}
+              />
+              {errors.category && (
+                <p className="text-sm text-destructive">{errors.category.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Customize your own category to organize rates
+              </p>
+            </div>
+
             {/* Amount */}
             <div className="grid gap-2">
               <Label htmlFor="amount">Hourly Rate (¥) *</Label>
@@ -182,9 +205,9 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
                   setAssignmentType(value);
                   if (value === 'none') {
                     setValue('clientId', undefined);
-                    setValue('clientType', undefined);
+                    setValue('clientTypeId', undefined);
                   } else if (value === 'specific') {
-                    setValue('clientType', undefined);
+                    setValue('clientTypeId', undefined);
                   } else if (value === 'type') {
                     setValue('clientId', undefined);
                   }
@@ -229,22 +252,24 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
             {/* Client Type Selection */}
             {assignmentType === 'type' && (
               <div className="grid gap-2">
-                <Label htmlFor="clientType">Client Type *</Label>
+                <Label htmlFor="clientTypeId">Client Type *</Label>
               <Select
-                value={watch('clientType') || ''}
-                onValueChange={(value) => setValue('clientType', value as import('@student-record/shared').ClientType)}
+                value={watch('clientTypeId') || ''}
+                onValueChange={(value) => setValue('clientTypeId', value)}
               >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="institution">Institution</SelectItem>
-                    <SelectItem value="individual">Individual</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
+                    {clientTypeItems.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {errors.clientType && (
-                  <p className="text-sm text-destructive">{errors.clientType.message}</p>
+                {errors.clientTypeId && (
+                  <p className="text-sm text-destructive">{errors.clientTypeId.message}</p>
                 )}
               </div>
             )}

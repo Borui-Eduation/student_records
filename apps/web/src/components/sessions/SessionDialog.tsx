@@ -47,6 +47,12 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
   });
   const clientItems = (clients?.items || []) as Client[];
 
+  // Get session types list
+  const { data: sessionTypes } = trpc.sessionTypes.list.useQuery({
+    limit: 100,
+  });
+  const sessionTypeItems = (sessionTypes?.items || []) as any[];
+
   const {
     register,
     handleSubmit,
@@ -58,7 +64,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
     resolver: zodResolver(CreateSessionSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      sessionType: 'education',
+      sessionTypeId: '',
       startTime: '09:00',
       endTime: '10:00',
     },
@@ -68,7 +74,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
   useEffect(() => {
     if (session && open) {
       setValue('clientId', session.clientId);
-      setValue('sessionType', session.sessionType);
+      setValue('sessionTypeId', session.sessionTypeId);
       setValue('startTime', session.startTime);
       setValue('endTime', session.endTime);
       setValue('notes', session.notes || '');
@@ -81,7 +87,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
     } else if (!open) {
       reset({
         date: new Date().toISOString().split('T')[0],
-        sessionType: 'education',
+        sessionTypeId: '',
         startTime: '09:00',
         endTime: '10:00',
         notes: '',
@@ -234,21 +240,24 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
 
             {/* Session Type */}
             <div className="grid gap-2">
-              <Label htmlFor="sessionType">Session Type *</Label>
+              <Label htmlFor="sessionTypeId">Session Type *</Label>
               <Select
-                value={watch('sessionType')}
-                onValueChange={(value) => setValue('sessionType', value as import('@student-record/shared').SessionType)}
+                value={watch('sessionTypeId')}
+                onValueChange={(value) => setValue('sessionTypeId', value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select a session type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="technical">Technical</SelectItem>
+                  {sessionTypeItems.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {errors.sessionType && (
-                <p className="text-sm text-destructive">{errors.sessionType.message}</p>
+              {errors.sessionTypeId && (
+                <p className="text-sm text-destructive">{errors.sessionTypeId.message}</p>
               )}
             </div>
 

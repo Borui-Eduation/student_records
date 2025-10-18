@@ -58,7 +58,7 @@ export const ratesRouter = router({
     .input(
       z.object({
         clientId: z.string().optional(),
-        clientType: z.enum(['institution', 'individual', 'project']).optional(),
+        clientTypeId: z.string().optional(),
         limit: z.number().min(1).max(100).optional().default(50),
         cursor: z.string().optional(),
         viewAllUsers: z.boolean().optional(), // Super admin only
@@ -77,9 +77,9 @@ export const ratesRouter = router({
         query = query.where('clientId', '==', input.clientId);
       }
 
-      // Filter by clientType
-      if (input.clientType) {
-        query = query.where('clientType', '==', input.clientType);
+      // Filter by clientTypeId
+      if (input.clientTypeId) {
+        query = query.where('clientTypeId', '==', input.clientTypeId);
       }
 
       // Order by effectiveDate descending (most recent first)

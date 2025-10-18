@@ -1,8 +1,10 @@
 // Export all Zod schemas
 export * from './user';
 export * from './client';
+export * from './clientType';
 export * from './rate';
 export * from './session';
+export * from './sessionType';
 export * from './invoice';
 export * from './knowledgeBase';
 export * from './sharingLink';
