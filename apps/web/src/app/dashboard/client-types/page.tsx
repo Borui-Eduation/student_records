@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import type { ClientType } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +20,8 @@ import { ClientTypeDialog } from '@/components/client-types/ClientTypeDialog';
 
 export default function ClientTypesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingType, setEditingType] = useState<any>(null);
-  const [deletingType, setDeletingType] = useState<any>(null);
+  const [editingType, setEditingType] = useState<ClientType | null>(null);
+  const [deletingType, setDeletingType] = useState<ClientType | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -29,7 +30,7 @@ export default function ClientTypesPage() {
     limit: 100,
   });
 
-  const clientTypes = (data?.items || []) as any[];
+  const clientTypes = (data?.items || []) as ClientType[];
 
   // Delete mutation
   const deleteMutation = trpc.clientTypes.delete.useMutation({
@@ -77,7 +78,7 @@ export default function ClientTypesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Client Type?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingType?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{deletingType?.name}&quot;? This action cannot be undone.
               {deletingType && (
                 <span className="block mt-2">
                   Make sure this client type is not being used by any clients or rates.

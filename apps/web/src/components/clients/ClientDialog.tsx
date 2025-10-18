@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateClientSchema, type CreateClientInput } from '@student-record/shared';
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 
-import type { Client } from '@student-record/shared';
+import type { Client, ClientType } from '@student-record/shared';
 
 interface ClientDialogProps {
   open: boolean;
@@ -41,7 +41,7 @@ export function ClientDialog({ open, onOpenChange, client }: ClientDialogProps) 
   const { data: clientTypes } = trpc.clientTypes.list.useQuery({
     limit: 100,
   });
-  const clientTypeItems = (clientTypes?.items || []) as any[];
+  const clientTypeItems = (clientTypes?.items || []) as ClientType[];
 
   const {
     register,

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
+// import type { User } from '@student-record/shared/dist/types/user';
 import { Shield, User as UserIcon, Mail, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
@@ -182,7 +183,7 @@ export default function UsersPage() {
                             onValueChange={(value) =>
                               handleRoleChange(userData.id, value as 'user' | 'admin' | 'superadmin')
                             }
-                            disabled={isCurrentUser || updateRoleMutation.isLoading}
+                            disabled={isCurrentUser || updateRoleMutation.isPending}
                           >
                             <SelectTrigger className="w-[140px]">
                               <SelectValue />

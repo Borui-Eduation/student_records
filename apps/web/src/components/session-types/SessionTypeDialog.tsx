@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateSessionTypeSchema, type CreateSessionTypeInput } from '@student-record/shared';
+import { CreateSessionTypeSchema, type CreateSessionTypeInput, type SessionType } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import { trpc } from '@/lib/trpc';
 interface SessionTypeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sessionType?: any | null;
+  sessionType?: SessionType | null;
 }
 
 export function SessionTypeDialog({

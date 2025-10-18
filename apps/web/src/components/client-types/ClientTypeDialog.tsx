@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateClientTypeSchema, type CreateClientTypeInput } from '@student-record/shared';
+import { CreateClientTypeSchema, type CreateClientTypeInput, type ClientType } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import { trpc } from '@/lib/trpc';
 interface ClientTypeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clientType?: any | null;
+  clientType?: ClientType | null;
 }
 
 export function ClientTypeDialog({

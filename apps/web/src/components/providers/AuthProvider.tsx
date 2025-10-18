@@ -42,7 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Separate effect to listen to user role changes in Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     // Real-time listener for user role
     const unsubscribe = onSnapshot(

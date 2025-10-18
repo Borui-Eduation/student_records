@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ClientDialog } from '@/components/clients/ClientDialog';
-import type { Client } from '@student-record/shared';
+import type { Client, ClientType } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,21 @@ export default function ClientsPage() {
     active: true,
     limit: 50,
   }) as { data?: { items: Client[]; total: number; hasMore: boolean }; isLoading: boolean; error: unknown };
+
+  // Query client types for reference
+  const { data: clientTypes } = trpc.clientTypes.list.useQuery({
+    limit: 100,
+  });
+  const clientTypeItems = (clientTypes?.items || []) as ClientType[];
+
+  // Helper function to get client type name
+  const getClientTypeName = (clientTypeId?: string): string => {
+    if (!clientTypeId || !clientTypeItems) {
+      return 'No Type';
+    }
+    const clientType = clientTypeItems.find((ct: ClientType) => ct.id === clientTypeId);
+    return clientType ? clientType.name : 'Unknown Type';
+  };
 
   // Delete mutation
   const deleteMutation = trpc.clients.delete.useMutation({
@@ -124,7 +139,7 @@ export default function ClientsPage() {
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base sm:text-lg truncate">{client.name}</CardTitle>
                       <CardDescription className="text-xs sm:text-sm">
-                        {client.type.charAt(0).toUpperCase() + client.type.slice(1)}
+                        {getClientTypeName(client.clientTypeId)}
                       </CardDescription>
                     </div>
                     <div className="flex gap-1 sm:gap-2 shrink-0">

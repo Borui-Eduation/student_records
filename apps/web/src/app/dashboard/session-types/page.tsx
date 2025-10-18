@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2, Grid2X2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import type { SessionType } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +20,8 @@ import { SessionTypeDialog } from '@/components/session-types/SessionTypeDialog'
 
 export default function SessionTypesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingType, setEditingType] = useState<any>(null);
-  const [deletingType, setDeletingType] = useState<any>(null);
+  const [editingType, setEditingType] = useState<SessionType | null>(null);
+  const [deletingType, setDeletingType] = useState<SessionType | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -29,7 +30,7 @@ export default function SessionTypesPage() {
     limit: 100,
   });
 
-  const sessionTypes = (data?.items || []) as any[];
+  const sessionTypes = (data?.items || []) as SessionType[];
 
   // Delete mutation
   const deleteMutation = trpc.sessionTypes.delete.useMutation({
@@ -77,7 +78,7 @@ export default function SessionTypesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Session Type?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingType?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{deletingType?.name}&quot;? This action cannot be undone.
               {deletingType && (
                 <span className="block mt-2">
                   Make sure this session type is not being used by any sessions.

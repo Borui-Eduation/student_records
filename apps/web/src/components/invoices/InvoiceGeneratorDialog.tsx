@@ -196,7 +196,7 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                                 {session.startTime} - {session.endTime} ({session.durationHours}h)
                               </div>
                               <div className="text-xs text-muted-foreground mt-1">
-                                {session.sessionType === 'education' ? 'Education' : 'Technical'}
+                                {session.sessionTypeId ? 'Custom Type' : 'Default'}
                               </div>
                             </div>
                             <div className="text-right">

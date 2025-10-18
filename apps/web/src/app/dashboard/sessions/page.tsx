@@ -7,7 +7,7 @@ import { Plus, Calendar, Clock, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { SessionDialog } from '@/components/sessions/SessionDialog';
 import { format } from 'date-fns';
-import type { Session, Timestamp } from '@student-record/shared';
+import type { Session, Timestamp, SessionType } from '@student-record/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,7 +51,7 @@ export default function SessionsPage() {
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery({
     limit: 100,
   });
-  const sessionTypeItems = (sessionTypes?.items || []) as any[];
+  const sessionTypeItems = (sessionTypes?.items || []) as SessionType[];
 
   // Delete mutation
   const deleteMutation = trpc.sessions.delete.useMutation({
@@ -78,7 +78,7 @@ export default function SessionsPage() {
     if (!sessionTypeId || !sessionTypeItems) {
       return undefined;
     }
-    const sessionType = sessionTypeItems.find((st: any) => st.id === sessionTypeId);
+    const sessionType = sessionTypeItems.find((st: SessionType) => st.id === sessionTypeId);
     return sessionType ? (sessionType.name as string) : undefined;
   };
 

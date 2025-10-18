@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateSessionSchema, type CreateSessionInput, type Client } from '@student-record/shared';
+import { CreateSessionSchema, type CreateSessionInput, type Client, type SessionType } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -51,7 +51,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery({
     limit: 100,
   });
-  const sessionTypeItems = (sessionTypes?.items || []) as any[];
+  const sessionTypeItems = (sessionTypes?.items || []) as SessionType[];
 
   const {
     register,

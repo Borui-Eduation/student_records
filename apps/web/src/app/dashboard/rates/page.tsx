@@ -42,7 +42,6 @@ export default function RatesPage() {
 
   // Query client types for reference
   const { data: clientTypes } = trpc.clientTypes.list.useQuery({
-    active: true,
     limit: 100,
   });
 
@@ -66,8 +65,8 @@ export default function RatesPage() {
     if (!clientTypeId || !clientTypes) {
       return null;
     }
-    const clientType = clientTypes.items.find((ct: any) => ct.id === clientTypeId);
-    return clientType ? (clientType.name as string) : null;
+    const clientType = clientTypes.items.find((ct) => ct.id === clientTypeId);
+    return clientType ? (clientType as any).name : null;
   };
 
   return (

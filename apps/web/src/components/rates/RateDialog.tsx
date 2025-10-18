@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client } from '@student-record/shared';
+import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client, type ClientType } from '@student-record/shared';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +63,7 @@ export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {
   const { data: clientTypes } = trpc.clientTypes.list.useQuery({
     limit: 100,
   });
-  const clientTypeItems = (clientTypes?.items || []) as any[];
+  const clientTypeItems = (clientTypes?.items || []) as ClientType[];
 
   const {
     register,
