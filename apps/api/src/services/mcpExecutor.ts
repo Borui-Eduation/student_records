@@ -170,26 +170,22 @@ async function searchEntity(
           .limit(1)
           .get();
 
+        let foundClientDocs = clientQuery.docs;
+
         // If no exact match, try case-insensitive search
-        if (clientQuery.empty) {
+        if (foundClientDocs.length === 0) {
           const allClients = await db
             .collection('clients')
             .where('userId', '==', userId)
             .get();
           
-          const clientDocs = allClients.docs.filter(doc => 
+          foundClientDocs = allClients.docs.filter(doc => 
             doc.data().name.toLowerCase() === conditions.clientName.toLowerCase()
           );
-          
-          clientQuery = {
-            ...allClients,
-            empty: clientDocs.length === 0,
-            docs: clientDocs,
-          };
         }
 
-        if (!clientQuery.empty) {
-          const clientId = clientQuery.docs[0].id;
+        if (foundClientDocs.length > 0) {
+          const clientId = foundClientDocs[0].id;
           query = query.where('clientId', '==', clientId);
         } else {
           // 客户不存在，返回空结果
