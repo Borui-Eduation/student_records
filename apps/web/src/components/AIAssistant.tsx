@@ -123,41 +123,89 @@ export function AIAssistant() {
         
         // 如果有查询结果数据，显示它
         if (result.data && Array.isArray(result.data)) {
-          const queryResults = result.data.filter((item: any) => 
-            Array.isArray(item) && item.length > 0
-          );
+          // 检查是否是查询结果（包含多个结果对象的数组）
+          const firstItem = result.data[0];
           
-          if (queryResults.length > 0 && queryResults[0].length > 0) {
-            const records = queryResults[0];
-            content = `✅ 查询成功，找到 ${records.length} 条记录\n\n`;
+          // 如果第一个元素是数组（查询操作返回），或如果是对象且有数据库字段（如clientName、date等）
+          if (Array.isArray(firstItem)) {
+            // 第一个命令返回的是数组（如查询结果）
+            const records = firstItem;
             
-            // 显示每条记录的摘要
-            records.slice(0, 5).forEach((record: any, index: number) => {
-              content += `${index + 1}. `;
-              if (record.name) {
-                content += `${record.name} `;
+            if (records.length > 0) {
+              content = `✅ 查询成功，找到 ${records.length} 条记录\n\n`;
+              
+              // 显示每条记录的摘要
+              records.slice(0, 5).forEach((record: any, index: number) => {
+                content += `${index + 1}. `;
+                if (record.name) {
+                  content += `${record.name} `;
+                }
+                if (record.clientName) {
+                  content += `客户: ${record.clientName} `;
+                }
+                if (record.date) {
+                  const date = new Date(record.date);
+                  content += `日期: ${date.toLocaleDateString('zh-CN')} `;
+                }
+                if (record.startTime && record.endTime) {
+                  content += `时间: ${record.startTime}-${record.endTime} `;
+                }
+                if (record.totalAmount) {
+                  content += `金额: ¥${record.totalAmount}`;
+                }
+                if (record.title && !record.clientName) {
+                  // KnowledgeBase entry
+                  content += `标题: ${record.title}`;
+                }
+                content += '\n';
+              });
+              
+              if (records.length > 5) {
+                content += `\n... 还有 ${records.length - 5} 条记录`;
               }
-              if (record.clientName) {
-                content += `客户: ${record.clientName} `;
-              }
-              if (record.date) {
-                const date = new Date(record.date);
-                content += `日期: ${date.toLocaleDateString('zh-CN')} `;
-              }
-              if (record.startTime && record.endTime) {
-                content += `时间: ${record.startTime}-${record.endTime} `;
-              }
-              if (record.totalAmount) {
-                content += `金额: ¥${record.totalAmount}`;
-              }
-              content += '\n';
-            });
+            } else {
+              content = '✅ 操作成功完成，但没有找到匹配的记录';
+            }
+          } else if (firstItem && typeof firstItem === 'object' && (firstItem.clientName || firstItem.date || firstItem.title)) {
+            // 直接是结果对象数组（来自search操作）
+            const records = result.data;
             
-            if (records.length > 5) {
-              content += `\n... 还有 ${records.length - 5} 条记录`;
+            if (records.length > 0) {
+              content = `✅ 查询成功，找到 ${records.length} 条记录\n\n`;
+              
+              records.slice(0, 5).forEach((record: any, index: number) => {
+                content += `${index + 1}. `;
+                if (record.name) {
+                  content += `${record.name} `;
+                }
+                if (record.clientName) {
+                  content += `客户: ${record.clientName} `;
+                }
+                if (record.date) {
+                  const date = new Date(record.date);
+                  content += `日期: ${date.toLocaleDateString('zh-CN')} `;
+                }
+                if (record.startTime && record.endTime) {
+                  content += `时间: ${record.startTime}-${record.endTime} `;
+                }
+                if (record.totalAmount) {
+                  content += `金额: ¥${record.totalAmount}`;
+                }
+                if (record.title && !record.clientName) {
+                  content += `标题: ${record.title}`;
+                }
+                content += '\n';
+              });
+              
+              if (records.length > 5) {
+                content += `\n... 还有 ${records.length - 5} 条记录`;
+              }
+            } else {
+              content = '✅ 操作成功完成，但没有找到匹配的记录';
             }
           } else {
-            content = '✅ 操作成功完成，但没有找到匹配的记录';
+            // 创建/更新/删除操作
+            content = '✅ 操作成功完成';
           }
         } else if (result.affectedRecords && result.affectedRecords.length > 0) {
           // 显示创建/更新/删除的记录
@@ -238,7 +286,13 @@ export function AIAssistant() {
                 &ldquo;显示本月所有cello课程&rdquo;
               </div>
               <div className="bg-gray-50 p-3 rounded">
-                &ldquo;更新Hubery的rate为90&rdquo;
+                &ldquo;显示Hubery的所有课程记录&rdquo;
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                &ldquo;保存一个API密钥，标题OpenAI Key，内容sk-xxx&rdquo;
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                &ldquo;查找所有SSH相关的记录&rdquo;
               </div>
             </div>
           </div>

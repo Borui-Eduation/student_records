@@ -15,7 +15,8 @@ export type MCPEntity =
   | 'sessionType' 
   | 'clientType'
   | 'expense'
-  | 'expenseCategory';
+  | 'expenseCategory'
+  | 'knowledgeBase';
 
 // Main command structure parsed from natural language
 export interface MCPCommand {

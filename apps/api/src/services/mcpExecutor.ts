@@ -94,7 +94,7 @@ export async function executeWorkflow(
 
     return {
       success: true,
-      data: results,
+      data: results.map(r => r.data),
       affectedRecords,
     };
   } catch (error) {
@@ -160,19 +160,43 @@ async function searchEntity(
         query = query.where('name', '==', conditions.name);
       }
 
-      // Handle special case: searching by clientName
+      // Handle special case: searching by clientName (for sessions)
       if (conditions.clientName) {
-        // First search for client
-        const clientQuery = await db
+        // First search for client with exact match
+        let clientQuery = await db
           .collection('clients')
           .where('userId', '==', userId)
           .where('name', '==', conditions.clientName)
           .limit(1)
           .get();
 
+        // If no exact match, try case-insensitive search
+        if (clientQuery.empty) {
+          const allClients = await db
+            .collection('clients')
+            .where('userId', '==', userId)
+            .get();
+          
+          const clientDocs = allClients.docs.filter(doc => 
+            doc.data().name.toLowerCase() === conditions.clientName.toLowerCase()
+          );
+          
+          clientQuery = {
+            ...allClients,
+            empty: clientDocs.length === 0,
+            docs: clientDocs,
+          };
+        }
+
         if (!clientQuery.empty) {
           const clientId = clientQuery.docs[0].id;
           query = query.where('clientId', '==', clientId);
+        } else {
+          // 客户不存在，返回空结果
+          return {
+            success: true,
+            data: [],
+          };
         }
       }
 
@@ -189,7 +213,7 @@ async function searchEntity(
         query = query.where('amount', '==', conditions.amount);
       }
 
-      // Handle sessionTypeName
+      // Handle sessionTypeName (for sessions)
       if (conditions.sessionTypeName) {
         const typeQuery = await db
           .collection('sessionTypes')
@@ -203,13 +227,52 @@ async function searchEntity(
           query = query.where('sessionTypeId', '==', typeId);
         }
       }
+
+      // Handle knowledgeBase type filter
+      if (entity === 'knowledgeBase' && conditions.type) {
+        query = query.where('type', '==', conditions.type);
+      }
+
+      // Handle knowledgeBase tags filter
+      if (entity === 'knowledgeBase' && conditions.tags && conditions.tags.length > 0) {
+        query = query.where('tags', 'array-contains', conditions.tags[0]);
+      }
+
+      // Handle knowledgeBase category filter
+      if (entity === 'knowledgeBase' && conditions.category) {
+        query = query.where('category', '==', conditions.category);
+      }
     }
 
     const snapshot = await query.get();
-    const items = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const items = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const item: any = {
+        id: doc.id,
+        ...data,
+      };
+      
+      // Handle Firestore Timestamps for serialization
+      if (data.date && typeof data.date.toDate === 'function') {
+        item.date = data.date.toDate().toISOString();
+      }
+      if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+        item.createdAt = data.createdAt.toDate().toISOString();
+      }
+      if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
+        item.updatedAt = data.updatedAt.toDate().toISOString();
+      }
+      if (data.effectiveDate && typeof data.effectiveDate.toDate === 'function') {
+        item.effectiveDate = data.effectiveDate.toDate().toISOString();
+      }
+
+      // For knowledgeBase: hide encrypted content in search results
+      if (entity === 'knowledgeBase' && data.isEncrypted) {
+        item.content = '[ENCRYPTED]';
+      }
+
+      return item;
+    });
 
     return {
       success: true,
@@ -316,6 +379,31 @@ async function createEntity(
           userId,
           createdAt: now,
           updatedAt: now,
+        };
+        break;
+
+      case 'knowledgeBase':
+        // Determine if content should be encrypted
+        const sensitiveTypes = ['api-key', 'ssh-record', 'password'];
+        const shouldEncrypt = data?.requireEncryption || sensitiveTypes.includes(data?.type);
+        
+        // Note: Encryption will be handled by the knowledgeBase router
+        // We just pass requireEncryption flag
+        entityData = {
+          userId,
+          title: data?.title || '',
+          type: data?.type || 'note',
+          content: data?.content || '',
+          requireEncryption: shouldEncrypt,
+          tags: data?.tags || [],
+          category: data?.category,
+          attachments: [],
+          accessCount: 0,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: userId,
+          createdByAI: true,
+          aiGeneratedAt: now,
         };
         break;
     }
@@ -743,6 +831,7 @@ function getCollectionName(entity: MCPEntity): string {
     clientType: 'clientTypes',
     expense: 'expenses',
     expenseCategory: 'expenseCategories',
+    knowledgeBase: 'knowledgeBase',
   };
 
   return collectionMap[entity] || entity + 's';

@@ -57,32 +57,60 @@ function getSystemPrompt(): string {
    - name: string (e.g., "cello", "piano", "violin")
    - description: string
 
+5. **KnowledgeBase** (知识库)
+   - title: string (required)
+   - type: string (required, enum: 'note', 'api-key', 'ssh-record', 'password', 'memo')
+   - content: string (required)
+   - tags: string[] (optional)
+   - category: string (optional)
+   - requireEncryption: boolean (auto-set to true for types: 'api-key', 'ssh-record', 'password')
+
 **Operation Types:**
 - create: Create new record
 - read/search: Query existing records
 - update: Modify existing record
 - delete: Remove record
 
-**Time Parsing Rules:**
+**Time Parsing Rules - COMPREHENSIVE:**
+
+Date Expressions:
 - "今天" / "today" → current date
 - "明天" / "tomorrow" → current date + 1 day
-- "下周一" → next Monday
+- "后天" → current date + 2 days
+- "昨天" / "yesterday" → current date - 1 day
+- "本周一/二/三..." → current week's Monday/Tuesday/Wednesday... (if not past)
+- "下周一/二..." → next week's Monday/Tuesday...
+- "上周一/二..." → last week's Monday/Tuesday...
+- "本月" → entire current month (start: YYYY-MM-01, end: YYYY-MM-last-day)
+- "上月" → entire last month
+- "下月" → entire next month
+- "本周" → current week (Monday to Sunday)
+- "上周" → last week
+- "下周" → next week
+- "N天后" → current date + N days
+
+Time Expressions:
 - "10-12点" / "10:00-12:00" → startTime: "10:00", endTime: "12:00"
-- "上午10点" → "10:00"
+- "上午10点" / "早上10点" → "10:00"
 - "下午2点" → "14:00"
+- "晚上7点" → "19:00"
+- "中午12点" → "12:00"
 
 **Parsing Instructions:**
 1. Parse the user's natural language input
-2. Identify the operation (create, read, update, delete)
-3. Identify the entities involved (client, session, rate, etc.)
+2. Identify the operation (create, read, update, delete, search)
+3. Identify the entities involved (client, session, rate, knowledgeBase, etc.)
 4. Extract all relevant data fields
-5. Return a JSON object with the following structure:
+5. For search operations on sessions: include dateRange if temporal keywords present
+6. For knowledgeBase operations: automatically handle encryption for sensitive types
+7. **For session queries with client names**: ALWAYS include "clientName" in conditions (e.g., "alex的课程" → conditions: {"clientName": "alex"})
+8. Return a JSON object with the following structure:
 
 {
   "commands": [
     {
       "operation": "create|read|update|delete|search",
-      "entity": "client|session|rate|sessionType|clientType",
+      "entity": "client|session|rate|sessionType|clientType|knowledgeBase",
       "data": { /* extracted data */ },
       "conditions": { /* search/update conditions */ },
       "metadata": {
@@ -101,7 +129,26 @@ function getSystemPrompt(): string {
 3. If a rate is specified and doesn't exist, include a command to create it
 4. Commands should be ordered logically (create dependencies first)
 5. Always use "search" operation before "create" to check existence
-6. Set "requiresConfirmation" to true for destructive operations (update, delete)
+6. Set "requiresConfirmation" to true ONLY for destructive operations (delete, update operations)
+7. Set "requiresConfirmation" to false for read/search and create operations
+8. For session queries: if no specific customer name given but relative time mentioned, search by dateRange only
+9. For session queries: "客户名的课程" should search by both clientName and include any other conditions
+10. For knowledgeBase: type 'api-key', 'ssh-record', 'password' MUST set requireEncryption: true
+11. For knowledgeBase searches: search by type, tags, or title pattern matching
+
+**Session Query Examples:**
+
+Example: "Hubery的课程记录"
+- Search for all sessions where clientName = "Hubery"
+- No time constraint, return all records
+
+Example: "本月所有cello课程"  
+- Search for sessions with sessionTypeName = "cello"
+- dateRange from 2025-10-01 to 2025-10-31 (current month)
+
+Example: "下周David的piano课程"
+- Search for sessions with clientName = "David" and sessionTypeName = "piano"
+- dateRange for next week
 
 **Example 1:**
 Input: "帮我添加一个Hubery，今天10-12点，cello课程，rate 80"
@@ -132,7 +179,7 @@ Output:
       "data": {
         "clientName": "Hubery",
         "sessionTypeName": "cello",
-        "date": "2025-10-18",
+        "date": "2025-10-19",
         "startTime": "10:00",
         "endTime": "12:00",
         "rateAmount": 80
@@ -140,10 +187,26 @@ Output:
     }
   ],
   "description": "将为客户Hubery创建今天10:00-12:00的cello课程记录，费率为80元/小时。如果客户、课程类型或费率不存在，将自动创建。",
-  "requiresConfirmation": true
+  "requiresConfirmation": false
 }
 
 **Example 2:**
+Input: "显示Hubery的所有课程"
+Output:
+{
+  "commands": [
+    {
+      "operation": "search",
+      "entity": "session",
+      "data": {},
+      "conditions": { "clientName": "Hubery" }
+    }
+  ],
+  "description": "查询客户Hubery的所有课程记录",
+  "requiresConfirmation": false
+}
+
+**Example 3:**
 Input: "显示本月所有cello课程"
 Output:
 {
@@ -165,26 +228,43 @@ Output:
   "requiresConfirmation": false
 }
 
-**Example 3:**
-Input: "更新Hubery的rate为90"
+**Example 4 - KnowledgeBase:**
+Input: "保存一个API密钥，标题OpenAI Key，内容sk-test123"
+Output:
+{
+  "commands": [
+    {
+      "operation": "create",
+      "entity": "knowledgeBase",
+      "data": {
+        "title": "OpenAI Key",
+        "type": "api-key",
+        "content": "sk-test123",
+        "requireEncryption": true,
+        "tags": ["api-key", "openai"]
+      }
+    }
+  ],
+  "description": "创建一个API密钥知识库条目，标题为'OpenAI Key'，内容将自动加密保存",
+  "requiresConfirmation": false
+}
+
+**Example 5 - KnowledgeBase Search:**
+Input: "查找所有API密钥"
 Output:
 {
   "commands": [
     {
       "operation": "search",
-      "entity": "client",
+      "entity": "knowledgeBase",
       "data": {},
-      "conditions": { "name": "Hubery" }
-    },
-    {
-      "operation": "update",
-      "entity": "rate",
-      "data": { "amount": 90 },
-      "conditions": { "clientName": "Hubery" }
+      "conditions": {
+        "type": "api-key"
+      }
     }
   ],
-  "description": "将Hubery的费率更新为90元/小时",
-  "requiresConfirmation": true
+  "description": "查询所有类型为'api-key'的知识库条目",
+  "requiresConfirmation": false
 }
 
 Return ONLY the JSON object, no additional text.`;
@@ -285,7 +365,7 @@ export function validateWorkflow(workflow: MCPWorkflow): { valid: boolean; error
     }
 
     // Validate entity
-    const validEntities = ['client', 'session', 'rate', 'invoice', 'sessionType', 'clientType', 'expense', 'expenseCategory'];
+    const validEntities = ['client', 'session', 'rate', 'invoice', 'sessionType', 'clientType', 'expense', 'expenseCategory', 'knowledgeBase'];
     if (!validEntities.includes(cmd.entity)) {
       errors.push(`命令 ${index + 1}: 无效的实体类型 "${cmd.entity}"`);
     }

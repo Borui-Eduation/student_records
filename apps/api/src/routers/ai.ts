@@ -25,7 +25,7 @@ const ExecuteInputSchema = z.object({
   workflow: z.object({
     commands: z.array(z.object({
       operation: z.enum(['create', 'read', 'update', 'delete', 'search']),
-      entity: z.enum(['client', 'session', 'rate', 'invoice', 'sessionType', 'clientType', 'expense', 'expenseCategory']),
+      entity: z.enum(['client', 'session', 'rate', 'invoice', 'sessionType', 'clientType', 'expense', 'expenseCategory', 'knowledgeBase']),
       data: z.record(z.any()).optional(),
       conditions: z.record(z.any()).optional(),
       metadata: z.object({
