@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false);
       },
-      (error) => {
-        // console.error('Error listening to user role:', error);
+      (_error) => {
+        // console.error('Error listening to user role:', _error);
         setUserRole('user');
         setLoading(false);
       }
