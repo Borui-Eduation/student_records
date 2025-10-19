@@ -134,8 +134,12 @@ export function AIAssistant() {
             // 显示每条记录的摘要
             records.slice(0, 5).forEach((record: any, index: number) => {
               content += `${index + 1}. `;
-              if (record.name) content += `${record.name} `;
-              if (record.clientName) content += `客户: ${record.clientName} `;
+              if (record.name) {
+                content += `${record.name} `;
+              }
+              if (record.clientName) {
+                content += `客户: ${record.clientName} `;
+              }
               if (record.date) {
                 const date = new Date(record.date);
                 content += `日期: ${date.toLocaleDateString('zh-CN')} `;

@@ -54,14 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = doc.data();
           const role = (userData.role as UserRole) || 'user';
           setUserRole(role);
-          console.log('🔄 User role updated:', role);
+          // console.log('🔄 User role updated:', role);
         } else {
           setUserRole('user');
         }
         setLoading(false);
       },
       (error) => {
-        console.error('Error listening to user role:', error);
+        // console.error('Error listening to user role:', error);
         setUserRole('user');
         setLoading(false);
       }
