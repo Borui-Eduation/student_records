@@ -98,21 +98,25 @@ Time Expressions:
 
 **Parsing Instructions:**
 1. Parse the user's natural language input
-2. Identify the operation (create, read, update, delete, search)
+2. Identify the operation (create, read, update, delete, search, aggregate)
 3. Identify the entities involved (client, session, rate, knowledgeBase, etc.)
 4. Extract all relevant data fields
 5. For search operations on sessions: include dateRange if temporal keywords present
 6. For knowledgeBase operations: automatically handle encryption for sensitive types
 7. **For session queries with client names**: ALWAYS include "clientName" in conditions (e.g., "alex的课程" → conditions: {"clientName": "alex"})
-8. Return a JSON object with the following structure:
+8. **For aggregate queries**: Detect keywords like "total", "sum", "average", "how many", "count", "统计", "合计", "平均", "多少" 
+   - Use "aggregate" operation with aggregations array
+   - Common patterns: "alex的total" → search alex's sessions then sum totalAmount
+9. Return a JSON object with the following structure:
 
 {
   "commands": [
     {
-      "operation": "create|read|update|delete|search",
+      "operation": "create|read|update|delete|search|aggregate",
       "entity": "client|session|rate|sessionType|clientType|knowledgeBase",
       "data": { /* extracted data */ },
       "conditions": { /* search/update conditions */ },
+      "aggregations": [ /* for aggregate operations */ { "function": "sum|count|avg|min|max", "field": "fieldName" } ],
       "metadata": {
         "confidence": 0.95,
         "warnings": []
@@ -267,6 +271,26 @@ Output:
   "requiresConfirmation": false
 }
 
+**Example 6 - Aggregate Query:**
+Input: "算一下alex的total"
+Output:
+{
+  "commands": [
+    {
+      "operation": "aggregate",
+      "entity": "session",
+      "data": {},
+      "conditions": { "clientName": "alex" },
+      "aggregations": [
+        { "function": "sum", "field": "totalAmount" },
+        { "function": "count", "field": "id" }
+      ]
+    }
+  ],
+  "description": "计算客户alex所有课程的总金额和课程数量",
+  "requiresConfirmation": false
+}
+
 Return ONLY the JSON object, no additional text.`;
 }
 
@@ -359,7 +383,7 @@ export function validateWorkflow(workflow: MCPWorkflow): { valid: boolean; error
 
   workflow.commands.forEach((cmd, index) => {
     // Validate operation
-    const validOperations = ['create', 'read', 'update', 'delete', 'search'];
+    const validOperations = ['create', 'read', 'update', 'delete', 'search', 'aggregate'];
     if (!validOperations.includes(cmd.operation)) {
       errors.push(`命令 ${index + 1}: 无效的操作类型 "${cmd.operation}"`);
     }
@@ -378,6 +402,11 @@ export function validateWorkflow(workflow: MCPWorkflow): { valid: boolean; error
     // Validate conditions for update/delete operations
     if ((cmd.operation === 'update' || cmd.operation === 'delete') && !cmd.conditions) {
       errors.push(`命令 ${index + 1}: ${cmd.operation} 操作通常需要 conditions 字段`);
+    }
+
+    // Validate aggregations for aggregate operations
+    if (cmd.operation === 'aggregate' && (!cmd.aggregations || cmd.aggregations.length === 0)) {
+      errors.push(`命令 ${index + 1}: aggregate 操作需要 aggregations 字段`);
     }
   });
 
@@ -409,5 +438,94 @@ export async function generateSuggestions(context: MCPContext): Promise<string[]
   }
 
   return suggestions;
+}
+
+/**
+ * Generate natural language response from aggregation results
+ */
+export function generateAggregateResponse(
+  _userInput: string,
+  aggregationData: any,
+  _entity: string,
+  conditions?: Record<string, any>
+): string {
+  if (!aggregationData || !aggregationData.aggregations) {
+    return '无法生成响应';
+  }
+
+  const { count, aggregations } = aggregationData;
+  let response = '';
+
+  // 根据查询条件构建响应
+  if (conditions?.clientName) {
+    response += `客户 ${conditions.clientName} `;
+  }
+
+  // 添加记录计数
+  if (count === 0) {
+    response += '没有找到任何记录';
+    return response;
+  }
+
+  response += `共有 ${count} 条记录。`;
+
+  // 添加聚合结果
+  const resultParts: string[] = [];
+  for (const agg of aggregations) {
+    const { function: func, field, result } = agg;
+    
+    if (result === null || result === undefined) {
+      continue;
+    }
+
+    // 格式化字段名为可读的中文
+    const fieldNames: Record<string, string> = {
+      totalAmount: '总金额',
+      amount: '金额',
+      durationHours: '总时长',
+      id: '数量',
+    };
+    
+    const displayField = fieldNames[field] || field;
+    let formattedResult = result;
+    
+    // 格式化数字结果
+    if (typeof result === 'number') {
+      if (displayField.includes('金额')) {
+        formattedResult = `¥${result.toFixed(2)}`;
+      } else if (displayField.includes('时长')) {
+        formattedResult = `${result.toFixed(2)} 小时`;
+      } else if (Number.isInteger(result)) {
+        formattedResult = result;
+      } else {
+        formattedResult = result.toFixed(2);
+      }
+    }
+
+    // 生成聚合结果描述
+    switch (func) {
+      case 'sum':
+        resultParts.push(`总${displayField}为 ${formattedResult}`);
+        break;
+      case 'avg':
+        resultParts.push(`平均${displayField}为 ${formattedResult}`);
+        break;
+      case 'count':
+        resultParts.push(`共有 ${result} 条记录`);
+        break;
+      case 'min':
+        resultParts.push(`最小${displayField}为 ${formattedResult}`);
+        break;
+      case 'max':
+        resultParts.push(`最大${displayField}为 ${formattedResult}`);
+        break;
+    }
+  }
+
+  if (resultParts.length > 0) {
+    response += resultParts.join('，') + '。';
+  }
+
+  return response;
 }
 

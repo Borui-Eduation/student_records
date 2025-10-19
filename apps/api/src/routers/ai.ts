@@ -4,7 +4,7 @@
 
 import { router, adminProcedure } from '../trpc';
 import { z } from 'zod';
-import { parseNaturalLanguage, validateWorkflow, generateSuggestions } from '../services/aiService';
+import { parseNaturalLanguage, validateWorkflow, generateSuggestions, generateAggregateResponse } from '../services/aiService';
 import { executeWorkflow } from '../services/mcpExecutor';
 import type { MCPContext } from '@student-record/shared';
 
@@ -24,10 +24,14 @@ const ChatInputSchema = z.object({
 const ExecuteInputSchema = z.object({
   workflow: z.object({
     commands: z.array(z.object({
-      operation: z.enum(['create', 'read', 'update', 'delete', 'search']),
+      operation: z.enum(['create', 'read', 'update', 'delete', 'search', 'aggregate']),
       entity: z.enum(['client', 'session', 'rate', 'invoice', 'sessionType', 'clientType', 'expense', 'expenseCategory', 'knowledgeBase']),
       data: z.record(z.any()).optional(),
       conditions: z.record(z.any()).optional(),
+      aggregations: z.array(z.object({
+        function: z.enum(['sum', 'count', 'avg', 'min', 'max']),
+        field: z.string(),
+      })).optional(),
       metadata: z.object({
         confidence: z.number().optional(),
         originalInput: z.string().optional(),
@@ -108,6 +112,25 @@ export const aiRouter = router({
         userId: ctx.user.uid,
         userRole: ctx.userRole,
       });
+
+      // For aggregate operations, generate natural language response
+      if (result.success && workflow.commands.length > 0) {
+        const lastCommand = workflow.commands[workflow.commands.length - 1];
+        if (lastCommand.operation === 'aggregate' && result.data && Array.isArray(result.data)) {
+          const aggregationResult = result.data[result.data.length - 1];
+          const naturalResponse = generateAggregateResponse(
+            lastCommand.metadata?.originalInput || '',
+            aggregationResult,
+            lastCommand.entity,
+            lastCommand.conditions
+          );
+          
+          return {
+            ...result,
+            naturalResponse,
+          };
+        }
+      }
 
       return result;
     }),

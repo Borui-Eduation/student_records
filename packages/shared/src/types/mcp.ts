@@ -4,7 +4,10 @@
  */
 
 // Operation types supported by the MCP system
-export type MCPOperation = 'create' | 'read' | 'update' | 'delete' | 'search';
+export type MCPOperation = 'create' | 'read' | 'update' | 'delete' | 'search' | 'aggregate';
+
+// Aggregation function types
+export type MCPAggregateFunction = 'sum' | 'count' | 'avg' | 'min' | 'max';
 
 // Entity types that can be operated on
 export type MCPEntity = 
@@ -24,6 +27,11 @@ export interface MCPCommand {
   entity: MCPEntity;
   data?: Record<string, any>;
   conditions?: Record<string, any>;
+  // For aggregate operations
+  aggregations?: {
+    function: MCPAggregateFunction;
+    field: string; // Field to aggregate on (e.g., 'totalAmount')
+  }[];
   metadata?: {
     confidence?: number; // AI confidence score (0-1)
     originalInput?: string; // Original user input

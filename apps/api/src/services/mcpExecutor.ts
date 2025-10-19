@@ -127,6 +127,8 @@ async function executeCommand(
       return deleteEntity(command, context);
     case 'read':
       return searchEntity(command, context);
+    case 'aggregate':
+      return aggregateEntity(command, context);
     default:
       return {
         success: false,
@@ -812,6 +814,108 @@ async function findOrCreateRate(
   logger.info('Auto-created rate', { clientId, amount, rateId: docRef.id });
 
   return { success: true, data: rate };
+}
+
+/**
+ * Aggregate entities (sum, count, avg, min, max)
+ */
+async function aggregateEntity(
+  command: MCPCommand,
+  context: ExecutionContext
+): Promise<MCPExecutionResult> {
+  const { entity: _entity, aggregations } = command;
+  const { db: _db, userId: _userId, userRole: _userRole } = context;
+
+  try {
+    if (!aggregations || aggregations.length === 0) {
+      return {
+        success: false,
+        error: 'No aggregations specified',
+      };
+    }
+
+    // First, search for entities matching conditions
+    const searchResult = await searchEntity(command, context);
+    
+    if (!searchResult.success || !searchResult.data) {
+      return {
+        success: false,
+        error: 'Failed to retrieve data for aggregation',
+      };
+    }
+
+    const items = searchResult.data;
+    if (items.length === 0) {
+      return {
+        success: true,
+        data: {
+          count: 0,
+          aggregations: aggregations.map(agg => ({
+            function: agg.function,
+            field: agg.field,
+            result: agg.function === 'count' ? 0 : null,
+          })),
+        },
+      };
+    }
+
+    // Calculate aggregations
+    const results: any = {
+      count: items.length,
+      aggregations: [],
+    };
+
+    for (const agg of aggregations) {
+      const { function: func, field } = agg;
+      const values = items.map((item: any) => {
+        const val = item[field];
+        return typeof val === 'number' ? val : parseFloat(val) || 0;
+      }).filter((v: any) => !isNaN(v));
+
+      let result: number | null = null;
+
+      switch (func) {
+        case 'sum':
+          result = values.reduce((a: any, b: any) => a + b, 0);
+          break;
+        case 'count':
+          result = values.length;
+          break;
+        case 'avg':
+          result = values.length > 0 ? values.reduce((a: any, b: any) => a + b, 0) / values.length : 0;
+          break;
+        case 'min':
+          result = values.length > 0 ? Math.min(...values) : null;
+          break;
+        case 'max':
+          result = values.length > 0 ? Math.max(...values) : null;
+          break;
+      }
+
+      results.aggregations.push({
+        function: func,
+        field,
+        result,
+      });
+    }
+
+    logger.info('Aggregation completed', {
+      entity: _entity,
+      itemCount: items.length,
+      aggregationCount: aggregations.length,
+    });
+
+    return {
+      success: true,
+      data: results,
+    };
+  } catch (error) {
+    logger.error('Aggregation failed', error instanceof Error ? error : new Error(String(error)));
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Aggregation failed',
+    };
+  }
 }
 
 /**
