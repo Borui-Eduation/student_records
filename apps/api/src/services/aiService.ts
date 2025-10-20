@@ -449,7 +449,11 @@ export function generateAggregateResponse(
   _entity: string,
   conditions?: Record<string, any>
 ): string {
+  // Log the received data for debugging
+  console.log('generateAggregateResponse received:', JSON.stringify(aggregationData));
+  
   if (!aggregationData || !aggregationData.aggregations) {
+    console.error('Invalid aggregationData:', aggregationData);
     return '无法生成响应';
   }
 

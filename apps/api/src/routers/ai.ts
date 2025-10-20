@@ -122,10 +122,12 @@ export const aiRouter = router({
       let naturalResponse: string | undefined;
       if (result.success && workflow.commands.length > 0) {
         const lastCommand = workflow.commands[workflow.commands.length - 1];
-        if (lastCommand.operation === 'aggregate' && result.data) {
+        if (lastCommand.operation === 'aggregate' && result.data && Array.isArray(result.data)) {
+          // result.data is an array of command results, get the last one
+          const aggregateResult = result.data[result.data.length - 1];
           naturalResponse = generateAggregateResponse(
             lastCommand.metadata?.originalInput || '',
-            result.data,
+            aggregateResult,
             lastCommand.entity,
             lastCommand.conditions
           );
@@ -152,7 +154,7 @@ export const aiRouter = router({
 ${naturalResponse}
 
 原始数据:
-${JSON.stringify(result.data, null, 2)}`;
+${JSON.stringify(aggregateResult, null, 2)}`;
             
             await ctx.db.collection('knowledgeBase').add(cleanUndefinedValues({
               userId: ctx.user.uid,
