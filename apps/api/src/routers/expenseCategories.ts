@@ -8,6 +8,7 @@ import {
 import { PRESET_CATEGORIES } from '@student-record/shared/dist/types/expenseCategory';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const expenseCategoriesRouter = router({
   /**
@@ -33,7 +34,7 @@ export const expenseCategoriesRouter = router({
     let count = 0;
     for (const preset of PRESET_CATEGORIES) {
       const docRef = ctx.db.collection('expenseCategories').doc();
-      batch.set(docRef, {
+      batch.set(docRef, cleanUndefinedValues({
         userId: ctx.user.uid,
         name: preset.name,
         icon: preset.icon,
@@ -43,7 +44,7 @@ export const expenseCategoriesRouter = router({
         presetId: preset.id, // 保存预设ID便于识别
         createdAt: now,
         updatedAt: now,
-      });
+      }));
       count++;
     }
 
@@ -84,7 +85,7 @@ export const expenseCategoriesRouter = router({
       updatedAt: now,
     };
 
-    const docRef = await ctx.db.collection('expenseCategories').add(categoryData);
+    const docRef = await ctx.db.collection('expenseCategories').add(cleanUndefinedValues(categoryData));
 
     return {
       id: docRef.id,
@@ -211,7 +212,7 @@ export const expenseCategoriesRouter = router({
     if (updates.color) updateData.color = updates.color;
     if (updates.order !== undefined) updateData.order = updates.order;
 
-    await docRef.update(updateData);
+    await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     return {

@@ -9,6 +9,7 @@
 
 import * as admin from 'firebase-admin';
 import { createLogger } from '@student-record/shared';
+import { cleanUndefinedValues } from './firestoreHelpers';
 
 const logger = createLogger('cache-service');
 
@@ -86,11 +87,11 @@ class FirestoreCache {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + ttlDays);
 
-      await this.db.collection(this.cacheCollection).doc(key).set({
+      await this.db.collection(this.cacheCollection).doc(key).set(cleanUndefinedValues({
         value,
         expiresAt,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      }));
 
       logger.debug('Firestore cache SET', { key, ttlDays });
     } catch (error) {

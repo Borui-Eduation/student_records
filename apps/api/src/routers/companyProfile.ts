@@ -1,6 +1,7 @@
 import { router, adminProcedure, auditedProcedure } from '../trpc';
 import { UpdateCompanyProfileSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const companyProfileRouter = router({
   /**
@@ -41,7 +42,7 @@ export const companyProfileRouter = router({
       updatedBy: ctx.user.uid,
     };
 
-    await docRef.set(updateData, { merge: true });
+    await docRef.set(cleanUndefinedValues(updateData), { merge: true });
 
     const updated = await docRef.get();
     return {

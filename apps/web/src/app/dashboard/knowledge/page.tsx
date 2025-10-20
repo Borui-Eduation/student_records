@@ -50,6 +50,7 @@ export default function KnowledgePage() {
       'ssh-record': 'text-purple-600 bg-purple-100',
       'password': 'text-orange-600 bg-orange-100',
       'memo': 'text-green-600 bg-green-100',
+      'query-result': 'text-indigo-600 bg-indigo-100',
     };
     return colors[type] || 'text-gray-600 bg-gray-100';
   };

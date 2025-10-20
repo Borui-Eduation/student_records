@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchema, GetMonthlyRevenueSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 // Helper function to format date based on granularity
 // Uses UTC to avoid timezone issues
@@ -124,19 +125,19 @@ export const invoicesRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    const invoiceRef = await ctx.db.collection('invoices').add(invoiceData);
+    const invoiceRef = await ctx.db.collection('invoices').add(cleanUndefinedValues(invoiceData));
 
     // Update counter
-    await counterRef.set({ current: nextNumber }, { merge: true });
+    await counterRef.set(cleanUndefinedValues({ current: nextNumber }), { merge: true });
 
     // Update all sessions to billed status
     const batch = ctx.db.batch();
     sessionRefs.forEach((ref) => {
-      batch.update(ref, {
+      batch.update(ref, cleanUndefinedValues({
         billingStatus: 'billed',
         invoiceId: invoiceRef.id,
         updatedAt: now,
-      });
+      }));
     });
     await batch.commit();
 
@@ -298,15 +299,15 @@ export const invoicesRouter = router({
         const batch = ctx.db.batch();
         for (const sessionId of sessionIds) {
           const sessionRef = ctx.db.collection('sessions').doc(sessionId);
-          batch.update(sessionRef, {
+          batch.update(sessionRef, cleanUndefinedValues({
             billingStatus: 'paid',
             updatedAt: admin.firestore.Timestamp.now(),
-          });
+          }));
         }
         await batch.commit();
       }
 
-      await docRef.update(updateData);
+      await docRef.update(cleanUndefinedValues(updateData));
 
       const updated = await docRef.get();
       return {
@@ -352,11 +353,11 @@ export const invoicesRouter = router({
     const batch = ctx.db.batch();
     for (const sessionId of sessionIds) {
       const sessionRef = ctx.db.collection('sessions').doc(sessionId);
-      batch.update(sessionRef, {
+      batch.update(sessionRef, cleanUndefinedValues({
         billingStatus: 'unbilled',
         invoiceId: admin.firestore.FieldValue.delete(),
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
     }
     await batch.commit();
 

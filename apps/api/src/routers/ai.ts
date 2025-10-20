@@ -4,9 +4,14 @@
 
 import { router, adminProcedure } from '../trpc';
 import { z } from 'zod';
-import { parseNaturalLanguage, validateWorkflow, generateSuggestions, generateAggregateResponse } from '../services/aiService';
+import { parseNaturalLanguage, validateWorkflow, generateSuggestions, generateAggregateResponse, generateQueryResultTitle, generateQueryResultTags } from '../services/aiService';
 import { executeWorkflow } from '../services/mcpExecutor';
 import type { MCPContext } from '@student-record/shared';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
+import * as admin from 'firebase-admin';
+import { createLogger } from '@student-record/shared';
+
+const logger = createLogger('ai-router');
 
 // Schemas
 const ChatInputSchema = z.object({
@@ -114,25 +119,71 @@ export const aiRouter = router({
       });
 
       // For aggregate operations, generate natural language response
+      let naturalResponse: string | undefined;
       if (result.success && workflow.commands.length > 0) {
         const lastCommand = workflow.commands[workflow.commands.length - 1];
-        if (lastCommand.operation === 'aggregate' && result.data && Array.isArray(result.data)) {
-          const aggregationResult = result.data[result.data.length - 1];
-          const naturalResponse = generateAggregateResponse(
+        if (lastCommand.operation === 'aggregate' && result.data) {
+          naturalResponse = generateAggregateResponse(
             lastCommand.metadata?.originalInput || '',
-            aggregationResult,
+            result.data,
             lastCommand.entity,
             lastCommand.conditions
           );
           
-          return {
-            ...result,
-            naturalResponse,
-          };
+          // Auto-save query result to Knowledge Base
+          try {
+            const title = generateQueryResultTitle(
+              lastCommand.metadata?.originalInput || 'AI查询',
+              lastCommand.operation,
+              lastCommand.entity
+            );
+            
+            const tags = generateQueryResultTags(
+              lastCommand.operation,
+              lastCommand.entity,
+              lastCommand.conditions
+            );
+            
+            const content = `查询时间: ${new Date().toLocaleString('zh-CN')}
+
+用户问题: ${lastCommand.metadata?.originalInput || ''}
+
+查询结果:
+${naturalResponse}
+
+原始数据:
+${JSON.stringify(result.data, null, 2)}`;
+            
+            await ctx.db.collection('knowledgeBase').add(cleanUndefinedValues({
+              userId: ctx.user.uid,
+              title,
+              type: 'query-result',
+              content,
+              isEncrypted: false,
+              tags,
+              category: 'AI查询历史',
+              attachments: [],
+              accessCount: 0,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              createdBy: ctx.user.uid,
+            }));
+            
+            logger.info('Query result auto-saved to Knowledge Base', { 
+              userId: ctx.user.uid, 
+              title 
+            });
+          } catch (error) {
+            // Don't fail the main request if save fails
+            logger.error('Failed to auto-save query result', error instanceof Error ? error : new Error(String(error)));
+          }
         }
       }
 
-      return result;
+      return {
+        ...result,
+        naturalResponse,
+      };
     }),
 
   /**

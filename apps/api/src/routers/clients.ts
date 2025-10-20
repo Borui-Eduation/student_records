@@ -7,6 +7,7 @@ import {
 } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const clientsRouter = router({
   /**
@@ -27,7 +28,7 @@ export const clientsRouter = router({
         createdBy: ctx.user.uid,
       };
 
-      const docRef = await ctx.db.collection('clients').add(clientData);
+      const docRef = await ctx.db.collection('clients').add(cleanUndefinedValues(clientData));
 
       return {
         id: docRef.id,
@@ -154,10 +155,10 @@ export const clientsRouter = router({
         });
       }
 
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         ...updates,
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       const updated = await docRef.get();
       return {
@@ -197,10 +198,10 @@ export const clientsRouter = router({
       }
 
       // Soft delete by setting active to false
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         active: false,
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       return { success: true };
     }),

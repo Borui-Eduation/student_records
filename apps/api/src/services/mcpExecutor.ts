@@ -11,6 +11,7 @@ import type {
   MCPExecutionResult, 
   MCPEntity
 } from '@student-record/shared';
+import { cleanUndefinedValues } from './firestoreHelpers';
 
 const logger = createLogger('mcp-executor');
 
@@ -406,7 +407,7 @@ async function createEntity(
         break;
     }
 
-    const docRef = await db.collection(getCollectionName(entity)).add(entityData);
+    const docRef = await db.collection(getCollectionName(entity)).add(cleanUndefinedValues(entityData));
     const created = { id: docRef.id, ...entityData };
 
     return {
@@ -711,7 +712,7 @@ async function findOrCreateClient(
     aiGeneratedAt: now, // AI创建时间
   };
 
-  const docRef = await db.collection('clients').add(clientData);
+  const docRef = await db.collection('clients').add(cleanUndefinedValues(clientData));
   const client = { id: docRef.id, ...clientData };
 
   logger.info('Auto-created client', { clientName, clientId: docRef.id });
@@ -753,7 +754,7 @@ async function findOrCreateSessionType(
     aiGeneratedAt: now, // AI创建时间
   };
 
-  const docRef = await db.collection('sessionTypes').add(typeData);
+  const docRef = await db.collection('sessionTypes').add(cleanUndefinedValues(typeData));
   const sessionType = { id: docRef.id, ...typeData };
 
   logger.info('Auto-created sessionType', { sessionTypeName, sessionTypeId: docRef.id });
@@ -808,7 +809,7 @@ async function findOrCreateRate(
     aiGeneratedAt: now, // AI创建时间
   };
 
-  const docRef = await db.collection('rates').add(rateData);
+  const docRef = await db.collection('rates').add(cleanUndefinedValues(rateData));
   const rate = { id: docRef.id, ...rateData };
 
   logger.info('Auto-created rate', { clientId, amount, rateId: docRef.id });

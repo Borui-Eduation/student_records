@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { CreateSessionSchema, UpdateSessionSchema, ListSessionsSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 // Helper function to parse date string in local timezone
 function parseLocalDate(dateInput: string | Date): Date {
@@ -155,7 +156,7 @@ export const sessionsRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    const docRef = await ctx.db.collection('sessions').add(sessionData);
+    const docRef = await ctx.db.collection('sessions').add(cleanUndefinedValues(sessionData));
 
     return {
       id: docRef.id,
@@ -329,7 +330,7 @@ export const sessionsRouter = router({
       updateData.date = admin.firestore.Timestamp.fromDate(parseLocalDate(updates.date));
     }
 
-    await docRef.update(updateData);
+    await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     const updatedData = updated.data();

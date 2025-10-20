@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import * as admin from 'firebase-admin';
 import { createLogger } from '@student-record/shared';
+import { cleanUndefinedValues } from './services/firestoreHelpers';
 
 const logger = createLogger('trpc');
 
@@ -31,6 +32,11 @@ if (!admin.apps.length) {
     credential,
     projectId,
     storageBucket,
+  });
+
+  // Enable ignoreUndefinedProperties globally for Firestore
+  admin.firestore().settings({
+    ignoreUndefinedProperties: true,
   });
 }
 
@@ -143,14 +149,14 @@ export const auditedProcedure = adminProcedure.use(async ({ ctx, path, next }) =
   const result = await next();
 
   // Log to Firestore audit logs (async, don't wait)
-  ctx.db.collection('auditLogs').add({
+  ctx.db.collection('auditLogs').add(cleanUndefinedValues({
     userId: ctx.user.uid,
     userEmail: ctx.user.email,
     action: path,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
     ipAddress: ctx.req.ip,
     userAgent: ctx.req.headers['user-agent'],
-  }).catch((error) => {
+  })).catch((error) => {
     logger.error('Audit log failed', { userId: ctx.user.uid, path }, error instanceof Error ? error : new Error(String(error)));
   });
 

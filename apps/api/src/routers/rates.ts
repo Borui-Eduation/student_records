@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { CreateRateSchema, UpdateRateSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const ratesRouter = router({
   /**
@@ -29,7 +30,7 @@ export const ratesRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    const docRef = await ctx.db.collection('rates').add(rateData);
+    const docRef = await ctx.db.collection('rates').add(cleanUndefinedValues(rateData));
 
     // If clientId is provided, add this rate to client's defaultRateIds
     if (input.clientId) {
@@ -172,7 +173,7 @@ export const ratesRouter = router({
           : admin.firestore.Timestamp.fromDate(updates.endDate);
     }
 
-    await docRef.update(updateData);
+    await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     return {

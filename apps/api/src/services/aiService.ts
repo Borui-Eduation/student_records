@@ -529,3 +529,71 @@ export function generateAggregateResponse(
   return response;
 }
 
+/**
+ * Generate a natural title for query result
+ * Uses AI-like logic to create readable titles
+ */
+export function generateQueryResultTitle(
+  userInput: string,
+  operation: string,
+  _entity: string
+): string {
+  // Extract key information from user input
+  const cleaned = userInput.trim();
+  
+  // For aggregate queries
+  if (operation === 'aggregate') {
+    // Examples: "计算alex的total" -> "计算alex的total - 查询结果"
+    return `${cleaned} - 查询结果`;
+  }
+  
+  // For search queries
+  if (operation === 'search') {
+    return `${cleaned} - 搜索记录`;
+  }
+  
+  return `${cleaned} - AI查询`;
+}
+
+/**
+ * Generate natural tags for query result
+ */
+export function generateQueryResultTags(
+  operation: string,
+  entity: string,
+  conditions?: Record<string, any>
+): string[] {
+  const tags: string[] = ['ai-generated', 'query-result'];
+  
+  // Add operation type
+  if (operation === 'aggregate') {
+    tags.push('统计查询');
+  } else if (operation === 'search') {
+    tags.push('搜索查询');
+  }
+  
+  // Add entity type in Chinese
+  const entityNameMap: Record<string, string> = {
+    session: '课程',
+    client: '客户',
+    invoice: '发票',
+    expense: '支出',
+    rate: '费率',
+    sessionType: '课程类型',
+    clientType: '客户类型',
+    expenseCategory: '支出分类',
+    knowledgeBase: '知识库',
+  };
+  
+  if (entityNameMap[entity]) {
+    tags.push(entityNameMap[entity]);
+  }
+  
+  // Add client name if present
+  if (conditions?.clientName) {
+    tags.push(conditions.clientName);
+  }
+  
+  return tags;
+}
+

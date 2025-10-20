@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { CreateSessionTypeSchema, UpdateSessionTypeSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const sessionTypesRouter = router({
   /**
@@ -20,7 +21,7 @@ export const sessionTypesRouter = router({
         updatedAt: now,
       };
 
-      const docRef = await ctx.db.collection('sessionTypes').add(sessionTypeData);
+      const docRef = await ctx.db.collection('sessionTypes').add(cleanUndefinedValues(sessionTypeData));
 
       return {
         id: docRef.id,
@@ -130,10 +131,10 @@ export const sessionTypesRouter = router({
         });
       }
 
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         ...updates,
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       const updated = await docRef.get();
       return {

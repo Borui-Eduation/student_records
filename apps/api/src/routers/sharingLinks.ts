@@ -4,6 +4,7 @@ import { CreateSharingLinkSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const sharingLinksRouter = router({
   /**
@@ -50,7 +51,7 @@ export const sharingLinksRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    const docRef = await ctx.db.collection('sharingLinks').add(linkData);
+    const docRef = await ctx.db.collection('sharingLinks').add(cleanUndefinedValues(linkData));
 
     return {
       id: docRef.id,
@@ -100,10 +101,10 @@ export const sharingLinksRouter = router({
       }
 
       // Update access tracking
-      await linkDoc.ref.update({
+      await linkDoc.ref.update(cleanUndefinedValues({
         lastAccessedAt: admin.firestore.Timestamp.now(),
         accessCount: admin.firestore.FieldValue.increment(1),
-      });
+      }));
 
       // Get session data
       const sessionDoc = await ctx.db.collection('sessions').doc(linkData.sessionId).get();
@@ -236,11 +237,11 @@ export const sharingLinksRouter = router({
         });
       }
 
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         revoked: true,
         revokedAt: admin.firestore.Timestamp.now(),
         revokedBy: ctx.user.uid,
-      });
+      }));
 
       return { success: true };
     }),
@@ -280,10 +281,10 @@ export const sharingLinksRouter = router({
       const newExpiration = new Date(currentExpiration);
       newExpiration.setDate(newExpiration.getDate() + input.additionalDays);
 
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         expiresAt: admin.firestore.Timestamp.fromDate(newExpiration),
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       return {
         success: true,

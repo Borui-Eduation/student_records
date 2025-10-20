@@ -8,6 +8,7 @@ import {
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { encryptionService } from '../services/encryption';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const knowledgeBaseRouter = router({
   /**
@@ -66,7 +67,7 @@ export const knowledgeBaseRouter = router({
       entryData.encryptionMetadata = encryptionMetadata;
     }
 
-    const docRef = await ctx.db.collection('knowledgeBase').add(entryData);
+    const docRef = await ctx.db.collection('knowledgeBase').add(cleanUndefinedValues(entryData));
 
     return {
       id: docRef.id,
@@ -99,10 +100,10 @@ export const knowledgeBaseRouter = router({
     }
 
     // Update access tracking
-    await doc.ref.update({
+    await doc.ref.update(cleanUndefinedValues({
       accessedAt: admin.firestore.Timestamp.now(),
       accessCount: admin.firestore.FieldValue.increment(1),
-    });
+    }));
 
     // Decrypt if encrypted
     let content = data.content;
@@ -246,7 +247,7 @@ export const knowledgeBaseRouter = router({
       }
     }
 
-    await docRef.update(updateData);
+    await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     const updatedData = updated.data()!;

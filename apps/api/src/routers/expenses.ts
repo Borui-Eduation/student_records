@@ -9,6 +9,7 @@ import {
 } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 import { 
   processImage, 
   base64ToBuffer, 
@@ -157,7 +158,7 @@ export const expensesRouter = router({
       createdBy: ctx.user.uid,
     };
 
-    await ctx.db.collection('expenses').doc(expenseId).set(expenseData);
+    await ctx.db.collection('expenses').doc(expenseId).set(cleanUndefinedValues(expenseData));
 
     return {
       id: expenseId,
@@ -414,7 +415,7 @@ export const expensesRouter = router({
       }
     }
 
-    await docRef.update(updateData);
+    await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     return {

@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { CreateClientTypeSchema, UpdateClientTypeSchema } from '@student-record/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const clientTypesRouter = router({
   /**
@@ -20,7 +21,7 @@ export const clientTypesRouter = router({
         updatedAt: now,
       };
 
-      const docRef = await ctx.db.collection('clientTypes').add(clientTypeData);
+      const docRef = await ctx.db.collection('clientTypes').add(cleanUndefinedValues(clientTypeData));
 
       return {
         id: docRef.id,
@@ -130,10 +131,10 @@ export const clientTypesRouter = router({
         });
       }
 
-      await docRef.update({
+      await docRef.update(cleanUndefinedValues({
         ...updates,
         updatedAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       const updated = await docRef.get();
       return {

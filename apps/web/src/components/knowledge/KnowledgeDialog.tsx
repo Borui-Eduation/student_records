@@ -83,7 +83,7 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
   useEffect(() => {
     if (entry && isFullEntry(entry) && open && isEditing) {
       setValue('title', entry.title);
-      setValue('type', entry.type as 'note' | 'api-key' | 'ssh-record' | 'password' | 'memo');
+      setValue('type', entry.type);
       setValue('content', entry.content);
       setValue('category', entry.category || '');
       setValue('tags', entry.tags || []);
@@ -303,6 +303,7 @@ Use Markdown syntax:
                   <SelectItem value="ssh-record">SSH Record</SelectItem>
                   <SelectItem value="password">Password</SelectItem>
                   <SelectItem value="memo">Memo</SelectItem>
+                  <SelectItem value="query-result">Query Result</SelectItem>
                 </SelectContent>
               </Select>
             </div>

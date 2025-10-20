@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const KnowledgeTypeSchema = z.enum(['note', 'api-key', 'ssh-record', 'password', 'memo']);
+export const KnowledgeTypeSchema = z.enum(['note', 'api-key', 'ssh-record', 'password', 'memo', 'query-result']);
 
 export const CreateKnowledgeEntrySchema = z.object({
   title: z.string().min(1).max(200),

@@ -2,6 +2,7 @@ import { router, protectedProcedure, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
 export const usersRouter = router({
   /**
@@ -12,9 +13,9 @@ export const usersRouter = router({
 
     if (userDoc.exists) {
       // Update last login time
-      await userDoc.ref.update({
+      await userDoc.ref.update(cleanUndefinedValues({
         lastLoginAt: admin.firestore.Timestamp.now(),
-      });
+      }));
 
       return {
         id: userDoc.id,
@@ -34,7 +35,7 @@ export const usersRouter = router({
       isInitialized: false,
     };
 
-    await ctx.db.collection('users').doc(ctx.user.uid).set(newUser);
+    await ctx.db.collection('users').doc(ctx.user.uid).set(cleanUndefinedValues(newUser));
 
     return {
       id: ctx.user.uid,
@@ -297,7 +298,7 @@ $$
     const now = admin.firestore.Timestamp.now();
 
     // Add markdown guide to knowledge base
-    await ctx.db.collection('knowledgeBase').add({
+    await ctx.db.collection('knowledgeBase').add(cleanUndefinedValues({
       userId: ctx.user.uid,
       title: '📚 Markdown 语法指南',
       type: 'note',
@@ -310,10 +311,10 @@ $$
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.user.uid,
-    });
+    }));
 
     // Create default company profile
-    await ctx.db.collection('companyProfile').doc(ctx.user.uid).set({
+    await ctx.db.collection('companyProfile').doc(ctx.user.uid).set(cleanUndefinedValues({
       companyName: '',
       address: '',
       email: ctx.user.email || '',
@@ -321,12 +322,12 @@ $$
       website: '',
       updatedAt: now,
       updatedBy: ctx.user.uid,
-    });
+    }));
 
     // Mark user as initialized
-    await userDoc.ref.update({
+    await userDoc.ref.update(cleanUndefinedValues({
       isInitialized: true,
-    });
+    }));
 
     return { success: true, message: 'User initialized successfully' };
   }),

@@ -59,6 +59,7 @@ export interface MCPExecutionResult {
   success: boolean;
   data?: any; // The created/updated/retrieved data
   error?: string;
+  naturalResponse?: string; // Natural language response for aggregate queries
   affectedRecords?: {
     entity: MCPEntity;
     id: string;
