@@ -169,22 +169,36 @@ export const sessionTypesRouter = router({
         });
       }
 
-      // Check if sessions use this session type
-      const sessionsInUse = await ctx.db
+      // CASCADE DELETE: Delete session type and soft delete all related sessions
+      const batch = ctx.db.batch();
+      const now = admin.firestore.Timestamp.now();
+      
+      // Get all sessions using this type
+      const sessionsSnapshot = await ctx.db
         .collection('sessions')
         .where('sessionTypeId', '==', input.id)
-        .limit(1)
+        .where('active', '==', true)
         .get();
 
-      if (!sessionsInUse.empty) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot delete session type that is in use by sessions',
-        });
-      }
+      // Soft delete all related sessions
+      sessionsSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
 
-      await docRef.delete();
+      // Delete the session type itself
+      batch.delete(docRef);
 
-      return { success: true };
+      // Commit all changes atomically
+      await batch.commit();
+
+      return { 
+        success: true,
+        cascadeDeleted: {
+          sessions: sessionsSnapshot.size,
+        }
+      };
     }),
 });

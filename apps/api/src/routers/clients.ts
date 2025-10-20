@@ -197,13 +197,84 @@ export const clientsRouter = router({
         });
       }
 
-      // Soft delete by setting active to false
-      await docRef.update(cleanUndefinedValues({
+      // CASCADE DELETE: Soft delete client and all related entities
+      const batch = ctx.db.batch();
+      const now = admin.firestore.Timestamp.now();
+      
+      // 1. Soft delete the client
+      batch.update(docRef, cleanUndefinedValues({
         active: false,
-        updatedAt: admin.firestore.Timestamp.now(),
+        updatedAt: now,
       }));
 
-      return { success: true };
+      // 2. Cascade delete: Soft delete all related sessions
+      const sessionsSnapshot = await ctx.db
+        .collection('sessions')
+        .where('clientId', '==', input.id)
+        .where('active', '==', true)
+        .get();
+      
+      sessionsSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+
+      // 3. Cascade delete: Soft delete all related rates
+      const ratesSnapshot = await ctx.db
+        .collection('rates')
+        .where('clientId', '==', input.id)
+        .where('active', '==', true)
+        .get();
+      
+      ratesSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+
+      // 4. Cascade delete: Soft delete all related expenses (if linked to client)
+      const expensesSnapshot = await ctx.db
+        .collection('expenses')
+        .where('clientId', '==', input.id)
+        .where('active', '==', true)
+        .get();
+      
+      expensesSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+
+      // 5. Cascade delete: Soft delete invoices that reference this client
+      const invoicesSnapshot = await ctx.db
+        .collection('invoices')
+        .where('clientId', '==', input.id)
+        .where('active', '==', true)
+        .get();
+      
+      invoicesSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+
+      // Commit all changes atomically
+      await batch.commit();
+
+      return { 
+        success: true,
+        cascadeDeleted: {
+          sessions: sessionsSnapshot.size,
+          rates: ratesSnapshot.size,
+          expenses: expensesSnapshot.size,
+          invoices: invoicesSnapshot.size,
+        }
+      };
     }),
 });
 

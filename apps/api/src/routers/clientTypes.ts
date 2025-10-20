@@ -169,36 +169,126 @@ export const clientTypesRouter = router({
         });
       }
 
-      // Check if client type is in use
-      const clientsInUse = await ctx.db
+      // CASCADE DELETE: Delete client type and all related entities
+      const batch = ctx.db.batch();
+      const now = admin.firestore.Timestamp.now();
+      
+      // Get all clients using this type
+      const clientsSnapshot = await ctx.db
         .collection('clients')
         .where('clientTypeId', '==', input.id)
-        .limit(1)
+        .where('active', '==', true)
         .get();
 
-      if (!clientsInUse.empty) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot delete client type that is in use by clients',
+      // Cascade delete all clients (which will cascade to their sessions, rates, etc.)
+      // Note: We need to do this in multiple batches if there are many clients
+      const clientIds: string[] = [];
+      clientsSnapshot.docs.forEach(doc => {
+        clientIds.push(doc.id);
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+
+      // For each deleted client, also delete their related entities
+      let totalSessions = 0;
+      let totalRates = 0;
+      let totalExpenses = 0;
+      let totalInvoices = 0;
+
+      for (const clientId of clientIds) {
+        // Delete sessions for this client
+        const sessionsSnapshot = await ctx.db
+          .collection('sessions')
+          .where('clientId', '==', clientId)
+          .where('active', '==', true)
+          .get();
+        
+        sessionsSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, cleanUndefinedValues({
+            active: false,
+            updatedAt: now,
+          }));
         });
+        totalSessions += sessionsSnapshot.size;
+
+        // Delete rates for this client
+        const clientRatesSnapshot = await ctx.db
+          .collection('rates')
+          .where('clientId', '==', clientId)
+          .where('active', '==', true)
+          .get();
+        
+        clientRatesSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, cleanUndefinedValues({
+            active: false,
+            updatedAt: now,
+          }));
+        });
+        totalRates += clientRatesSnapshot.size;
+
+        // Delete expenses for this client
+        const expensesSnapshot = await ctx.db
+          .collection('expenses')
+          .where('clientId', '==', clientId)
+          .where('active', '==', true)
+          .get();
+        
+        expensesSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, cleanUndefinedValues({
+            active: false,
+            updatedAt: now,
+          }));
+        });
+        totalExpenses += expensesSnapshot.size;
+
+        // Delete invoices for this client
+        const invoicesSnapshot = await ctx.db
+          .collection('invoices')
+          .where('clientId', '==', clientId)
+          .where('active', '==', true)
+          .get();
+        
+        invoicesSnapshot.docs.forEach(doc => {
+          batch.update(doc.ref, cleanUndefinedValues({
+            active: false,
+            updatedAt: now,
+          }));
+        });
+        totalInvoices += invoicesSnapshot.size;
       }
 
-      // Check if rates use this client type
-      const ratesInUse = await ctx.db
+      // Delete rates that use this client type directly
+      const typeRatesSnapshot = await ctx.db
         .collection('rates')
         .where('clientTypeId', '==', input.id)
-        .limit(1)
+        .where('active', '==', true)
         .get();
+      
+      typeRatesSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, cleanUndefinedValues({
+          active: false,
+          updatedAt: now,
+        }));
+      });
+      totalRates += typeRatesSnapshot.size;
 
-      if (!ratesInUse.empty) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot delete client type that is in use by rates',
-        });
-      }
+      // Delete the client type itself
+      batch.delete(docRef);
 
-      await docRef.delete();
+      // Commit all changes atomically
+      await batch.commit();
 
-      return { success: true };
+      return { 
+        success: true,
+        cascadeDeleted: {
+          clients: clientsSnapshot.size,
+          sessions: totalSessions,
+          rates: totalRates,
+          expenses: totalExpenses,
+          invoices: totalInvoices,
+        }
+      };
     }),
 });
