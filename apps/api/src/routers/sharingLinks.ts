@@ -1,6 +1,6 @@
 import { router, adminProcedure, auditedProcedure, publicProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { CreateSharingLinkSchema } from '@student-record/shared';
+import { CreateSharingLinkSchema } from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';

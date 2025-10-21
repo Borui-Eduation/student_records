@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateClientTypeSchema, type CreateClientTypeInput, type ClientType } from '@student-record/shared';
+import { CreateClientTypeSchema, type CreateClientTypeInput, type ClientType } from '@professional-workspace/shared';
 import {
   Dialog,
   DialogContent,

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import type { ExpenseCategory } from '@student-record/shared';
+import type { ExpenseCategory } from '@professional-workspace/shared';
 
 const PRESET_ICONS = ['📋', '💰', '🎁', '🏋️', '🎨', '✈️', '🔧', '📱', '💻', '🎵', '📚', '🍿'];
 const PRESET_COLORS = [

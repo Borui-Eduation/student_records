@@ -4,7 +4,7 @@ import {
   CreateKnowledgeEntrySchema,
   UpdateKnowledgeEntrySchema,
   SearchKnowledgeSchema,
-} from '@student-record/shared';
+} from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { encryptionService } from '../services/encryption';
@@ -71,8 +71,20 @@ export const knowledgeBaseRouter = router({
 
     return {
       id: docRef.id,
-      ...entryData,
-      content: isEncrypted ? '[ENCRYPTED]' : content, // Don't return encrypted content
+      userId: entryData.userId,
+      title: entryData.title,
+      type: entryData.type,
+      content: isEncrypted ? '[ENCRYPTED]' : content,
+      isEncrypted: entryData.isEncrypted,
+      tags: entryData.tags,
+      category: entryData.category,
+      attachments: entryData.attachments,
+      accessCount: entryData.accessCount,
+      createdAt: now.toDate().toISOString(),
+      updatedAt: now.toDate().toISOString(),
+      createdBy: entryData.createdBy,
+      kmsKeyId: entryData.kmsKeyId,
+      encryptionMetadata: entryData.encryptionMetadata,
     };
   }),
 
@@ -121,8 +133,21 @@ export const knowledgeBaseRouter = router({
 
     return {
       id: doc.id,
-      ...data,
+      userId: data.userId,
+      title: data.title,
+      type: data.type,
       content,
+      isEncrypted: data.isEncrypted,
+      tags: data.tags || [],
+      category: data.category,
+      attachments: data.attachments || [],
+      accessCount: data.accessCount || 0,
+      createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+      updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
+      createdBy: data.createdBy,
+      kmsKeyId: data.kmsKeyId,
+      encryptionMetadata: data.encryptionMetadata,
     };
   }),
 
@@ -182,8 +207,19 @@ export const knowledgeBaseRouter = router({
         const data = doc.data();
         return {
           id: doc.id,
-          ...data,
-          content: data.isEncrypted ? '[ENCRYPTED]' : data.content.substring(0, 100), // Preview only
+          userId: data.userId,
+          title: data.title,
+          type: data.type,
+          content: data.isEncrypted ? '[ENCRYPTED]' : (data.content || '').substring(0, 100),
+          isEncrypted: data.isEncrypted,
+          tags: data.tags || [],
+          category: data.category,
+          attachments: data.attachments || [],
+          accessCount: data.accessCount || 0,
+          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+          accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
+          createdBy: data.createdBy,
         };
       });
 
@@ -254,8 +290,21 @@ export const knowledgeBaseRouter = router({
 
     return {
       id: updated.id,
-      ...updatedData,
+      userId: updatedData.userId,
+      title: updatedData.title,
+      type: updatedData.type,
       content: updatedData.isEncrypted ? '[ENCRYPTED]' : updatedData.content,
+      isEncrypted: updatedData.isEncrypted,
+      tags: updatedData.tags || [],
+      category: updatedData.category,
+      attachments: updatedData.attachments || [],
+      accessCount: updatedData.accessCount || 0,
+      createdAt: updatedData.createdAt?.toDate?.() ? updatedData.createdAt.toDate().toISOString() : updatedData.createdAt,
+      updatedAt: updatedData.updatedAt?.toDate?.() ? updatedData.updatedAt.toDate().toISOString() : updatedData.updatedAt,
+      accessedAt: updatedData.accessedAt?.toDate?.() ? updatedData.accessedAt.toDate().toISOString() : undefined,
+      createdBy: updatedData.createdBy,
+      kmsKeyId: updatedData.kmsKeyId,
+      encryptionMetadata: updatedData.encryptionMetadata,
     };
   }),
 
@@ -320,8 +369,19 @@ export const knowledgeBaseRouter = router({
         const data = doc.data();
         return {
           id: doc.id,
-          ...data,
-          content: data.isEncrypted ? '[ENCRYPTED]' : data.content.substring(0, 100),
+          userId: data.userId,
+          title: data.title,
+          type: data.type,
+          content: data.isEncrypted ? '[ENCRYPTED]' : (data.content || '').substring(0, 100),
+          isEncrypted: data.isEncrypted,
+          tags: data.tags || [],
+          category: data.category,
+          attachments: data.attachments || [],
+          accessCount: data.accessCount || 0,
+          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+          accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
+          createdBy: data.createdBy,
         };
       })
       .filter((item: any) =>

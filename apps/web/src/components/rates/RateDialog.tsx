@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client, type ClientType } from '@student-record/shared';
+import { CreateRateSchema, type CreateRateInput, type Timestamp, type Client, type ClientType } from '@professional-workspace/shared';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,7 @@ function toDate(timestamp: Timestamp): Date {
 interface RateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rate?: import('@student-record/shared').Rate | null; // Existing rate for edit mode
+  rate?: import('@professional-workspace/shared').Rate | null; // Existing rate for edit mode
 }
 
 export function RateDialog({ open, onOpenChange, rate }: RateDialogProps) {

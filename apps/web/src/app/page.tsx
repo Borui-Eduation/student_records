@@ -29,10 +29,10 @@ export default function Home() {
       <div className="z-10 max-w-5xl w-full items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-12 text-center">
           <h1 className="text-5xl font-bold text-center mb-4 text-gray-900">
-            学生记录管理系统
+            专业工作空间
           </h1>
           <p className="text-xl text-center text-gray-600 mb-2">
-            Student Record Management System
+            Professional Workspace
           </p>
           <div className="mt-8 mb-10">
             <p className="text-lg text-gray-700 font-medium">Multi-Business Management Platform</p>

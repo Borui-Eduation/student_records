@@ -1,6 +1,6 @@
 import { router, adminProcedure, auditedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchema, GetMonthlyRevenueSchema } from '@student-record/shared';
+import { GenerateInvoiceSchema, UpdateInvoiceStatusSchema, GetRevenueReportSchema, GetMonthlyRevenueSchema } from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { format } from 'date-fns';
-import type { Session, Timestamp } from '@student-record/shared';
+import type { Session, Timestamp } from '@professional-workspace/shared';
 
 // Helper function to convert Timestamp to Date
 function toDate(timestamp: Timestamp): Date {

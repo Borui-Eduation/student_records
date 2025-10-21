@@ -33,12 +33,10 @@ export default function LoginPage() {
         {/* Logo/Title Section */}
         <div className="text-center space-y-2 sm:space-y-3 md:space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-            学生记录
-            <br />
-            管理系统
+            专业工作空间
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-gray-600">
-            Student Record Management System
+            Professional Workspace
           </p>
           <p className="text-xs sm:text-sm md:text-base text-gray-500">
             Multi-Business Management Platform

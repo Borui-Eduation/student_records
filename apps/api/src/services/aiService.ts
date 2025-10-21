@@ -4,8 +4,8 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createLogger } from '@student-record/shared';
-import type { MCPParseResult, MCPWorkflow, MCPContext } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
+import type { MCPParseResult, MCPWorkflow, MCPContext } from '@professional-workspace/shared';
 
 const logger = createLogger('ai-service');
 
@@ -27,7 +27,7 @@ function getGeminiClient(): GoogleGenerativeAI {
  * System prompt that defines the database schema and parsing rules
  */
 function getSystemPrompt(): string {
-  return `You are an AI assistant for a student record management system. Your job is to parse natural language commands into structured database operations.
+  return `You are an AI assistant for a professional workspace management system. Your job is to parse natural language commands into structured database operations.
 
 **Database Schema:**
 

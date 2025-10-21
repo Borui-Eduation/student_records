@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@student-record/shared'],
+  transpilePackages: ['@professional-workspace/shared'],
   // Enable production optimizations
   compress: true,
   poweredByHeader: false,

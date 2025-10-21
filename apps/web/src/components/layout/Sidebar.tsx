@@ -155,7 +155,7 @@ export function Sidebar() {
       <div className="hidden w-64 border-r bg-card lg:block">
         <div className="flex h-full flex-col">
           <div className="flex h-14 items-center border-b px-6">
-            <h1 className="text-lg font-semibold">Student Record</h1>
+            <h1 className="text-lg font-semibold">Professional Workspace</h1>
           </div>
           <SidebarNav />
         </div>
@@ -166,7 +166,7 @@ export function Sidebar() {
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex h-full flex-col">
             <div className="flex h-14 items-center border-b px-6">
-              <h1 className="text-lg font-semibold">Student Record</h1>
+              <h1 className="text-lg font-semibold">Professional Workspace</h1>
             </div>
             <SidebarNav onLinkClick={() => setIsOpen(false)} />
           </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import type { ClientType } from '@student-record/shared';
+import type { ClientType } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,

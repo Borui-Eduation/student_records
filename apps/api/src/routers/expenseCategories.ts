@@ -4,8 +4,8 @@ import {
   CreateExpenseCategorySchema,
   UpdateExpenseCategorySchema,
   ListExpenseCategoriesSchema,
-} from '@student-record/shared';
-import { PRESET_CATEGORIES } from '@student-record/shared/dist/types/expenseCategory';
+} from '@professional-workspace/shared';
+import { PRESET_CATEGORIES } from '@professional-workspace/shared/dist/types/expenseCategory';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';

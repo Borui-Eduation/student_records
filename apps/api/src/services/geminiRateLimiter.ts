@@ -9,8 +9,8 @@
  * 4. 降级处理（当超出限制时）
  */
 
-import { createLogger } from '@student-record/shared';
-import type { MCPParseResult } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
+import type { MCPParseResult } from '@professional-workspace/shared';
 
 const logger = createLogger('gemini-rate-limiter');
 

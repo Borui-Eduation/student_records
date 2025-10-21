@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateKnowledgeEntrySchema, type CreateKnowledgeEntryInput, type KnowledgeEntry } from '@student-record/shared';
+import { CreateKnowledgeEntrySchema, type CreateKnowledgeEntryInput, type KnowledgeEntry } from '@professional-workspace/shared';
 import {
   Dialog,
   DialogContent,
@@ -292,7 +292,7 @@ Use Markdown syntax:
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={watch('type')}
-                onValueChange={(value) => setValue('type', value as import('@student-record/shared').KnowledgeType)}
+                onValueChange={(value) => setValue('type', value as import('@professional-workspace/shared').KnowledgeType)}
               >
                 <SelectTrigger>
                   <SelectValue />

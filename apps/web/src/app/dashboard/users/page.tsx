@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
-// import type { User } from '@student-record/shared/dist/types/user';
+// import type { User } from '@professional-workspace/shared/dist/types/user';
 import { Shield, User as UserIcon, Mail, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';

@@ -1,6 +1,6 @@
 import { router, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { CreateSessionSchema, UpdateSessionSchema, ListSessionsSchema } from '@student-record/shared';
+import { CreateSessionSchema, UpdateSessionSchema, ListSessionsSchema } from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';

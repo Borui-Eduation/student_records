@@ -1,5 +1,5 @@
 import { router, adminProcedure } from '../trpc';
-import { ExportExpensesSchema } from '@student-record/shared';
+import { ExportExpensesSchema } from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 
 export const expenseExportRouter = router({

@@ -19,7 +19,7 @@ export type {
   Expense,
   ExpenseCategory,
   PresetCategory,
-} from '@student-record/shared';
+} from '@professional-workspace/shared';
 
 // Frontend-specific types
 

@@ -8,7 +8,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Student Record Management System',
+  title: 'Professional Workspace',
   description: 'Multi-Business Management Platform for Education & Technical Services',
 }
 

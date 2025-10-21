@@ -7,7 +7,7 @@ import { Plus, Lock, Search, Tag, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { KnowledgeDialog } from '@/components/knowledge/KnowledgeDialog';
 import { Input } from '@/components/ui/input';
-import type { KnowledgeEntry } from '@student-record/shared';
+import type { KnowledgeEntry } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,

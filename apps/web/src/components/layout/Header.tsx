@@ -36,7 +36,7 @@ export function Header() {
           Multi-Business Management Platform
         </h2>
         <h2 className="text-sm font-medium text-muted-foreground sm:hidden">
-          Student Record
+          Professional Workspace
         </h2>
       </div>
 

@@ -8,7 +8,7 @@ import { trpc } from '@/lib/trpc';
 import { RateDialog } from '@/components/rates/RateDialog';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
-import type { Rate } from '@student-record/shared';
+import type { Rate } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,

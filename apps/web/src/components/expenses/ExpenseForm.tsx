@@ -11,7 +11,7 @@ import { ImageUpload } from './ImageUpload';
 import { CategorySelector } from './CategorySelector';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { Expense } from '@student-record/shared';
+import type { Expense } from '@professional-workspace/shared';
 
 const formSchema = z.object({
   date: z.string().min(1, 'Please select a date'),

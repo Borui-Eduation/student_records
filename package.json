@@ -1,8 +1,8 @@
 {
-  "name": "student-record-management",
+  "name": "professional-workspace",
   "version": "1.0.0",
   "private": true,
-  "description": "Multi-Business Management Platform for Education & Technical Services",
+  "description": "Professional Workspace - Multi-Business Management Platform for Education & Technical Services",
   "scripts": {
     "dev": "turbo run dev",
     "dev:start": "./dev-start.sh",

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ClientDialog } from '@/components/clients/ClientDialog';
-import type { Client, ClientType } from '@student-record/shared';
+import type { Client, ClientType } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,

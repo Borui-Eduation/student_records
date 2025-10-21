@@ -8,7 +8,7 @@
  */
 
 import * as admin from 'firebase-admin';
-import { createLogger } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
 import { cleanUndefinedValues } from './firestoreHelpers';
 
 const logger = createLogger('cache-service');

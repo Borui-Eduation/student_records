@@ -7,7 +7,7 @@ import { Plus, Share2, Copy, ExternalLink } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ShareLinkDialog } from '@/components/sharing/ShareLinkDialog';
 import { format, formatDistanceToNow } from 'date-fns';
-import type { SharingLink, Timestamp } from '@student-record/shared';
+import type { SharingLink, Timestamp } from '@professional-workspace/shared';
 
 // Helper function to convert Timestamp to Date
 function toDate(timestamp: Timestamp): Date {

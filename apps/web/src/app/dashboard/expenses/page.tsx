@@ -11,7 +11,7 @@ import { SwipeActions } from '@/components/expenses/SwipeActions';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
-import type { Expense } from '@student-record/shared';
+import type { Expense } from '@professional-workspace/shared';
 
 export default function ExpensesPage() {
   const router = useRouter();

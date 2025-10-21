@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import type { ExpenseCategory } from '@student-record/shared';
+import type { ExpenseCategory } from '@professional-workspace/shared';
 
 interface CategorySelectorProps {
   value?: string;

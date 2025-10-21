@@ -4,13 +4,13 @@
  */
 
 import * as admin from 'firebase-admin';
-import { createLogger } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
 import type { 
   MCPCommand, 
   MCPWorkflow, 
   MCPExecutionResult, 
   MCPEntity
-} from '@student-record/shared';
+} from '@professional-workspace/shared';
 import { cleanUndefinedValues } from './firestoreHelpers';
 
 const logger = createLogger('mcp-executor');

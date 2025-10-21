@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
 import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
-import type { CreateExpenseInput } from '@student-record/shared';
+import type { CreateExpenseInput } from '@professional-workspace/shared';
 
 export default function NewExpensePage() {
   const router = useRouter();

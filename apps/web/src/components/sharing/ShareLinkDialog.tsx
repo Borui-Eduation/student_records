@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { Copy, ExternalLink } from 'lucide-react';
-import type { Session } from '@student-record/shared';
+import type { Session } from '@professional-workspace/shared';
 import { toDate } from '@/lib/utils';
 
 interface ShareLinkDialogProps {

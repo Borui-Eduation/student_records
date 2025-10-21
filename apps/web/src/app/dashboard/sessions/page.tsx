@@ -7,7 +7,7 @@ import { Plus, Calendar, Clock, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { SessionDialog } from '@/components/sessions/SessionDialog';
 import { format } from 'date-fns';
-import type { Session, Timestamp, SessionType } from '@student-record/shared';
+import type { Session, Timestamp, SessionType } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,

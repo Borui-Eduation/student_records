@@ -1,5 +1,5 @@
-# Student Record Management System
-# 学生记录管理系统
+# Professional Workspace
+# 专业工作空间
 
 > 🎉 **项目状态: 100% 完成，可立即部署！**
 

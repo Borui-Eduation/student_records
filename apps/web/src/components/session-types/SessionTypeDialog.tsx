@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateSessionTypeSchema, type CreateSessionTypeInput, type SessionType } from '@student-record/shared';
+import { CreateSessionTypeSchema, type CreateSessionTypeInput, type SessionType } from '@professional-workspace/shared';
 import {
   Dialog,
   DialogContent,

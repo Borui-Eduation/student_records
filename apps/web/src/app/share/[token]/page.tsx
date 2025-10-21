@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import type { ContentBlock } from '@student-record/shared';
+import type { ContentBlock } from '@professional-workspace/shared';
 
 export default function SharedSessionPage() {
   const params = useParams();

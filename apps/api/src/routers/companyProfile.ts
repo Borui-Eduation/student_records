@@ -1,5 +1,5 @@
 import { router, adminProcedure, auditedProcedure } from '../trpc';
-import { UpdateCompanyProfileSchema } from '@student-record/shared';
+import { UpdateCompanyProfileSchema } from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
 

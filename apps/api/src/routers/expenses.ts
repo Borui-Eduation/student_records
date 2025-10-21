@@ -6,7 +6,7 @@ import {
   ListExpensesSchema,
   GetStatisticsSchema,
   BatchDeleteExpensesSchema,
-} from '@student-record/shared';
+} from '@professional-workspace/shared';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';

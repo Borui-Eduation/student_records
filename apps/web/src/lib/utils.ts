@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Timestamp } from '@student-record/shared';
+import type { Timestamp } from '@professional-workspace/shared';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

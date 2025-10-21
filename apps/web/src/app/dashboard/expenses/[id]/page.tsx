@@ -8,7 +8,7 @@ import { trpc } from '@/lib/trpc';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { format } from 'date-fns';
-import type { UpdateExpenseInput, CreateExpenseInput } from '@student-record/shared';
+import type { UpdateExpenseInput, CreateExpenseInput } from '@professional-workspace/shared';
 
 export default function ExpenseDetailPage({ params }: { params: { id: string } }) {
   const resolvedParams = params;

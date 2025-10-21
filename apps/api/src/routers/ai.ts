@@ -6,10 +6,10 @@ import { router, adminProcedure } from '../trpc';
 import { z } from 'zod';
 import { parseNaturalLanguage, validateWorkflow, generateSuggestions, generateAggregateResponse, generateQueryResultTitle, generateQueryResultTags } from '../services/aiService';
 import { executeWorkflow } from '../services/mcpExecutor';
-import type { MCPContext } from '@student-record/shared';
+import type { MCPContext } from '@professional-workspace/shared';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
 import * as admin from 'firebase-admin';
-import { createLogger } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
 
 const logger = createLogger('ai-router');
 

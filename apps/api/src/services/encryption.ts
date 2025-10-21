@@ -1,5 +1,5 @@
 import { KeyManagementServiceClient } from '@google-cloud/kms';
-import { createLogger } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
 import * as crypto from 'crypto';
 
 const logger = createLogger('encryption');

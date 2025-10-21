@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import * as admin from 'firebase-admin';
-import { createLogger } from '@student-record/shared';
+import { createLogger } from '@professional-workspace/shared';
 import { cleanUndefinedValues } from './services/firestoreHelpers';
 
 const logger = createLogger('trpc');

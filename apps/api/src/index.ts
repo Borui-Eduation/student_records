@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { appRouter } from './routers/_app';
 import { createContext } from './trpc';
-import { createLogger, validateServerEnv } from '@student-record/shared';
+import { createLogger, validateServerEnv } from '@professional-workspace/shared';
 
 // Load environment variables
 dotenv.config();

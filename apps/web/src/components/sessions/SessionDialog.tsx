@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateSessionSchema, type CreateSessionInput, type Client, type SessionType } from '@student-record/shared';
+import { CreateSessionSchema, type CreateSessionInput, type Client, type SessionType } from '@professional-workspace/shared';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,7 @@ import { toDate } from '@/lib/utils';
 interface SessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  session?: import('@student-record/shared').Session | null; // Existing session for edit mode
+  session?: import('@professional-workspace/shared').Session | null; // Existing session for edit mode
 }
 
 export function SessionDialog({ open, onOpenChange, session }: SessionDialogProps) {

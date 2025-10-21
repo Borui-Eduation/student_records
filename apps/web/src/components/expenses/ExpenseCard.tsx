@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { Store, Calendar, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Expense } from '@student-record/shared';
+import type { Expense } from '@professional-workspace/shared';
 
 interface ExpenseCardProps {
   expense: Expense;

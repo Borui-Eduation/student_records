@@ -8,7 +8,7 @@ import { trpc } from '@/lib/trpc';
 import { InvoiceGeneratorDialog } from '@/components/invoices/InvoiceGeneratorDialog';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
-import type { Invoice } from '@student-record/shared';
+import type { Invoice } from '@professional-workspace/shared';
 import {
   AlertDialog,
   AlertDialogAction,
