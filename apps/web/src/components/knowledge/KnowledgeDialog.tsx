@@ -55,11 +55,6 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
     { enabled: !!entryId }
   );
 
-  // Type guard for entry with full properties
-  const isFullEntry = (entry: Partial<KnowledgeEntry>): entry is KnowledgeEntry => {
-    return entry && typeof entry.title === 'string' && typeof entry.type === 'string';
-  };
-
   useEffect(() => {
     setIsEditing(editMode);
   }, [editMode, entryId]);
@@ -82,13 +77,14 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
 
   // Populate form when editing
   useEffect(() => {
-    if (entry && isFullEntry(entry) && open && isEditing) {
-      setValue('title', entry.title);
-      setValue('type', entry.type);
-      setValue('content', entry.content);
-      setValue('category', entry.category || '');
-      setValue('tags', entry.tags || []);
-      setValue('requireEncryption', entry.isEncrypted || false);
+    if (entry && open && isEditing) {
+      const sanitized = sanitizeKnowledgeEntryForDisplay(entry);
+      setValue('title', sanitized.title);
+      setValue('type', sanitized.type as any);
+      setValue('content', sanitized.content);
+      setValue('category', sanitized.category || '');
+      setValue('tags', sanitized.tags || []);
+      setValue('requireEncryption', sanitized.isEncrypted || false);
     } else if (!open) {
       reset({
         type: 'note',
