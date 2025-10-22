@@ -192,14 +192,21 @@ export default function InvoicesPage() {
                     <div>
                       <span className="text-muted-foreground">Issue Date:</span>
                       <span className="ml-2 font-medium">
-                        {invoice.issueDate ? format(toDate(invoice.issueDate), 'yyyy-MM-dd') : 'N/A'}
+                        {invoice.issueDate ? (() => {
+                          const date = toDate(invoice.issueDate);
+                          return date ? format(date, 'yyyy-MM-dd') : 'N/A';
+                        })() : 'N/A'}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Billing Period:</span>
                       <span className="ml-2 font-medium">
                         {invoice.billingPeriodStart && invoice.billingPeriodEnd
-                          ? `${format(toDate(invoice.billingPeriodStart), 'MMM d')} - ${format(toDate(invoice.billingPeriodEnd), 'MMM d, yyyy')}`
+                          ? (() => {
+                            const startDate = toDate(invoice.billingPeriodStart);
+                            const endDate = toDate(invoice.billingPeriodEnd);
+                            return startDate && endDate ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}` : 'N/A';
+                          })()
                           : 'N/A'}
                       </span>
                     </div>
@@ -224,11 +231,14 @@ export default function InvoicesPage() {
                     )}
                   </div>
 
-                  {invoice.paidDate && (
-                    <div className="mt-4 text-sm text-green-600">
-                      ✓ Paid on {format(toDate(invoice.paidDate), 'yyyy-MM-dd')}
-                    </div>
-                  )}
+                  {invoice.paidDate && (() => {
+                    const date = toDate(invoice.paidDate);
+                    return date ? (
+                      <div className="mt-4 text-sm text-green-600">
+                        ✓ Paid on {format(date, 'yyyy-MM-dd')}
+                      </div>
+                    ) : null;
+                  })()}
 
                   {invoice.paymentNotes && (
                     <div className="mt-4 text-sm text-muted-foreground border-t pt-4">
