@@ -6,6 +6,12 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Disable ESLint during build to allow warnings
+  eslint: {
+    ignoreDuringBuilds: false,
+    dirs: ['src'],
+  },
+
   // Image optimization
   images: {
     domains: ['storage.googleapis.com'],
