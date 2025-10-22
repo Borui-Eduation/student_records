@@ -20,39 +20,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shared package
-        run: cd packages/shared && pnpm run build
-
-      - name: Build API
-        run: cd apps/api && pnpm run build
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -61,32 +28,22 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
-
-      - name: Build and Push Docker Image
-        run: |
-          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}"
-          docker build -t ${IMAGE_NAME}:latest -t ${IMAGE_NAME}:${{ github.sha }} .
-          docker push ${IMAGE_NAME}:latest
-          docker push ${IMAGE_NAME}:${{ github.sha }}
-
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --source . \
             --platform managed \
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
+            --project ${{ env.PROJECT_ID }} \
             --service-account student-record-api@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-env-vars="NODE_ENV=production" \
-            --set-secrets="FIREBASE_SERVICE_ACCOUNT=student-record-firebase-sa:latest,GEMINI_API_KEY=student-record-gemini-key:latest" \
-            --memory 512Mi \
+            --set-env-vars "NODE_ENV=production,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},FIREBASE_PROJECT_ID=${{ env.PROJECT_ID }},GCS_BUCKET_NAME=${{ env.PROJECT_ID }}-storage,KMS_KEY_RING=student-record-keyring,KMS_KEY_NAME=knowledge-base-key,KMS_LOCATION=${{ env.REGION }},ADMIN_EMAILS=yao.s.1216@gmail.com,PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true,PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser,CORS_ORIGIN=https://record.borui.org^:^https://student-records-web.vercel.app,GEMINI_API_KEY=AIzaSyBKja8knngB9_fL0okuN2LTREvR4zJhWmA" \
+            --memory 1Gi \
             --cpu 1 \
-            --timeout 300 \
-            --concurrency 80 \
+            --max-instances 10 \
             --min-instances 0 \
-            --max-instances 10
+            --timeout 60s \
+            --port 8080
 
       - name: Show deployment URL
         run: |
