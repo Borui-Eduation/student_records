@@ -70,7 +70,7 @@ export default function DashboardLayout({
       {/* AI Assistant Floating Button */}
       <Button
         onClick={() => setAiAssistantOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all hover:scale-110 z-50 bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all hover:scale-110 z-30 bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
         size="icon"
       >
         <Sparkles className="w-6 h-6" />

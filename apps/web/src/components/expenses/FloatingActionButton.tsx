@@ -35,7 +35,7 @@ export function FloatingActionButton({ onClick, label = '添加费用' }: Floati
     <button
       onClick={onClick}
       className={cn(
-        'fixed bottom-20 right-4 z-40',
+        'fixed bottom-20 right-4 z-20',
         'bg-blue-600 hover:bg-blue-700',
         'text-white',
         'rounded-full shadow-lg',

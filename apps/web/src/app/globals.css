@@ -110,4 +110,20 @@
   }
 }
 
+/* iOS Safari Share Menu Fix */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific: Ensure share menu is always accessible */
+  html, body {
+    position: relative;
+    z-index: auto;
+  }
+
+  /* Reduce z-index of floating elements on iOS */
+  [class*="z-50"],
+  [class*="z-40"],
+  [class*="z-30"] {
+    z-index: auto !important;
+  }
+}
+
 

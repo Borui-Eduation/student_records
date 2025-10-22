@@ -17,6 +17,7 @@ import {
   Shield,
   Tag,
   Grid2X2,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -81,6 +82,12 @@ const navItems = [
     title: 'User Management',
     href: '/dashboard/users',
     icon: Shield,
+    superAdminOnly: true,
+  },
+  {
+    title: 'New Users',
+    href: '/dashboard/new-users',
+    icon: UserPlus,
     superAdminOnly: true,
   },
 ];

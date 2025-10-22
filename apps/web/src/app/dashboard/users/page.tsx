@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 // import type { User } from '@professional-workspace/shared/dist/types/user';
-import { Shield, User as UserIcon, Mail, Calendar, Loader2 } from 'lucide-react';
+import { Shield, User as UserIcon, Mail, Calendar, Loader2, AlertCircle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +46,10 @@ export default function UsersPage() {
   }, [userRole, authLoading, router, toast]);
 
   const { data: usersData, isLoading, refetch } = trpc.users.listUsers.useQuery(undefined, {
+    enabled: userRole === 'superadmin',
+  });
+
+  const { data: newUsersCountData } = trpc.users.getNewUsersCount.useQuery(undefined, {
     enabled: userRole === 'superadmin',
   });
 
@@ -93,6 +97,31 @@ export default function UsersPage() {
         </p>
       </div>
 
+      {newUsersCountData && newUsersCountData.count > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-sm text-blue-900">
+                  {newUsersCountData.count} new user{newUsersCountData.count !== 1 ? 's' : ''} awaiting review
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Go to <strong>New Users</strong> page to review and approve them
+                </p>
+              </div>
+              <a
+                href="/dashboard/new-users"
+                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                <UserPlus className="h-3 w-3" />
+                Review
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">All Users</CardTitle>
@@ -131,11 +160,18 @@ export default function UsersPage() {
                             </div>
                             <div>
                               <p className="font-medium text-sm">{userData.email}</p>
-                              {isCurrentUser && (
-                                <Badge variant="outline" className="text-xs">
-                                  You
-                                </Badge>
-                              )}
+                              <div className="flex gap-1 mt-1">
+                                {isCurrentUser && (
+                                  <Badge variant="outline" className="text-xs">
+                                    You
+                                  </Badge>
+                                )}
+                                {userData.isNewUser && (
+                                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                    🆕 New
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </TableCell>

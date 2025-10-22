@@ -9,5 +9,8 @@ export interface User {
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
   isInitialized: boolean; // Track if welcome guide created
+  isNewUser?: boolean; // Track if user is newly registered and pending review
+  reviewedAt?: Timestamp; // When the user was reviewed by superadmin
+  reviewedBy?: string; // UID of the superadmin who reviewed the user
 }
 

@@ -35,6 +35,7 @@ export const usersRouter = router({
       createdAt: admin.firestore.Timestamp.now(),
       lastLoginAt: admin.firestore.Timestamp.now(),
       isInitialized: false,
+      isNewUser: true, // Mark as new user for admin review
     };
 
     await ctx.db.collection('users').doc(ctx.user.uid).set(cleanUndefinedValues(newUser));
@@ -410,6 +411,107 @@ $$
       return {
         success: true,
         message: 'User role updated successfully',
+      };
+    }),
+
+  /**
+   * List new users (super admin only)
+   */
+  listNewUsers: adminProcedure.query(async ({ ctx }) => {
+    // Check if user is super admin
+    const userDoc = await ctx.db.collection('users').doc(ctx.user.uid).get();
+    const userData = userDoc.data();
+
+    if (userData?.role !== 'superadmin') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Super admin access required',
+      });
+    }
+
+    const snapshot = await ctx.db
+      .collection('users')
+      .where('isNewUser', '==', true)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const users = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return {
+      items: users,
+      total: users.length,
+    };
+  }),
+
+  /**
+   * Get count of new users (super admin only)
+   */
+  getNewUsersCount: adminProcedure.query(async ({ ctx }) => {
+    // Check if user is super admin
+    const userDoc = await ctx.db.collection('users').doc(ctx.user.uid).get();
+    const userData = userDoc.data();
+
+    if (userData?.role !== 'superadmin') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Super admin access required',
+      });
+    }
+
+    const snapshot = await ctx.db
+      .collection('users')
+      .where('isNewUser', '==', true)
+      .count()
+      .get();
+
+    return {
+      count: snapshot.data().count,
+    };
+  }),
+
+  /**
+   * Mark user as reviewed (super admin only)
+   */
+  markUserAsReviewed: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is super admin
+      const currentUserDoc = await ctx.db.collection('users').doc(ctx.user.uid).get();
+      const currentUserData = currentUserDoc.data();
+
+      if (currentUserData?.role !== 'superadmin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Super admin access required',
+        });
+      }
+
+      // Check if target user exists
+      const targetUserDoc = await ctx.db.collection('users').doc(input.userId).get();
+      if (!targetUserDoc.exists) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Mark as reviewed
+      await ctx.db.collection('users').doc(input.userId).update({
+        isNewUser: false,
+        reviewedAt: admin.firestore.Timestamp.now(),
+        reviewedBy: ctx.user.uid,
+      });
+
+      return {
+        success: true,
+        message: 'User marked as reviewed',
       };
     }),
 });
