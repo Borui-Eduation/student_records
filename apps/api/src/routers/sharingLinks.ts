@@ -106,6 +106,10 @@ export const sharingLinksRouter = router({
         accessCount: admin.firestore.FieldValue.increment(1),
       }));
 
+      // Re-fetch to get the updated accessCount
+      const updatedLinkDoc = await linkDoc.ref.get();
+      const updatedLinkData = updatedLinkDoc.data()!;
+
       // Get session data
       const sessionDoc = await ctx.db.collection('sessions').doc(linkData.sessionId).get();
       if (!sessionDoc.exists) {
@@ -130,8 +134,8 @@ export const sharingLinksRouter = router({
           contentBlocks: sessionData.contentBlocks,
         },
         link: {
-          accessCount: linkData.accessCount + 1,
-          expiresAt: linkData.expiresAt,
+          accessCount: updatedLinkData.accessCount || 0,
+          expiresAt: updatedLinkData.expiresAt,
         },
       };
     }),
