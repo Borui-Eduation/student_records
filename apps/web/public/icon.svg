@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- Main shape - briefcase/workspace icon -->
+  <g transform="translate(256, 256)">
+    <!-- Briefcase body -->
+    <rect x="-80" y="-60" width="160" height="120" rx="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Briefcase handle -->
+    <path d="M -60 -60 Q -60 -100 0 -100 Q 60 -100 60 -60" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Divider line -->
+    <line x1="-80" y1="0" x2="80" y2="0" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Left compartment -->
+    <circle cx="-40" cy="-30" r="12" fill="#000000"/>
+    <circle cx="-40" cy="30" r="12" fill="#000000"/>
+    
+    <!-- Right compartment -->
+    <circle cx="40" cy="-30" r="12" fill="#000000"/>
+    <circle cx="40" cy="30" r="12" fill="#000000"/>
+    
+    <!-- Center accent -->
+    <rect x="-20" y="-15" width="40" height="30" rx="4" fill="#000000"/>
+  </g>
+</svg>
+

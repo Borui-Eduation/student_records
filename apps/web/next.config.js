@@ -5,7 +5,7 @@ const nextConfig = {
   // Enable production optimizations
   compress: true,
   poweredByHeader: false,
-  
+
   // Image optimization
   images: {
     domains: ['storage.googleapis.com'],
@@ -14,10 +14,35 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,
   },
-  
-  // Security headers
+
+  // Security headers and PWA support
   async headers() {
     return [
+      // PWA Service Worker
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      // PWA Manifest
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+        ],
+      },
+      // Security headers for all routes
       {
         source: '/:path*',
         headers: [
