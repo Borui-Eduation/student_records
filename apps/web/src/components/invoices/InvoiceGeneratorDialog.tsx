@@ -188,9 +188,10 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-medium">
-                                {session.date
-                                  ? format(toDate(session.date), 'yyyy-MM-dd')
-                                  : 'N/A'}
+                                {session.date ? (() => {
+                                  const date = toDate(session.date);
+                                  return date ? format(date, 'yyyy-MM-dd') : 'N/A';
+                                })() : 'N/A'}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {session.startTime} - {session.endTime} ({session.durationHours}h)

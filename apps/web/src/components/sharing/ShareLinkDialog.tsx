@@ -181,9 +181,10 @@ export function ShareLinkDialog({ open, onOpenChange }: ShareLinkDialogProps) {
                       <div className="flex items-center justify-between gap-4">
                         <span>{session.clientName}</span>
                         <span className="text-sm text-muted-foreground">
-                          {session.date
-                            ? toDate(session.date).toISOString().split('T')[0]
-                            : 'N/A'}
+                          {session.date ? (() => {
+                            const date = toDate(session.date);
+                            return date ? date.toISOString().split('T')[0] : 'N/A';
+                          })() : 'N/A'}
                         </span>
                       </div>
                     </SelectItem>

@@ -109,8 +109,6 @@ export default function DashboardPage() {
   // Fetch recent sessions for the new card
   const { data: recentSessions } = trpc.sessions.list.useQuery({
     limit: 5,
-    sortBy: 'date',
-    sortOrder: 'desc',
   });
 
   const typedInvoices = (invoices?.items || []) as Invoice[];
@@ -119,11 +117,11 @@ export default function DashboardPage() {
 
   // Debug: Log sessions data with detailed date info
   if (recentSessions?.items?.[0]) {
-    const firstSession = recentSessions.items[0];
+    const firstSession = recentSessions.items[0] as any;
     console.log('🔍 First Session Date Analysis:', {
       id: firstSession.id,
-      clientName: firstSession.clientName,
-      totalAmount: firstSession.totalAmount,
+      clientName: firstSession.clientName || 'N/A',
+      totalAmount: firstSession.totalAmount || 0,
       dateRaw: firstSession.date,
       dateISO: firstSession.date?.toDate?.()?.toISOString?.(),
       dateLocal: firstSession.date?.toDate?.()?.toString?.(),
@@ -131,8 +129,8 @@ export default function DashboardPage() {
   }
   
   console.log('Sessions Debug:', {
-    recentSessionsCount: recentSessions?.items.length,
-    sessionsWithDateRangeCount: sessions?.items.length,
+    recentSessionsCount: recentSessions?.items.length || 0,
+    sessionsWithDateRangeCount: sessions?.items.length || 0,
     queryDateRange: {
       start: formatLocalDate(statsStart),
       end: formatLocalDate(statsEnd),
@@ -325,7 +323,10 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="font-medium text-sm">{session.clientName || 'Session'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {session.date ? format(toDate(session.date), 'MMM d, yyyy') : 'N/A'} • {session.durationHours}h
+                          {session.date ? (() => {
+                            const date = toDate(session.date);
+                            return date ? format(date, 'MMM d, yyyy') : 'N/A';
+                          })() : 'N/A'} • {session.durationHours}h
                         </p>
                       </div>
                       <div className="text-right">
@@ -372,7 +373,10 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="font-medium text-sm">{expense.description || 'Expense'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {expense.date ? format(toDate(expense.date), 'MMM d, yyyy') : 'N/A'} • {expense.categoryName}
+                          {expense.date ? (() => {
+                            const date = toDate(expense.date);
+                            return date ? format(date, 'MMM d, yyyy') : 'N/A';
+                          })() : 'N/A'} • {expense.categoryName}
                         </p>
                       </div>
                       <div className="text-right">

@@ -68,7 +68,10 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
       sessionTypeId: session.sessionTypeId,
       startTime: session.startTime,
       endTime: session.endTime,
-      date: toDate(session.date).toISOString().split('T')[0], // Use session's date
+      date: (() => {
+        const date = toDate(session.date);
+        return date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      })(),
       notes: session.notes || '',
     } : {
       date: new Date().toISOString().split('T')[0], // Default to today for new sessions

@@ -190,34 +190,42 @@ export default function SharingPage() {
                           <div>
                             <span className="text-muted-foreground">Created:</span>
                             <span className="ml-2 font-medium">
-                              {link.createdAt
-                                ? formatDistanceToNow(toDate(link.createdAt), { addSuffix: true })
-                                : 'N/A'}
+                              {link.createdAt ? (() => {
+                                const date = toDate(link.createdAt);
+                                return date ? formatDistanceToNow(date, { addSuffix: true }) : 'N/A';
+                              })() : 'N/A'}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Expires:</span>
                             <span className="ml-2 font-medium">
-                              {link.expiresAt
-                                ? format(toDate(link.expiresAt), 'yyyy-MM-dd')
-                                : 'N/A'}
-                              {link.expiresAt && !isExpired(link.expiresAt) && (
-                                <span className="text-xs text-muted-foreground ml-1">
-                                  ({formatDistanceToNow(toDate(link.expiresAt), { addSuffix: true })})
-                                </span>
-                              )}
+                              {link.expiresAt ? (() => {
+                                const date = toDate(link.expiresAt);
+                                return date ? format(date, 'yyyy-MM-dd') : 'N/A';
+                              })() : 'N/A'}
+                              {link.expiresAt && !isExpired(link.expiresAt) && (() => {
+                                const date = toDate(link.expiresAt);
+                                return date ? (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    ({formatDistanceToNow(date, { addSuffix: true })})
+                                  </span>
+                                ) : null;
+                              })()}
                             </span>
                           </div>
                         </div>
 
-                        {link.lastAccessedAt && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Last Accessed:</span>
-                            <span className="ml-2 font-medium">
-                              {formatDistanceToNow(toDate(link.lastAccessedAt), { addSuffix: true })}
-                            </span>
-                          </div>
-                        )}
+                        {link.lastAccessedAt && (() => {
+                          const date = toDate(link.lastAccessedAt);
+                          return date ? (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Last Accessed:</span>
+                              <span className="ml-2 font-medium">
+                                {formatDistanceToNow(date, { addSuffix: true })}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
 
                         {/* Actions */}
                         <div className="flex gap-2">

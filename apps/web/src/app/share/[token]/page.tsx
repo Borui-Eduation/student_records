@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, Clock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import type { ContentBlock } from '@professional-workspace/shared';
+import { toDate } from '@/lib/utils';
 
 export default function SharedSessionPage() {
   const params = useParams();
@@ -82,7 +83,10 @@ export default function SharedSessionPage() {
                 </span>
               </div>
               <div className="text-muted-foreground">
-                Link expires: {link?.expiresAt?.toDate ? format(link.expiresAt.toDate(), 'MMM d, yyyy') : 'N/A'}
+                Link expires: {link?.expiresAt ? (() => {
+                  const date = toDate(link.expiresAt);
+                  return date ? format(date, 'MMM d, yyyy') : 'N/A';
+                })() : 'N/A'}
               </div>
             </div>
           </CardContent>

@@ -191,13 +191,19 @@ export default function RatesPage() {
                     <div className="text-sm">
                       <span className="text-muted-foreground">Effective Date: </span>
                       <span className="font-medium">
-                        {rate.effectiveDate ? format(toDate(rate.effectiveDate), 'yyyy-MM-dd') : 'N/A'}
+                        {rate.effectiveDate ? (() => {
+                          const date = toDate(rate.effectiveDate);
+                          return date ? format(date, 'yyyy-MM-dd') : 'N/A';
+                        })() : 'N/A'}
                       </span>
                     </div>
                     <div className="text-sm">
                       <span className="text-muted-foreground">End Date: </span>
                       <span className="font-medium">
-                        {rate.endDate ? format(toDate(rate.endDate), 'yyyy-MM-dd') : 'N/A'}
+                        {rate.endDate ? (() => {
+                          const date = toDate(rate.endDate);
+                          return date ? format(date, 'yyyy-MM-dd') : 'N/A';
+                        })() : 'N/A'}
                       </span>
                     </div>
                     {rate.description && (

@@ -177,9 +177,10 @@ export default function NewUsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {createdAt
-                              ? format(toDate(createdAt), 'MMM d, yyyy HH:mm')
-                              : 'N/A'}
+                            {createdAt ? (() => {
+                              const date = toDate(createdAt);
+                              return date ? format(date, 'MMM d, yyyy HH:mm') : 'N/A';
+                            })() : 'N/A'}
                           </div>
                         </TableCell>
                         <TableCell>
