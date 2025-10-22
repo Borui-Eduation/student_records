@@ -9,18 +9,7 @@ import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { encryptionService } from '../services/encryption';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
-
-/**
- * Helper function to safely extract numeric values from potential FieldValue objects
- * Handles cases where Firestore FieldValue.increment objects are serialized as {operand: number}
- */
-function extractNumericValue(value: any, defaultValue: number = 0): number {
-  if (typeof value === 'number') return value;
-  if (value && typeof value === 'object' && 'operand' in value) {
-    return typeof value.operand === 'number' ? value.operand : defaultValue;
-  }
-  return defaultValue;
-}
+import { sanitizeKnowledgeEntry } from '../services/dataSanitizers';
 
 export const knowledgeBaseRouter = router({
   /**
@@ -147,23 +136,11 @@ export const knowledgeBaseRouter = router({
       }
     }
 
+    // Sanitize and return with decrypted content
+    const sanitized = sanitizeKnowledgeEntry(updatedData, updatedDoc.id);
     return {
-      id: updatedDoc.id,
-      userId: updatedData.userId,
-      title: updatedData.title,
-      type: updatedData.type,
-      content,
-      isEncrypted: updatedData.isEncrypted,
-      tags: updatedData.tags || [],
-      category: updatedData.category,
-      attachments: updatedData.attachments || [],
-      accessCount: updatedData.accessCount || 0,
-      createdAt: updatedData.createdAt?.toDate?.() ? updatedData.createdAt.toDate().toISOString() : updatedData.createdAt,
-      updatedAt: updatedData.updatedAt?.toDate?.() ? updatedData.updatedAt.toDate().toISOString() : updatedData.updatedAt,
-      accessedAt: updatedData.accessedAt?.toDate?.() ? updatedData.accessedAt.toDate().toISOString() : undefined,
-      createdBy: updatedData.createdBy,
-      kmsKeyId: updatedData.kmsKeyId,
-      encryptionMetadata: updatedData.encryptionMetadata,
+      ...sanitized,
+      content, // Use decrypted content
     };
   }),
 
@@ -221,21 +198,12 @@ export const knowledgeBaseRouter = router({
 
       const items = snapshot.docs.map((doc) => {
         const data = doc.data();
+        const sanitized = sanitizeKnowledgeEntry(data, doc.id);
+        
+        // Truncate content for list view
         return {
-          id: doc.id,
-          userId: data.userId,
-          title: data.title,
-          type: data.type,
-          content: data.isEncrypted ? '[ENCRYPTED]' : (data.content || '').substring(0, 100),
-          isEncrypted: data.isEncrypted,
-          tags: data.tags || [],
-          category: data.category,
-          attachments: data.attachments || [],
-          accessCount: extractNumericValue(data.accessCount, 0),
-          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-          accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
-          createdBy: data.createdBy,
+          ...sanitized,
+          content: sanitized.isEncrypted ? '[ENCRYPTED]' : sanitized.content.substring(0, 100),
         };
       });
 
@@ -304,23 +272,11 @@ export const knowledgeBaseRouter = router({
     const updated = await docRef.get();
     const updatedData = updated.data()!;
 
+    // Sanitize and return
+    const sanitized = sanitizeKnowledgeEntry(updatedData, updated.id);
     return {
-      id: updated.id,
-      userId: updatedData.userId,
-      title: updatedData.title,
-      type: updatedData.type,
-      content: updatedData.isEncrypted ? '[ENCRYPTED]' : updatedData.content,
-      isEncrypted: updatedData.isEncrypted,
-      tags: updatedData.tags || [],
-      category: updatedData.category,
-      attachments: updatedData.attachments || [],
-      accessCount: updatedData.accessCount || 0,
-      createdAt: updatedData.createdAt?.toDate?.() ? updatedData.createdAt.toDate().toISOString() : updatedData.createdAt,
-      updatedAt: updatedData.updatedAt?.toDate?.() ? updatedData.updatedAt.toDate().toISOString() : updatedData.updatedAt,
-      accessedAt: updatedData.accessedAt?.toDate?.() ? updatedData.accessedAt.toDate().toISOString() : undefined,
-      createdBy: updatedData.createdBy,
-      kmsKeyId: updatedData.kmsKeyId,
-      encryptionMetadata: updatedData.encryptionMetadata,
+      ...sanitized,
+      content: sanitized.isEncrypted ? '[ENCRYPTED]' : sanitized.content,
     };
   }),
 
@@ -383,21 +339,12 @@ export const knowledgeBaseRouter = router({
     const items = snapshot.docs
       .map((doc) => {
         const data = doc.data();
+        const sanitized = sanitizeKnowledgeEntry(data, doc.id);
+        
+        // Truncate content for search results
         return {
-          id: doc.id,
-          userId: data.userId,
-          title: data.title,
-          type: data.type,
-          content: data.isEncrypted ? '[ENCRYPTED]' : (data.content || '').substring(0, 100),
-          isEncrypted: data.isEncrypted,
-          tags: data.tags || [],
-          category: data.category,
-          attachments: data.attachments || [],
-          accessCount: extractNumericValue(data.accessCount, 0),
-          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-          accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
-          createdBy: data.createdBy,
+          ...sanitized,
+          content: sanitized.isEncrypted ? '[ENCRYPTED]' : sanitized.content.substring(0, 100),
         };
       })
       .filter((item: any) =>

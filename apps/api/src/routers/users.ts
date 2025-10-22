@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
+import { sanitizeUser } from '../services/dataSanitizers';
 
 export const usersRouter = router({
   /**
@@ -17,10 +18,8 @@ export const usersRouter = router({
         lastLoginAt: admin.firestore.Timestamp.now(),
       }));
 
-      return {
-        id: userDoc.id,
-        ...userDoc.data(),
-      };
+      const data = userDoc.data();
+      return sanitizeUser(data, userDoc.id);
     }
 
     // Create new user document
@@ -40,10 +39,7 @@ export const usersRouter = router({
 
     await ctx.db.collection('users').doc(ctx.user.uid).set(cleanUndefinedValues(newUser));
 
-    return {
-      id: ctx.user.uid,
-      ...newUser,
-    };
+    return sanitizeUser(newUser, ctx.user.uid);
   }),
 
   /**
@@ -352,10 +348,10 @@ $$
 
     const snapshot = await ctx.db.collection('users').orderBy('createdAt', 'desc').get();
 
-    const users = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const users = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return sanitizeUser(data, doc.id);
+    });
 
     return {
       items: users,
@@ -435,10 +431,10 @@ $$
       .orderBy('createdAt', 'desc')
       .get();
 
-    const users = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const users = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return sanitizeUser(data, doc.id);
+    });
 
     return {
       items: users,

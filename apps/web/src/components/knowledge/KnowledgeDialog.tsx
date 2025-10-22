@@ -27,6 +27,7 @@ import { trpc } from '@/lib/trpc';
 import { Lock, Eye, EyeOff, Pencil, Maximize2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { safeString, safeNumber, safeArray, sanitizeKnowledgeEntryForDisplay } from '@/lib/typeGuards';
 
 // Dynamic import for Markdown preview to avoid SSR issues
 const MDPreview = dynamic<{ source?: string; style?: React.CSSProperties }>(
@@ -129,19 +130,29 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
 
   // If viewing existing entry (not editing)
   if (entryId && entry && !isEditing) {
+    // Sanitize entry data for safe rendering
+    const sanitized = sanitizeKnowledgeEntryForDisplay(entry);
+    const title = safeString(sanitized.title, '[No Title]');
+    const type = safeString(sanitized.type, 'note');
+    const category = sanitized.category ? safeString(sanitized.category) : null;
+    const content = safeString(sanitized.content, '');
+    const isEncrypted = Boolean(sanitized.isEncrypted);
+    const tags = safeArray(sanitized.tags, []);
+    const accessCount = safeNumber(sanitized.accessCount, 0);
+    
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {isFullEntry(entry) && entry.isEncrypted && <Lock className="h-5 w-5 text-red-500" />}
-              {isFullEntry(entry) && entry.title}
+              {isEncrypted && <Lock className="h-5 w-5 text-red-500" />}
+              {title}
             </DialogTitle>
             <DialogDescription>
               <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                {isFullEntry(entry) && entry.type}
+                {type}
               </span>
-              {isFullEntry(entry) && entry.category && <span className="ml-2">{entry.category}</span>}
+              {category && <span className="ml-2">{category}</span>}
             </DialogDescription>
           </DialogHeader>
 
@@ -149,7 +160,7 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
             <div>
               <Label>Content</Label>
               <div className="relative mt-2">
-                {isFullEntry(entry) && entry.isEncrypted && (
+                {isEncrypted && (
                   <Button
                     type="button"
                     size="sm"
@@ -170,25 +181,25 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
                     )}
                   </Button>
                 )}
-                {isFullEntry(entry) && entry.isEncrypted && !showContent ? (
+                {isEncrypted && !showContent ? (
                   <div className="p-3 rounded-md border font-mono min-h-[200px]">
                     ••••••••••••••••
                   </div>
                 ) : (
                   <div data-color-mode="light" className="rounded-md border">
-                    {isFullEntry(entry) && <MDPreview source={entry.content} style={{ padding: 16 }} />}
+                    <MDPreview source={content} style={{ padding: 16 }} />
                   </div>
                 )}
               </div>
             </div>
 
-            {isFullEntry(entry) && entry.tags && entry.tags.length > 0 && (
+            {tags.length > 0 && (
               <div>
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {isFullEntry(entry) && entry.tags?.map((tag: string) => (
-                    <span key={tag} className="text-sm px-2 py-1 bg-muted rounded">
-                      {tag}
+                  {tags.map((tag: string, index: number) => (
+                    <span key={`tag-${index}`} className="text-sm px-2 py-1 bg-muted rounded">
+                      {safeString(tag, '')}
                     </span>
                   ))}
                 </div>
@@ -198,9 +209,9 @@ export function KnowledgeDialog({ open, onOpenChange, entryId, editMode = false 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Accessed:</span>
-                <span className="ml-2 font-medium">{isFullEntry(entry) ? (entry.accessCount || 0) : 0} times</span>
+                <span className="ml-2 font-medium">{accessCount} times</span>
               </div>
-              {isFullEntry(entry) && entry.isEncrypted && (
+              {isEncrypted && (
                 <div>
                   <span className="text-muted-foreground">Encryption:</span>
                   <span className="ml-2 font-medium text-green-600">

@@ -27,6 +27,7 @@ import { Shield, User as UserIcon, Mail, Calendar, Loader2, AlertCircle, UserPlu
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { safeString, sanitizeUserForDisplay } from '@/lib/typeGuards';
 
 export default function UsersPage() {
   const { userRole, loading: authLoading, user } = useAuth();
@@ -148,25 +149,32 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {usersData?.items.map((userData: any) => {
-                    const isCurrentUser = userData.id === user?.uid;
-                    const userRole = userData.role || 'user';
+                    // Sanitize user data for safe rendering
+                    const sanitized = sanitizeUserForDisplay(userData);
+                    const userId = safeString(sanitized.id, 'unknown');
+                    const email = safeString(sanitized.email, '[No Email]');
+                    const userRole = safeString(sanitized.role, 'user');
+                    const createdAt = sanitized.createdAt;
+                    const lastLoginAt = sanitized.lastLoginAt;
+                    const isNewUser = Boolean(sanitized.isNewUser);
+                    const isCurrentUser = userId === user?.uid;
                     
                     return (
-                      <TableRow key={userData.id}>
+                      <TableRow key={userId}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
                               <Mail className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium text-sm">{userData.email}</p>
+                              <p className="font-medium text-sm">{email}</p>
                               <div className="flex gap-1 mt-1">
                                 {isCurrentUser && (
                                   <Badge variant="outline" className="text-xs">
                                     You
                                   </Badge>
                                 )}
-                                {userData.isNewUser && (
+                                {isNewUser && (
                                   <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
                                     🆕 New
                                   </Badge>
@@ -201,15 +209,15 @@ export default function UsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {userData.createdAt
-                              ? format(toDate(userData.createdAt), 'MMM d, yyyy')
+                            {createdAt
+                              ? format(toDate(createdAt), 'MMM d, yyyy')
                               : 'N/A'}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {userData.lastLoginAt
-                              ? format(toDate(userData.lastLoginAt), 'MMM d, yyyy HH:mm')
+                            {lastLoginAt
+                              ? format(toDate(lastLoginAt), 'MMM d, yyyy HH:mm')
                               : 'N/A'}
                           </div>
                         </TableCell>
@@ -217,7 +225,7 @@ export default function UsersPage() {
                           <Select
                             value={userRole}
                             onValueChange={(value) =>
-                              handleRoleChange(userData.id, value as 'user' | 'admin' | 'superadmin')
+                              handleRoleChange(userId, value as 'user' | 'admin' | 'superadmin')
                             }
                             disabled={isCurrentUser || updateRoleMutation.isPending}
                           >

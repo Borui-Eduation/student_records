@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { safeString, safeNumber, safeArray, sanitizeKnowledgeEntryForDisplay } from '@/lib/typeGuards';
 
 export default function KnowledgePage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -55,14 +56,20 @@ export default function KnowledgePage() {
     return colors[type] || 'text-gray-600 bg-gray-100';
   };
 
-  const knowledgeItems = (data?.items || []) as KnowledgeEntry[];
-
-  const filteredItems = knowledgeItems.filter((item: KnowledgeEntry) =>
-    searchQuery
-      ? item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags?.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      : true
+  // Sanitize all entries before filtering to ensure safe rendering
+  const knowledgeItems = ((data?.items || []) as KnowledgeEntry[]).map(item => 
+    sanitizeKnowledgeEntryForDisplay(item)
   );
+
+  const filteredItems = knowledgeItems.filter((item: KnowledgeEntry) => {
+    const title = safeString(item.title, '');
+    const tags = safeArray(item.tags, []);
+    
+    return searchQuery
+      ? title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tags.some((tag: string) => String(tag).toLowerCase().includes(searchQuery.toLowerCase()))
+      : true;
+  });
 
   return (
     <div className="space-y-6">
@@ -89,7 +96,7 @@ export default function KnowledgePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete &quot;{deletingEntry?.title}&quot;. This action cannot be
+              This will permanently delete &quot;{safeString(deletingEntry?.title, '[No Title]')}&quot;. This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -157,86 +164,98 @@ export default function KnowledgePage() {
               </CardContent>
             </Card>
           ) : (
-            filteredItems?.map((entry: KnowledgeEntry) => (
-              <Card key={entry.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() => setSelectedEntry(entry)}
-                    >
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {entry.isEncrypted && <Lock className="h-4 w-4 text-red-500" />}
-                        {entry.title}
-                      </CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(entry.type)}`}>
-                        {entry.type}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingEntry(entry);
-                        }}
-                        className="h-8 w-8"
+            filteredItems?.map((entry: KnowledgeEntry) => {
+              // Safely extract all fields with defaults
+              const entryId = safeString(entry.id, 'unknown');
+              const title = safeString(entry.title, '[No Title]');
+              const type = safeString(entry.type, 'note');
+              const isEncrypted = Boolean(entry.isEncrypted);
+              const content = safeString(entry.content, '');
+              const category = entry.category ? safeString(entry.category) : null;
+              const tags = safeArray(entry.tags, []);
+              const accessCount = safeNumber(entry.accessCount, 0);
+              
+              return (
+                <Card key={entryId} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setSelectedEntry(entry)}
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingEntry(entry);
-                        }}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {entry.category && (
-                    <CardDescription className="mt-2">{entry.category}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent
-                  className="cursor-pointer"
-                  onClick={() => setSelectedEntry(entry)}
-                >
-                  <div className="text-sm text-muted-foreground">
-                    {entry.isEncrypted ? (
-                      <span className="flex items-center gap-1">
-                        <Lock className="h-3 w-3" />
-                        [Encrypted Content]
-                      </span>
-                    ) : (
-                      <p className="line-clamp-2">{entry.content}</p>
-                    )}
-                  </div>
-
-                  {entry.tags && entry.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {entry.tags.map((tag: string) => (
-                        <span
-                          key={tag}
-                          className="text-xs px-2 py-1 bg-muted rounded-full flex items-center gap-1"
-                        >
-                          <Tag className="h-3 w-3" />
-                          {tag}
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {isEncrypted && <Lock className="h-4 w-4 text-red-500" />}
+                          {title}
+                        </CardTitle>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(type)}`}>
+                          {type}
                         </span>
-                      ))}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingEntry(entry);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingEntry(entry);
+                          }}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  )}
+                    {category && (
+                      <CardDescription className="mt-2">{category}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent
+                    className="cursor-pointer"
+                    onClick={() => setSelectedEntry(entry)}
+                  >
+                    <div className="text-sm text-muted-foreground">
+                      {isEncrypted ? (
+                        <span className="flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          [Encrypted Content]
+                        </span>
+                      ) : (
+                        <p className="line-clamp-2">{content}</p>
+                      )}
+                    </div>
 
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    Accessed: {entry.accessCount || 0} times
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {tags.map((tag: string, index: number) => (
+                          <span
+                            key={`${entryId}-tag-${index}`}
+                            className="text-xs px-2 py-1 bg-muted rounded-full flex items-center gap-1"
+                          >
+                            <Tag className="h-3 w-3" />
+                            {safeString(tag, '')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      Accessed: {accessCount} times
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       )}

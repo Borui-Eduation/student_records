@@ -26,6 +26,7 @@ import { UserPlus, Mail, Calendar, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { safeString, sanitizeUserForDisplay } from '@/lib/typeGuards';
 
 export default function NewUsersPage() {
   const { userRole, loading: authLoading, user } = useAuth();
@@ -146,17 +147,22 @@ export default function NewUsersPage() {
                 </TableHeader>
                 <TableBody>
                   {newUsersData?.items.map((userData: any) => {
-                    const userRole = userData.role || 'admin';
+                    // Sanitize user data for safe rendering
+                    const sanitized = sanitizeUserForDisplay(userData);
+                    const userId = safeString(sanitized.id, 'unknown');
+                    const email = safeString(sanitized.email, '[No Email]');
+                    const userRole = safeString(sanitized.role, 'admin');
+                    const createdAt = sanitized.createdAt;
 
                     return (
-                      <TableRow key={userData.id} className="bg-blue-50/50">
+                      <TableRow key={userId} className="bg-blue-50/50">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100">
                               <Mail className="h-4 w-4 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-medium text-sm">{userData.email}</p>
+                              <p className="font-medium text-sm">{email}</p>
                               <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300 mt-1">
                                 🆕 New User
                               </Badge>
@@ -171,8 +177,8 @@ export default function NewUsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {userData.createdAt
-                              ? format(toDate(userData.createdAt), 'MMM d, yyyy HH:mm')
+                            {createdAt
+                              ? format(toDate(createdAt), 'MMM d, yyyy HH:mm')
                               : 'N/A'}
                           </div>
                         </TableCell>
@@ -181,7 +187,7 @@ export default function NewUsersPage() {
                             <Select
                               value={userRole}
                               onValueChange={(value) =>
-                                handleRoleChange(userData.id, value as 'user' | 'admin' | 'superadmin')
+                                handleRoleChange(userId, value as 'user' | 'admin' | 'superadmin')
                               }
                               disabled={updateRoleMutation.isPending || markAsReviewedMutation.isPending}
                             >
@@ -197,7 +203,7 @@ export default function NewUsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleMarkAsReviewed(userData.id)}
+                              onClick={() => handleMarkAsReviewed(userId)}
                               disabled={markAsReviewedMutation.isPending || updateRoleMutation.isPending}
                               className="gap-1"
                             >
