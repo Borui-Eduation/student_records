@@ -10,6 +10,18 @@ import { z } from 'zod';
 import { encryptionService } from '../services/encryption';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
+/**
+ * Helper function to safely extract numeric values from potential FieldValue objects
+ * Handles cases where Firestore FieldValue.increment objects are serialized as {operand: number}
+ */
+function extractNumericValue(value: any, defaultValue: number = 0): number {
+  if (typeof value === 'number') return value;
+  if (value && typeof value === 'object' && 'operand' in value) {
+    return typeof value.operand === 'number' ? value.operand : defaultValue;
+  }
+  return defaultValue;
+}
+
 export const knowledgeBaseRouter = router({
   /**
    * Create a knowledge entry (with optional encryption)
@@ -219,7 +231,7 @@ export const knowledgeBaseRouter = router({
           tags: data.tags || [],
           category: data.category,
           attachments: data.attachments || [],
-          accessCount: data.accessCount || 0,
+          accessCount: extractNumericValue(data.accessCount, 0),
           createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
           updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
           accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
@@ -381,7 +393,7 @@ export const knowledgeBaseRouter = router({
           tags: data.tags || [],
           category: data.category,
           attachments: data.attachments || [],
-          accessCount: data.accessCount || 0,
+          accessCount: extractNumericValue(data.accessCount, 0),
           createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
           updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
           accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
