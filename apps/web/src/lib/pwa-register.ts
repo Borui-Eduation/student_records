@@ -68,6 +68,7 @@ export async function registerPWA(config: PWAConfig = {}): Promise<void> {
 
     // Handle Service Worker updates
     registration.addEventListener('updatefound', () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const newWorker = registration!.installing
       if (!newWorker) {
         return
@@ -91,6 +92,7 @@ export async function registerPWA(config: PWAConfig = {}): Promise<void> {
     // Handle first install
     if (registration.installing) {
       registration.installing.addEventListener('statechange', () => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (registration!.active) {
           if (debug) {
             // eslint-disable-next-line no-console
@@ -257,6 +259,7 @@ function notifyUpdate(): void {
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
+    // eslint-disable-next-line no-console
     console.log('[PWA] Notifications not supported')
     return 'denied'
   }
