@@ -43,7 +43,11 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Type',
-            value: 'application/manifest+json',
+            value: 'application/json; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },

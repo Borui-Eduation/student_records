@@ -44,10 +44,21 @@ export default function RootLayout({
 
         {/* iOS Icons - Multiple sizes for different devices */}
         <link rel="icon" href="/icon-192x192.png" />
+        {/* iPhone (iOS 11.3+) - 180x180 is required for home screen */}
+        <link rel="apple-touch-icon" href="/icon-180x180.png" sizes="180x180" />
+        {/* iPad Pro (11-inch and 12.9-inch) */}
+        <link rel="apple-touch-icon" href="/icon-167x167.png" sizes="167x167" />
+        {/* iPad and iPad Pro */}
         <link rel="apple-touch-icon" href="/icon-192x192.png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/icon-512x512.png" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" sizes="180x180" />
+        {/* Fallback for older iOS versions */}
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
 
+        {/* iOS Web App Meta Tags */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Workspace" />
+        
         {/* Splash screens for iOS */}
         <link rel="apple-touch-startup-image" href="/icon-512x512.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
         <link rel="apple-touch-startup-image" href="/icon-512x512.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />

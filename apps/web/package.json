@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate-icons": "node scripts/generate-icon.js"
   },
   "dependencies": {
     "@professional-workspace/shared": "workspace:*",
@@ -54,6 +55,7 @@
     "eslint-config-next": "14.2.3",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "sharp": "^0.32.2"
   }
 }
