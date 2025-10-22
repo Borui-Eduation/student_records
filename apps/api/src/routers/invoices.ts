@@ -5,6 +5,40 @@ import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { cleanUndefinedValues } from '../services/firestoreHelpers';
 
+// Helper function to parse date string consistently (treats dates as local time, not UTC)
+function parseLocalDate(dateInput: string | Date): Date {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  // Parse YYYY-MM-DD as local time at noon to avoid timezone issues
+  const [year, month, day] = dateInput.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
+// Helper function to convert any date-like value to Date
+function toDate(dateValue: any): Date {
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+  if (typeof dateValue === 'string') {
+    return new Date(dateValue);
+  }
+  if (dateValue && typeof dateValue === 'object' && 'toDate' in dateValue && typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  }
+  if (dateValue && typeof dateValue === 'object' && '_seconds' in dateValue) {
+    // Firestore Timestamp-like object
+    return new Date(dateValue._seconds * 1000);
+  }
+  if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
+    // Firestore Timestamp-like object
+    return new Date(dateValue.seconds * 1000);
+  }
+  // Fallback to current date if we can't parse
+  console.warn('Unable to parse date value:', dateValue);
+  return new Date();
+}
+
 // Helper function to format date based on granularity
 // Uses UTC to avoid timezone issues
 function formatDateKey(date: Date, granularity: 'day' | 'week' | 'month'): string {
@@ -84,7 +118,7 @@ export const invoicesRouter = router({
     const invoiceNumber = `INV-${String(nextNumber).padStart(3, '0')}`;
 
     // Calculate billing period
-    const sessionDates = sessions.map((s: any) => s.date.toDate());
+    const sessionDates = sessions.map((s: any) => toDate(s.date));
     const billingPeriodStart = new Date(Math.min(...sessionDates.map((d: Date) => d.getTime())));
     const billingPeriodEnd = new Date(Math.max(...sessionDates.map((d: Date) => d.getTime())));
 
@@ -382,9 +416,46 @@ export const invoicesRouter = router({
       }
 
       // Filter by date range
+      const startDate = parseLocalDate(input.dateRange.start);
+      const endDate = parseLocalDate(input.dateRange.end);
+      const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
+      const endTimestamp = admin.firestore.Timestamp.fromDate(endDate);
+      
+      console.log('🔍 getRevenueReport Query:', {
+        userId: ctx.user.uid,
+        inputStart: input.dateRange.start,
+        inputEnd: input.dateRange.end,
+        parsedStart: startDate.toISOString(),
+        parsedEnd: endDate.toISOString(),
+        startTimestamp: startTimestamp.toDate().toISOString(),
+        endTimestamp: endTimestamp.toDate().toISOString(),
+      });
+      
+      // First, get ALL sessions for this user to see what's in the database
+      const allSessionsQuery = ctx.db.collection('sessions').where('userId', '==', ctx.user.uid);
+      const allSessionsSnapshot = await allSessionsQuery.get();
+      
+      const allSessions = allSessionsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data.userId,
+          date: data.date?.toDate?.()?.toISOString?.(),
+          dateSeconds: data.date?.seconds,
+          totalAmount: data.totalAmount,
+          clientName: data.clientName,
+        };
+      });
+      
+      console.log('📊 DEBUG: All sessions for user:', {
+        queryUserId: ctx.user.uid,
+        count: allSessionsSnapshot.size,
+        allSessions: allSessions,
+      });
+      
       query = query
-        .where('date', '>=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.start)))
-        .where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.end)));
+        .where('date', '>=', startTimestamp)
+        .where('date', '<=', endTimestamp);
 
       // Filter by clientId if provided
       if (input.clientId) {
@@ -398,6 +469,15 @@ export const invoicesRouter = router({
 
       const snapshot = await query.get();
       const sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      
+      console.log('✅ getRevenueReport Result:', {
+        sessionsFound: sessions.length,
+        firstSession: sessions[0] ? {
+          id: sessions[0].id,
+          date: (sessions[0] as any).date?.toDate?.()?.toISOString(),
+          totalAmount: (sessions[0] as any).totalAmount,
+        } : null,
+      });
 
       // Calculate statistics
       const totalRevenue = sessions.reduce((sum: number, s: any) => sum + s.totalAmount, 0);
@@ -462,8 +542,8 @@ export const invoicesRouter = router({
 
       // Filter by date range
       query = query
-        .where('date', '>=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.start)))
-        .where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.end)));
+        .where('date', '>=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.start)))
+        .where('date', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.end)));
 
       // Filter by clientId if provided
       if (input.clientId) {

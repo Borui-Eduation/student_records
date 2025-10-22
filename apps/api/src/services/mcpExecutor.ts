@@ -15,6 +15,27 @@ import { cleanUndefinedValues } from './firestoreHelpers';
 
 const logger = createLogger('mcp-executor');
 
+// 实体查询缓存（内存缓存，加快重复查询）
+const entityCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+
+function getCachedEntity(key: string): any | null {
+  const cached = entityCache.get(key);
+  if (!cached) return null;
+  
+  // 检查是否过期
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    entityCache.delete(key);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+function setCachedEntity(key: string, data: any): void {
+  entityCache.set(key, { data, timestamp: Date.now() });
+}
+
 export interface ExecutionContext {
   db: admin.firestore.Firestore;
   userId: string;
@@ -212,6 +233,30 @@ async function searchEntity(
         query = query.where('amount', '==', conditions.amount);
       }
 
+      // Handle clientId for rates (if clientName is provided, resolve it first)
+      if (entity === 'rate' && conditions.clientName) {
+        const clientQuery = await db
+          .collection('clients')
+          .where('userId', '==', userId)
+          .where('name', '==', conditions.clientName)
+          .limit(1)
+          .get();
+
+        if (!clientQuery.empty) {
+          const clientId = clientQuery.docs[0].id;
+          query = query.where('clientId', '==', clientId);
+        } else {
+          // 客户不存在，返回空结果
+          return {
+            success: true,
+            data: [],
+          };
+        }
+      } else if (conditions.clientId) {
+        // 直接使用 clientId
+        query = query.where('clientId', '==', conditions.clientId);
+      }
+
       // Handle sessionTypeName (for sessions)
       if (conditions.sessionTypeName) {
         const typeQuery = await db
@@ -344,9 +389,8 @@ async function createEntity(
           resolvedClientId = clientResult.data!.id;
         }
 
+        // Build rate data, omit undefined clientId/clientTypeId
         entityData = {
-          clientId: resolvedClientId,
-          clientTypeId: data?.clientTypeId,
           category: data?.category || 'General',
           amount: data?.amount || data?.rateAmount || 0,
           currency: data?.currency || 'CNY',
@@ -359,6 +403,14 @@ async function createEntity(
           updatedAt: now,
           createdBy: userId,
         };
+
+        // Only add clientId/clientTypeId if they exist
+        if (resolvedClientId) {
+          entityData.clientId = resolvedClientId;
+        }
+        if (data?.clientTypeId) {
+          entityData.clientTypeId = data.clientTypeId;
+        }
         break;
 
       case 'sessionType':
@@ -568,21 +620,39 @@ async function resolveSessionData(
   const { db, userId } = context;
 
   try {
+    // Validate required fields
+    if (!data.clientName) {
+      return {
+        success: false,
+        error: 'clientName is required for session creation',
+      };
+    }
+
+    if (!data.sessionTypeName) {
+      return {
+        success: false,
+        error: 'sessionTypeName is required for session creation',
+      };
+    }
+
     // 1. Resolve client
-    const clientResult = await findOrCreateClient(data.clientName, context);
+    // 并行执行：查找/创建客户和课程类型（独立操作，效率提升）
+    const [clientResult, sessionTypeResult] = await Promise.all([
+      findOrCreateClient(data.clientName, context),
+      findOrCreateSessionType(data.sessionTypeName, context),
+    ]);
+
     if (!clientResult.success) {
       return clientResult;
     }
-    const client = clientResult.data!;
-
-    // 2. Resolve sessionType
-    const sessionTypeResult = await findOrCreateSessionType(data.sessionTypeName, context);
     if (!sessionTypeResult.success) {
       return sessionTypeResult;
     }
+
+    const client = clientResult.data!;
     const sessionType = sessionTypeResult.data!;
 
-    // 3. Resolve or create rate
+    // 3. Resolve or create rate (依赖 client.id，必须在上面完成后执行)
     let rate: any;
     if (data.rateAmount !== undefined) {
       const rateResult = await findOrCreateRate(
@@ -683,6 +753,14 @@ async function findOrCreateClient(
 ): Promise<MCPExecutionResult> {
   const { db, userId } = context;
 
+  // 检查缓存
+  const cacheKey = `client:${userId}:${clientName}`;
+  const cached = getCachedEntity(cacheKey);
+  if (cached) {
+    logger.debug('Client cache HIT', { clientName });
+    return { success: true, data: cached };
+  }
+
   // Search for existing client
   const clientQuery = await db
     .collection('clients')
@@ -693,6 +771,10 @@ async function findOrCreateClient(
 
   if (!clientQuery.empty) {
     const client = { id: clientQuery.docs[0].id, ...clientQuery.docs[0].data() };
+    
+    // 缓存结果
+    setCachedEntity(cacheKey, client);
+    
     return { success: true, data: client };
   }
 
@@ -729,6 +811,14 @@ async function findOrCreateSessionType(
 ): Promise<MCPExecutionResult> {
   const { db, userId } = context;
 
+  // 检查缓存
+  const cacheKey = `sessionType:${userId}:${sessionTypeName}`;
+  const cached = getCachedEntity(cacheKey);
+  if (cached) {
+    logger.debug('SessionType cache HIT', { sessionTypeName });
+    return { success: true, data: cached };
+  }
+
   // Search for existing sessionType
   const typeQuery = await db
     .collection('sessionTypes')
@@ -739,6 +829,10 @@ async function findOrCreateSessionType(
 
   if (!typeQuery.empty) {
     const sessionType = { id: typeQuery.docs[0].id, ...typeQuery.docs[0].data() };
+    
+    // 缓存结果
+    setCachedEntity(cacheKey, sessionType);
+    
     return { success: true, data: sessionType };
   }
 

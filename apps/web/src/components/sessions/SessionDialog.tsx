@@ -62,62 +62,87 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
     reset,
   } = useForm<CreateSessionInput>({
     resolver: zodResolver(CreateSessionSchema),
-    defaultValues: {
-      date: new Date().toISOString().split('T')[0],
+    // Use session prop directly to set default values, leveraging the key prop on the parent to remount
+    defaultValues: session ? {
+      clientId: session.clientId,
+      sessionTypeId: session.sessionTypeId,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      date: toDate(session.date).toISOString().split('T')[0], // Use session's date
+      notes: session.notes || '',
+    } : {
+      date: new Date().toISOString().split('T')[0], // Default to today for new sessions
+      clientId: '',
       sessionTypeId: '',
       startTime: '09:00',
       endTime: '10:00',
-    },
+      notes: '',
+    }
   });
 
-  // Populate form when editing
-  useEffect(() => {
-    if (session && open) {
-      setValue('clientId', session.clientId);
-      setValue('sessionTypeId', session.sessionTypeId);
-      setValue('startTime', session.startTime);
-      setValue('endTime', session.endTime);
-      setValue('notes', session.notes || '');
-      
-      // Convert ISO date string to date input format (YYYY-MM-DD)
-      if (session.date) {
-        const date = toDate(session.date);
-        setValue('date', date.toISOString().split('T')[0]);
-      }
-    } else if (!open) {
-      reset({
-        date: new Date().toISOString().split('T')[0],
-        sessionTypeId: '',
-        startTime: '09:00',
-        endTime: '10:00',
-        notes: '',
-      });
-    }
-  }, [session, open, setValue, reset]);
+  // The useEffect for populating the form is no longer needed due to the key prop remount strategy
 
   const createMutation = trpc.sessions.create.useMutation({
     onSuccess: () => {
+      console.log('✅ Session created successfully');
       utils.sessions.list.invalidate();
-      reset();
       onOpenChange(false);
     },
   });
 
   const updateMutation = trpc.sessions.update.useMutation({
-    onSuccess: () => {
-      utils.sessions.list.invalidate();
-      reset();
+    onSuccess: (updatedSession) => {
+      console.log('✅ Session updated on backend, received:', updatedSession);
+
+      const queryInput = { limit: 50 }; // This must match the input of the useQuery in SessionsPage
+
+      // Manually update the tRPC cache to ensure the UI reflects the change immediately
+      utils.sessions.list.setData(queryInput, (oldQueryData) => {
+        if (!oldQueryData) {
+          console.warn('Cache for sessions.list not found. A refetch will occur.');
+          return oldQueryData;
+        }
+
+        console.log('Found cache. Manually updating session list...');
+        const newItems = oldQueryData.items.map((item) => {
+          if (item.id === updatedSession.id) {
+            console.log(`Found session ${item.id} in cache. Replacing with new data. Old date: ${item.date}, New date: ${updatedSession.date}`);
+            // The backend returns the full, updated session object, which we use to replace the stale item
+            return updatedSession as (typeof oldQueryData.items)[number];
+          }
+          return item;
+        });
+
+        return { ...oldQueryData, items: newItems };
+      });
+      
+      // Invalidate just in case, to ensure eventual consistency if the manual update fails
+      utils.sessions.list.invalidate(queryInput);
+
       onOpenChange(false);
     },
+    onError: (error) => {
+      console.error('❌ Session update failed:', error);
+    }
   });
 
   const onSubmit = async (data: CreateSessionInput) => {
-    if (isEditMode) {
-      await updateMutation.mutateAsync({
+    console.log('📤 Submitting session data:', { isEditMode, data });
+    
+    if (isEditMode && session) {
+      // Only send fields that should be updated
+      const updatePayload = {
         id: session.id,
-        ...data,
-      });
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        sessionTypeId: data.sessionTypeId,
+        notes: data.notes,
+      };
+      console.log('📝 Update payload:', updatePayload);
+      await updateMutation.mutateAsync(updatePayload);
     } else {
+      console.log('➕ Create payload:', data);
       await createMutation.mutateAsync(data);
     }
   };
@@ -323,7 +348,7 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
               type="button"
               variant="outline"
               onClick={() => {
-                reset();
+                // Just close dialog, useEffect will handle reset
                 onOpenChange(false);
               }}
               disabled={isSubmitting}

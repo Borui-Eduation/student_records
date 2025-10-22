@@ -6,6 +6,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createLogger } from '@professional-workspace/shared';
 import type { MCPParseResult, MCPWorkflow, MCPContext } from '@professional-workspace/shared';
+import { getCache } from './cache';
+import { generateAISystemContext } from './aiSystemContext';
+import * as crypto from 'crypto';
 
 const logger = createLogger('ai-service');
 
@@ -24,274 +27,16 @@ function getGeminiClient(): GoogleGenerativeAI {
 }
 
 /**
- * System prompt that defines the database schema and parsing rules
+ * Generate cache key from input and context
  */
-function getSystemPrompt(): string {
-  return `You are an AI assistant for a professional workspace management system. Your job is to parse natural language commands into structured database operations.
-
-**Database Schema:**
-
-1. **Client** (客户)
-   - name: string (required)
-   - clientTypeId: string (optional, references clientType)
-   - contactInfo: { email?, phone?, address? }
-   - notes: string
-
-2. **Session** (课时记录)
-   - clientId: string (required, can be client name)
-   - date: YYYY-MM-DD format
-   - startTime: HH:mm format (24-hour)
-   - endTime: HH:mm format (24-hour)
-   - sessionTypeId: string (required, can be session type name like "cello", "piano")
-   - notes: string
-
-3. **Rate** (费率)
-   - clientId: string (optional, for client-specific rate)
-   - clientTypeId: string (optional, for client type rate)
-   - category: string (e.g., "Tutoring", "Music Lesson")
-   - amount: number (required)
-   - currency: string (default: "CNY")
-   - effectiveDate: YYYY-MM-DD
-
-4. **SessionType** (课程类型)
-   - name: string (e.g., "cello", "piano", "violin")
-   - description: string
-
-5. **KnowledgeBase** (知识库)
-   - title: string (required)
-   - type: string (required, enum: 'note', 'api-key', 'ssh-record', 'password', 'memo')
-   - content: string (required)
-   - tags: string[] (optional)
-   - category: string (optional)
-   - requireEncryption: boolean (auto-set to true for types: 'api-key', 'ssh-record', 'password')
-
-**Operation Types:**
-- create: Create new record
-- read/search: Query existing records
-- update: Modify existing record
-- delete: Remove record
-
-**Time Parsing Rules - COMPREHENSIVE:**
-
-Date Expressions:
-- "今天" / "today" → current date
-- "明天" / "tomorrow" → current date + 1 day
-- "后天" → current date + 2 days
-- "昨天" / "yesterday" → current date - 1 day
-- "本周一/二/三..." → current week's Monday/Tuesday/Wednesday... (if not past)
-- "下周一/二..." → next week's Monday/Tuesday...
-- "上周一/二..." → last week's Monday/Tuesday...
-- "本月" → entire current month (start: YYYY-MM-01, end: YYYY-MM-last-day)
-- "上月" → entire last month
-- "下月" → entire next month
-- "本周" → current week (Monday to Sunday)
-- "上周" → last week
-- "下周" → next week
-- "N天后" → current date + N days
-
-Time Expressions:
-- "10-12点" / "10:00-12:00" → startTime: "10:00", endTime: "12:00"
-- "上午10点" / "早上10点" → "10:00"
-- "下午2点" → "14:00"
-- "晚上7点" → "19:00"
-- "中午12点" → "12:00"
-
-**Parsing Instructions:**
-1. Parse the user's natural language input
-2. Identify the operation (create, read, update, delete, search, aggregate)
-3. Identify the entities involved (client, session, rate, knowledgeBase, etc.)
-4. Extract all relevant data fields
-5. For search operations on sessions: include dateRange if temporal keywords present
-6. For knowledgeBase operations: automatically handle encryption for sensitive types
-7. **For session queries with client names**: ALWAYS include "clientName" in conditions (e.g., "alex的课程" → conditions: {"clientName": "alex"})
-8. **For aggregate queries**: Detect keywords like "total", "sum", "average", "how many", "count", "统计", "合计", "平均", "多少" 
-   - Use "aggregate" operation with aggregations array
-   - Common patterns: "alex的total" → search alex's sessions then sum totalAmount
-9. Return a JSON object with the following structure:
-
-{
-  "commands": [
-    {
-      "operation": "create|read|update|delete|search|aggregate",
-      "entity": "client|session|rate|sessionType|clientType|knowledgeBase",
-      "data": { /* extracted data */ },
-      "conditions": { /* search/update conditions */ },
-      "aggregations": [ /* for aggregate operations */ { "function": "sum|count|avg|min|max", "field": "fieldName" } ],
-      "metadata": {
-        "confidence": 0.95,
-        "warnings": []
-      }
-    }
-  ],
-  "description": "Human-readable description of what will happen",
-  "requiresConfirmation": true
-}
-
-**Important Rules:**
-1. If a client doesn't exist, include a command to create it first
-2. If a sessionType doesn't exist, include a command to create it
-3. If a rate is specified and doesn't exist, include a command to create it
-4. Commands should be ordered logically (create dependencies first)
-5. Always use "search" operation before "create" to check existence
-6. Set "requiresConfirmation" to true ONLY for destructive operations (delete, update operations)
-7. Set "requiresConfirmation" to false for read/search and create operations
-8. For session queries: if no specific customer name given but relative time mentioned, search by dateRange only
-9. For session queries: "客户名的课程" should search by both clientName and include any other conditions
-10. For knowledgeBase: type 'api-key', 'ssh-record', 'password' MUST set requireEncryption: true
-11. For knowledgeBase searches: search by type, tags, or title pattern matching
-
-**Session Query Examples:**
-
-Example: "Hubery的课程记录"
-- Search for all sessions where clientName = "Hubery"
-- No time constraint, return all records
-
-Example: "本月所有cello课程"  
-- Search for sessions with sessionTypeName = "cello"
-- dateRange from 2025-10-01 to 2025-10-31 (current month)
-
-Example: "下周David的piano课程"
-- Search for sessions with clientName = "David" and sessionTypeName = "piano"
-- dateRange for next week
-
-**Example 1:**
-Input: "帮我添加一个Hubery，今天10-12点，cello课程，rate 80"
-Output:
-{
-  "commands": [
-    {
-      "operation": "search",
-      "entity": "client",
-      "data": {},
-      "conditions": { "name": "Hubery" }
-    },
-    {
-      "operation": "search",
-      "entity": "sessionType",
-      "data": {},
-      "conditions": { "name": "cello" }
-    },
-    {
-      "operation": "search",
-      "entity": "rate",
-      "data": {},
-      "conditions": { "clientName": "Hubery", "amount": 80 }
-    },
-    {
-      "operation": "create",
-      "entity": "session",
-      "data": {
-        "clientName": "Hubery",
-        "sessionTypeName": "cello",
-        "date": "2025-10-19",
-        "startTime": "10:00",
-        "endTime": "12:00",
-        "rateAmount": 80
-      }
-    }
-  ],
-  "description": "将为客户Hubery创建今天10:00-12:00的cello课程记录，费率为80元/小时。如果客户、课程类型或费率不存在，将自动创建。",
-  "requiresConfirmation": false
-}
-
-**Example 2:**
-Input: "显示Hubery的所有课程"
-Output:
-{
-  "commands": [
-    {
-      "operation": "search",
-      "entity": "session",
-      "data": {},
-      "conditions": { "clientName": "Hubery" }
-    }
-  ],
-  "description": "查询客户Hubery的所有课程记录",
-  "requiresConfirmation": false
-}
-
-**Example 3:**
-Input: "显示本月所有cello课程"
-Output:
-{
-  "commands": [
-    {
-      "operation": "search",
-      "entity": "session",
-      "data": {},
-      "conditions": {
-        "sessionTypeName": "cello",
-        "dateRange": {
-          "start": "2025-10-01",
-          "end": "2025-10-31"
-        }
-      }
-    }
-  ],
-  "description": "查询本月(2025年10月)所有cello课程记录",
-  "requiresConfirmation": false
-}
-
-**Example 4 - KnowledgeBase:**
-Input: "保存一个API密钥，标题OpenAI Key，内容sk-test123"
-Output:
-{
-  "commands": [
-    {
-      "operation": "create",
-      "entity": "knowledgeBase",
-      "data": {
-        "title": "OpenAI Key",
-        "type": "api-key",
-        "content": "sk-test123",
-        "requireEncryption": true,
-        "tags": ["api-key", "openai"]
-      }
-    }
-  ],
-  "description": "创建一个API密钥知识库条目，标题为'OpenAI Key'，内容将自动加密保存",
-  "requiresConfirmation": false
-}
-
-**Example 5 - KnowledgeBase Search:**
-Input: "查找所有API密钥"
-Output:
-{
-  "commands": [
-    {
-      "operation": "search",
-      "entity": "knowledgeBase",
-      "data": {},
-      "conditions": {
-        "type": "api-key"
-      }
-    }
-  ],
-  "description": "查询所有类型为'api-key'的知识库条目",
-  "requiresConfirmation": false
-}
-
-**Example 6 - Aggregate Query:**
-Input: "算一下alex的total"
-Output:
-{
-  "commands": [
-    {
-      "operation": "aggregate",
-      "entity": "session",
-      "data": {},
-      "conditions": { "clientName": "alex" },
-      "aggregations": [
-        { "function": "sum", "field": "totalAmount" },
-        { "function": "count", "field": "id" }
-      ]
-    }
-  ],
-  "description": "计算客户alex所有课程的总金额和课程数量",
-  "requiresConfirmation": false
-}
-
-Return ONLY the JSON object, no additional text.`;
+function generateCacheKey(input: string, context?: MCPContext): string {
+  const contextStr = context ? JSON.stringify({
+    currentDate: context.currentDate,
+    timezone: context.userPreferences?.timezone,
+  }) : '';
+  
+  const combined = `${input}:${contextStr}`;
+  return `ai-parse:${crypto.createHash('md5').update(combined).digest('hex')}`;
 }
 
 /**
@@ -304,16 +49,24 @@ export async function parseNaturalLanguage(
   try {
     logger.info('Parsing natural language input', { inputLength: input.length });
 
+    // 检查缓存
+    const cacheKey = generateCacheKey(input, context);
+    const cache = getCache();
+    const cachedResult = await cache.get<MCPParseResult>(cacheKey);
+    
+    if (cachedResult && cachedResult.success) {
+      logger.info('Cache HIT for AI parsing', { inputLength: input.length });
+      return cachedResult;
+    }
+
     const client = getGeminiClient();
-    // 使用官方推荐的免费模型 gemini-2.5-flash
-    // https://ai.google.dev/gemini-api/docs/pricing
     const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // Build the prompt with context
-    const systemPrompt = getSystemPrompt();
-    const contextInfo = context ? `\n\n**Current Context:**\n- Current Date: ${context.currentDate}\n- User Timezone: ${context.userPreferences?.timezone || 'Asia/Shanghai'}\n- Default Currency: ${context.userPreferences?.defaultCurrency || 'CNY'}` : '';
+    // 使用简化的系统提示 - 关键内容仅保留
+    const systemPrompt = getOptimizedSystemPrompt();
+    const contextInfo = context ? `Current Date: ${context.currentDate}\nTimezone: ${context.userPreferences?.timezone || 'Asia/Shanghai'}\nCurrency: ${context.userPreferences?.defaultCurrency || 'CNY'}` : '';
     
-    const fullPrompt = `${systemPrompt}${contextInfo}\n\n**User Input:**\n${input}\n\n**Your Response (JSON only):**`;
+    const fullPrompt = `${systemPrompt}\n\n${contextInfo}\n\nUser Input:\n${input}\n\nReturn ONLY valid JSON:`;
 
     // Call Gemini API
     const result = await model.generateContent(fullPrompt);
@@ -323,7 +76,6 @@ export async function parseNaturalLanguage(
     logger.debug('Gemini API response received', { responseLength: text.length });
 
     // Parse the JSON response
-    // Remove markdown code blocks if present
     let jsonText = text.trim();
     if (jsonText.startsWith('```json')) {
       jsonText = jsonText.substring(7);
@@ -352,10 +104,15 @@ export async function parseNaturalLanguage(
       requiresConfirmation: workflow.requiresConfirmation,
     });
 
-    return {
+    const parseResult: MCPParseResult = {
       success: true,
       workflow,
     };
+
+    // 缓存结果 (15分钟内存TTL + 7天Firestore TTL) - 优化后
+    await cache.set(cacheKey, parseResult, { memoryTtl: 15, firestoreTtl: 7 });
+
+    return parseResult;
   } catch (error) {
     logger.error('Failed to parse natural language', error instanceof Error ? error : new Error(String(error)));
 
@@ -369,6 +126,77 @@ export async function parseNaturalLanguage(
       ],
     };
   }
+}
+
+/**
+ * Optimized system prompt with comprehensive context
+ */
+function getOptimizedSystemPrompt(): string {
+  // 获取 AI 系统上下文
+  const systemContext = generateAISystemContext();
+  
+  return `You are an AI assistant for a professional workspace system. Parse natural language into MCP commands.
+
+${systemContext}
+
+RESPONSE FORMAT (JSON only):
+{
+  "commands": [
+    {
+      "operation": "create|read|update|delete|search|aggregate",
+      "entity": "client|session|rate|sessionType|clientType|knowledgeBase",
+      "data": {
+        // For session: MUST include clientName, sessionTypeName, date, startTime, endTime
+        // For client: MUST include name
+        // For rate: MUST include amount
+        // NEVER include undefined values
+      },
+      "conditions": {},
+      "aggregations": [{"function": "sum|count|avg|min|max", "field": "fieldName"}],
+      "metadata": {"confidence": 0.95, "warnings": []}
+    }
+  ],
+  "description": "What will happen",
+  "requiresConfirmation": false
+}
+
+CRITICAL RULES:
+1. ⚠️ For session creation, ALWAYS extract and provide ALL required fields:
+   - clientName (from user input like "sophie", "Alex", etc.)
+   - sessionTypeName (from user input like "Math", "IB Math HL", etc.)
+   - date (parse from "today", "明天", specific dates, etc.)
+   - startTime (parse from "10点", "上午10点", "10:00", etc.)
+   - endTime (parse from time ranges like "10-12点")
+   
+2. ⚠️ NEVER add fields with undefined values
+   - If clientId is unknown, don't add it
+   - If clientTypeId is unknown, don't add it
+   
+3. Search for dependencies before creating
+4. requiresConfirmation=true ONLY for delete/update
+5. Return ONLY JSON, no extra text
+
+EXAMPLE - Session Creation:
+Input: "create a session for sophie, last sunday morning, 8:30-9:30, rate at 65, IB Math AA HL"
+Output:
+{
+  "commands": [
+    {
+      "operation": "create",
+      "entity": "session",
+      "data": {
+        "clientName": "sophie",
+        "sessionTypeName": "IB Math AA HL",
+        "date": "2025-10-19",
+        "startTime": "08:30",
+        "endTime": "09:30",
+        "rateAmount": 65
+      }
+    }
+  ],
+  "description": "Create session for sophie...",
+  "requiresConfirmation": false
+}`;
 }
 
 /**

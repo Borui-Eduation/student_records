@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Calendar, TrendingUp, DollarSign, TrendingDown, Receipt } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { format, startOfMonth, endOfMonth, subDays, subWeeks } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 import Link from 'next/link';
 import { RevenueTrendChart } from '@/components/dashboard/RevenueTrendChart';
 import { toDate } from '@/lib/utils';
@@ -33,17 +33,13 @@ export default function DashboardPage() {
         break;
       case 'month':
       default: {
-        // Use middle of the day to avoid timezone edge cases
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
+        // Last 6 months including current month
+        // Set to end of current month to ensure we capture the full month
+        const monthEnd = endOfMonth(now);
         
-        // Start: first day of 5 months ago at noon (to show last 6 months including current)
-        const startMonth = new Date(currentYear, currentMonth - 5, 1, 12, 0, 0);
-        
-        // End: use current date to ensure current month is included
         result = {
-          start: startMonth,
-          end: now,
+          start: subMonths(monthEnd, 5), // 5 months ago + current month = 6 months total
+          end: monthEnd,
         };
         break;
       }
@@ -60,33 +56,47 @@ export default function DashboardPage() {
     return result;
   }, [timeRange]);
 
-  // Get current month date range for stats
+  // Get date range for stats - last 90 days to capture recent data
   const now = new Date();
-  const currentMonthStart = startOfMonth(now);
-  const currentMonthEnd = endOfMonth(now);
+  const statsStart = new Date(now);
+  statsStart.setDate(statsStart.getDate() - 90); // Go back 90 days
+  statsStart.setHours(0, 0, 0, 0);
+  
+  const statsEnd = new Date(now);
+  statsEnd.setDate(statsEnd.getDate() + 2); // Add 2 days to be inclusive of today
+  statsEnd.setHours(23, 59, 59, 999);
+
+  // Format dates for API - use local date strings to avoid timezone conversion
+  // Format as YYYY-MM-DD in user's local timezone
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Fetch data
   const { data: clients } = trpc.clients.list.useQuery({ active: true, limit: 100 });
   const { data: sessions } = trpc.sessions.list.useQuery({
     dateRange: {
-      start: currentMonthStart.toISOString(),
-      end: currentMonthEnd.toISOString(),
+      start: formatLocalDate(statsStart),
+      end: formatLocalDate(statsEnd),
     },
     limit: 100,
   });
   const { data: invoices } = trpc.invoices.list.useQuery({ limit: 100 });
   const { data: revenue } = trpc.invoices.getRevenueReport.useQuery({
     dateRange: {
-      start: currentMonthStart.toISOString(),
-      end: currentMonthEnd.toISOString(),
+      start: formatLocalDate(statsStart),
+      end: formatLocalDate(statsEnd),
     },
   });
 
   // Fetch expense data
   const { data: expenseStats } = trpc.expenses.getStatistics.useQuery({
     dateRange: {
-      start: currentMonthStart.toISOString(),
-      end: currentMonthEnd.toISOString(),
+      start: formatLocalDate(statsStart),
+      end: formatLocalDate(statsEnd),
     },
   });
 
@@ -96,22 +106,56 @@ export default function DashboardPage() {
     sortOrder: 'desc',
   });
 
+  // Fetch recent sessions for the new card
+  const { data: recentSessions } = trpc.sessions.list.useQuery({
+    limit: 5,
+    sortBy: 'date',
+    sortOrder: 'desc',
+  });
+
   const typedInvoices = (invoices?.items || []) as Invoice[];
   const typedRecentExpenses = (recentExpenses?.items || []) as Expense[];
+  const typedRecentSessions = (recentSessions?.items || []) as any[];
+
+  // Debug: Log sessions data with detailed date info
+  if (recentSessions?.items?.[0]) {
+    const firstSession = recentSessions.items[0];
+    console.log('🔍 First Session Date Analysis:', {
+      id: firstSession.id,
+      clientName: firstSession.clientName,
+      totalAmount: firstSession.totalAmount,
+      dateRaw: firstSession.date,
+      dateISO: firstSession.date?.toDate?.()?.toISOString?.(),
+      dateLocal: firstSession.date?.toDate?.()?.toString?.(),
+    });
+  }
+  
+  console.log('Sessions Debug:', {
+    recentSessionsCount: recentSessions?.items.length,
+    sessionsWithDateRangeCount: sessions?.items.length,
+    queryDateRange: {
+      start: formatLocalDate(statsStart),
+      end: formatLocalDate(statsEnd),
+      startISO: statsStart.toISOString(),
+      endISO: statsEnd.toISOString(),
+      startParsed: `${formatLocalDate(statsStart)} will be parsed as noon local time`,
+      endParsed: `${formatLocalDate(statsEnd)} will be parsed as noon local time`,
+    },
+  });
 
   // Fetch trend data based on selected time range
   const { data: trendRevenue, isLoading: revenueLoading } = trpc.invoices.getMonthlyRevenue.useQuery({
     dateRange: {
-      start: dateRange.start.toISOString(),
-      end: dateRange.end.toISOString(),
+      start: formatLocalDate(dateRange.start),
+      end: formatLocalDate(dateRange.end),
     },
     granularity: timeRange,
   });
 
   const { data: trendExpenses, isLoading: expensesLoading } = trpc.expenses.getStatistics.useQuery({
     dateRange: {
-      start: dateRange.start.toISOString(),
-      end: dateRange.end.toISOString(),
+      start: formatLocalDate(dateRange.start),
+      end: formatLocalDate(dateRange.end),
     },
     granularity: timeRange,
   });
@@ -121,11 +165,29 @@ export default function DashboardPage() {
   const totalExpenses = expenseStats?.totalAmount || 0;
   const netIncome = totalRevenue - totalExpenses;
 
+  // Debug: Log the revenue data to see what we're getting
+  console.log('Dashboard Debug:', {
+    totalRevenue,
+    totalExpenses,
+    revenueDataFull: JSON.stringify(revenue, null, 2),
+    expenseDataFull: JSON.stringify(expenseStats, null, 2),
+    trendRevenueRaw: trendRevenue,
+    trendExpensesRaw: trendExpenses,
+    dateRangeForTrend: {
+      start: formatLocalDate(dateRange.start),
+      end: formatLocalDate(dateRange.end),
+    },
+    statsDateRange: {
+      start: formatLocalDate(statsStart),
+      end: formatLocalDate(statsEnd),
+    }
+  });
+
   const stats = [
     {
       title: 'Total Revenue',
-      value: `¥${totalRevenue.toLocaleString()}`,
-      description: 'This month',
+      value: `$${totalRevenue.toLocaleString()}`,
+      description: 'Last 90 days',
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -133,8 +195,8 @@ export default function DashboardPage() {
     },
     {
       title: 'Total Expenses',
-      value: `¥${totalExpenses.toLocaleString()}`,
-      description: 'This month',
+      value: `$${totalExpenses.toLocaleString()}`,
+      description: 'Last 90 days',
       icon: Receipt,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
@@ -142,7 +204,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Net Income',
-      value: `¥${netIncome.toLocaleString()}`,
+      value: `$${netIncome.toLocaleString()}`,
       description: netIncome >= 0 ? 'Profit' : 'Loss',
       icon: netIncome >= 0 ? TrendingUp : TrendingDown,
       color: netIncome >= 0 ? 'text-blue-600' : 'text-orange-600',
@@ -161,7 +223,7 @@ export default function DashboardPage() {
     {
       title: 'Sessions',
       value: sessions?.items.length || 0,
-      description: 'This month',
+      description: 'Last 90 days',
       icon: Calendar,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
@@ -187,9 +249,32 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards - 6 cards in grid */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {stats.map((stat) => {
+      {/* Financial Summary - 3 large cards */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3">
+        {stats.slice(0, 3).map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Link key={stat.title} href={stat.href}>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <div className={`${stat.bgColor} p-2 rounded-lg`}>
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Business Metrics - 3 cards */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
+        {stats.slice(3, 6).map((stat) => {
           const Icon = stat.icon;
           return (
             <Link key={stat.title} href={stat.href}>
@@ -219,8 +304,55 @@ export default function DashboardPage() {
         dateRange={dateRange}
       />
 
-      {/* Recent Activities */}
+      {/* Recent Activities - Two columns */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
+        {/* Recent Sessions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Recent Sessions</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 5 sessions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentSessions && recentSessions.items.length > 0 ? (
+              <div className="space-y-2 sm:space-y-3">
+                {typedRecentSessions.slice(0, 5).map((session: any) => {
+                  return (
+                    <Link
+                      key={session.id}
+                      href="/dashboard/sessions"
+                      className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{session.clientName || 'Session'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {session.date ? format(toDate(session.date), 'MMM d, yyyy') : 'N/A'} • {session.durationHours}h
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm text-green-600">
+                          ${session.totalAmount?.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {session.billingStatus || 'unbilled'}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No sessions recorded yet</p>
+                <Link href="/dashboard/sessions">
+                  <span className="text-sm text-primary hover:underline mt-2 inline-block">
+                    Add your first session →
+                  </span>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recent Expenses */}
         <Card>
           <CardHeader>
@@ -245,7 +377,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-sm text-red-600">
-                          -¥{expense.amount?.toLocaleString()}
+                          -${expense.amount?.toLocaleString()}
                         </p>
                         {expense.merchant && (
                           <p className="text-xs text-muted-foreground">{expense.merchant}</p>
@@ -292,7 +424,7 @@ export default function DashboardPage() {
                             {client.sessionCount} session(s), {client.hours.toFixed(1)} hours
                           </p>
                         </div>
-                        <p className="text-base font-bold text-green-600">¥{client.revenue.toLocaleString()}</p>
+                        <p className="text-base font-bold text-green-600">${client.revenue.toLocaleString()}</p>
                       </div>
                     </div>
                   ))}
@@ -322,7 +454,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-red-600">
-                            ¥{category.amount.toFixed(0)}
+                            ${category.amount.toFixed(0)}
                           </span>
                           <span className="text-xs text-muted-foreground min-w-[2.5rem] text-right">
                             {category.percentage.toFixed(0)}%

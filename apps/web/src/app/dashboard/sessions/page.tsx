@@ -7,7 +7,8 @@ import { Plus, Calendar, Clock, Pencil, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { SessionDialog } from '@/components/sessions/SessionDialog';
 import { format } from 'date-fns';
-import type { Session, Timestamp, SessionType } from '@professional-workspace/shared';
+import type { Session, SessionType } from '@professional-workspace/shared';
+import { toDate } from '@/lib/utils'; // Use the central, robust toDate function
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,19 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-// Helper function to convert Timestamp to Date
-function toDate(timestamp: Timestamp): Date {
-  if (timestamp instanceof Date) {
-    return timestamp;
-  }
-  if (typeof timestamp === 'string') {
-    return new Date(timestamp);
-  }
-  if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
-    return timestamp.toDate();
-  }
-  return new Date();
-}
+// The local, faulty toDate function is now removed.
 
 export default function SessionsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -96,6 +85,7 @@ export default function SessionsPage() {
       </div>
 
       <SessionDialog
+        key={editingSession ? editingSession.id : 'create'} // Force remount to reset form state
         open={isCreateDialogOpen || !!editingSession}
         onOpenChange={(open) => {
           if (!open) {
@@ -175,24 +165,27 @@ export default function SessionsPage() {
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1">
-                      <CardTitle className="text-lg sm:text-xl">{session.clientName}</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl">{session.clientName || 'Unknown Client'}</CardTitle>
                       <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {session.date ? format(toDate(session.date), 'yyyy-MM-dd') : 'N/A'}
+                          {(() => {
+                            const date = toDate(session.date);
+                            return date && !isNaN(date.getTime()) ? format(date, 'yyyy-MM-dd') : 'N/A';
+                          })()}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
-                          {session.startTime} - {session.endTime}
+                          {session.startTime || 'N/A'} - {session.endTime || 'N/A'}
                           <span className="text-xs ml-1">
-                            ({session.durationHours}h)
+                            ({session.durationHours?.toFixed(1) || 'N/A'}h)
                           </span>
                         </span>
                       </CardDescription>
                     </div>
                     <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 sm:gap-2">
                       <div className="text-xl sm:text-2xl font-bold">
-                        ¥{session.totalAmount?.toLocaleString()}
+                        ${(session.totalAmount || 0).toLocaleString()}
                       </div>
                       <div className="flex gap-2">
                         <span
@@ -239,7 +232,7 @@ export default function SessionsPage() {
                       </Button>
                     </div>
                     <div className="text-sm text-muted-foreground text-right sm:text-left">
-                      Rate: <span className="font-medium text-foreground">¥{session.rateAmount}</span>
+                      Rate: <span className="font-medium text-foreground">${session.rateAmount || 'N/A'}</span>
                     </div>
                   </div>
                   {session.notes && (

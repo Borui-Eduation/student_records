@@ -200,9 +200,9 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="font-bold">¥{session.totalAmount?.toLocaleString()}</div>
+                              <div className="font-bold">${session.totalAmount?.toLocaleString()}</div>
                               <div className="text-xs text-muted-foreground">
-                                @¥{session.rateAmount}/h
+                                @${session.rateAmount}/h
                               </div>
                             </div>
                           </div>
@@ -223,7 +223,7 @@ export function InvoiceGeneratorDialog({ open, onOpenChange }: InvoiceGeneratorD
                 </div>
                 <div className="flex justify-between items-center mt-2 text-lg font-bold">
                   <span>Total Amount:</span>
-                  <span>¥{selectedTotal.toLocaleString()}</span>
+                  <span>${selectedTotal.toLocaleString()}</span>
                 </div>
               </div>
             )}

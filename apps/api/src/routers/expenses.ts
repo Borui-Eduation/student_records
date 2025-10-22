@@ -22,6 +22,16 @@ import {
 } from '../services/storageService';
 import { nanoid } from 'nanoid';
 
+// Helper function to parse date string consistently (treats dates as local time, not UTC)
+function parseLocalDate(dateInput: string | Date): Date {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  // Parse YYYY-MM-DD as local time at noon to avoid timezone issues
+  const [year, month, day] = dateInput.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
 // Helper function to format date based on granularity
 // Uses UTC to avoid timezone issues
 function formatDateKey(date: Date, granularity: 'day' | 'week' | 'month'): string {
@@ -222,8 +232,8 @@ export const expensesRouter = router({
     // 日期范围筛选
     if (input.dateRange) {
       query = query
-        .where('date', '>=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.start)))
-        .where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.end)));
+        .where('date', '>=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.start)))
+        .where('date', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.end)));
     }
 
     // 排序

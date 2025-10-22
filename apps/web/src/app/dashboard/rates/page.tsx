@@ -151,7 +151,7 @@ export default function RatesPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-2xl font-bold">
-                        ¥{rate.amount.toLocaleString()}
+                        ${rate.amount.toLocaleString()}
                         <span className="text-sm font-normal text-muted-foreground ml-2">/hour</span>
                       </CardTitle>
                       <CardDescription>

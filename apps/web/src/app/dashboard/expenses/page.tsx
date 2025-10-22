@@ -118,7 +118,7 @@ export default function ExpensesPage() {
           <div className="bg-white rounded-lg border p-4">
             <div className="text-sm text-gray-600">This Month</div>
             <div className="text-2xl font-bold text-red-600 mt-1">
-              ¥{stats.totalAmount.toFixed(2)}
+              ${stats.totalAmount.toFixed(2)}
             </div>
           </div>
           <div className="bg-white rounded-lg border p-4">
@@ -128,13 +128,13 @@ export default function ExpensesPage() {
           <div className="bg-white rounded-lg border p-4">
             <div className="text-sm text-gray-600">Average</div>
             <div className="text-2xl font-bold mt-1">
-              ¥{stats.averageAmount.toFixed(0)}
+              ${stats.averageAmount.toFixed(0)}
             </div>
           </div>
           <div className="bg-white rounded-lg border p-4">
             <div className="text-sm text-gray-600">Max Amount</div>
             <div className="text-2xl font-bold mt-1">
-              ¥{stats.maxAmount.toFixed(2)}
+              ${stats.maxAmount.toFixed(2)}
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ export default function ExpensesPage() {
                     {format(date, 'MMM dd, EEEE')}
                   </h3>
                   <div className="text-sm text-gray-600">
-                    Total ¥{total.toFixed(2)}
+                    Total ${total.toFixed(2)}
                   </div>
                 </div>
 

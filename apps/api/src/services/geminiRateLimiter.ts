@@ -27,6 +27,8 @@ interface QueuedRequest {
   priority: 'high' | 'normal' | 'low';
   retries: number;
   maxRetries: number;
+  resolve?: (value: MCPParseResult) => void;
+  reject?: (reason?: any) => void;
 }
 
 interface RateLimitInfo {
@@ -47,8 +49,8 @@ export class GeminiRateLimiter {
   private requestIdCounter = 0;
 
   constructor() {
-    // 每500ms处理一次队列
-    this.processInterval = setInterval(() => this.processQueue(), 500);
+    // 每100ms处理一次队列（更快响应）
+    this.processInterval = setInterval(() => this.processQueue(), 100);
   }
 
   /**
@@ -66,59 +68,54 @@ export class GeminiRateLimiter {
       throw new Error('AI service is too busy. Please try again later.');
     }
 
-    // 创建请求包装
-    const wrappedExecute = async () => {
-      try {
-        const result = await Promise.race([
-          execute(),
-          new Promise<T>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout')), REQUEST_TIMEOUT_MS)
-          ),
-        ]);
-        return result;
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('429')) {
-          logger.warn('Rate limit hit', { requestId });
-          throw new RateLimitError('Rate limit exceeded');
+    // 创建Promise来等待执行完成
+    return new Promise<T>((resolve, reject) => {
+      // 创建请求包装
+      const wrappedExecute = async () => {
+        try {
+          const result = await Promise.race([
+            execute(),
+            new Promise<T>((_, rejectTimeout) =>
+              setTimeout(() => rejectTimeout(new Error('Request timeout')), REQUEST_TIMEOUT_MS)
+            ),
+          ]);
+          return result;
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('429')) {
+            logger.warn('Rate limit hit', { requestId });
+            throw new RateLimitError('Rate limit exceeded');
+          }
+          throw error;
         }
-        throw error;
-      }
-    };
+      };
 
-    // 添加到队列
-    const queuedRequest: QueuedRequest = {
-      id: requestId,
-      execute: wrappedExecute as any,
-      createdAt: Date.now(),
-      priority,
-      retries: 0,
-      maxRetries: 3,
-    };
+      // 添加到队列
+      const queuedRequest: QueuedRequest = {
+        id: requestId,
+        execute: wrappedExecute as any,
+        createdAt: Date.now(),
+        priority,
+        retries: 0,
+        maxRetries: 3,
+        resolve: resolve as any,
+        reject,
+      };
 
-    this.queue.push(queuedRequest);
+      this.queue.push(queuedRequest);
 
-    // 按优先级排序
-    this.queue.sort((a, b) => {
-      const priorityOrder = { high: 0, normal: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
+      // 按优先级排序
+      this.queue.sort((a, b) => {
+        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      });
 
-    logger.debug('Request queued', { requestId, queueSize: this.queue.length, priority });
+      logger.debug('Request queued', { requestId, queueSize: this.queue.length, priority });
 
-    // 等待请求完成
-    return new Promise((_resolve, reject) => {
-      const checkCompletion = setInterval(() => {
-        const request = this.queue.find(r => r.id === requestId);
-        if (!request) {
-          clearInterval(checkCompletion);
-          // 请求已处理（从队列移除）
-          // 实际结果通过其他机制返回
-        }
-      }, 100);
+      // 立即尝试处理队列（不等待下一个 interval）
+      setImmediate(() => this.processQueue());
 
       // 设置超时
       setTimeout(() => {
-        clearInterval(checkCompletion);
         const index = this.queue.findIndex(r => r.id === requestId);
         if (index !== -1) {
           this.queue.splice(index, 1);
@@ -164,7 +161,7 @@ export class GeminiRateLimiter {
       try {
         logger.debug('Executing queued request', { requestId: request.id, retries: request.retries });
 
-        await request.execute();
+        const result = await request.execute();
 
         // 增加计数
         this.rateLimitInfo.requestCount++;
@@ -175,6 +172,11 @@ export class GeminiRateLimiter {
           requestCount: this.rateLimitInfo.requestCount,
           remaining: RATE_LIMIT_REQUESTS - this.rateLimitInfo.requestCount,
         });
+
+        // 返回结果
+        if (request.resolve) {
+          request.resolve(result);
+        }
       } catch (error) {
         if (error instanceof RateLimitError) {
           // 速率限制，重新加入队列
@@ -188,6 +190,9 @@ export class GeminiRateLimiter {
             await new Promise(resolve => setTimeout(resolve, backoffMs));
           } else {
             logger.error('Max retries exceeded for rate limit', { requestId: request.id });
+            if (request.reject) {
+              request.reject(error);
+            }
           }
         } else {
           // 其他错误，放弃
@@ -195,6 +200,9 @@ export class GeminiRateLimiter {
             requestId: request.id,
             error: error instanceof Error ? error.message : String(error),
           });
+          if (request.reject) {
+            request.reject(error);
+          }
         }
       }
     } finally {

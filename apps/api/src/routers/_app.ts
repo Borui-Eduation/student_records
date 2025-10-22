@@ -14,6 +14,7 @@ import { expensesRouter } from './expenses';
 import { expenseCategoriesRouter } from './expenseCategories';
 import { expenseExportRouter } from './expenseExport';
 import { aiRouter } from './ai';
+import { dynamicQueryRouter } from './dynamicQuery';
 
 /**
  * Main tRPC application router
@@ -35,6 +36,7 @@ export const appRouter = router({
   expenseCategories: expenseCategoriesRouter,
   expenseExport: expenseExportRouter,
   ai: aiRouter,
+  dynamicQuery: dynamicQueryRouter,
 });
 
 export type AppRouter = typeof appRouter;

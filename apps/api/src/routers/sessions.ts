@@ -157,15 +157,22 @@ export const sessionsRouter = router({
     };
 
     const docRef = await ctx.db.collection('sessions').add(cleanUndefinedValues(sessionData));
+    const newSessionData = (await docRef.get()).data();
 
-    return {
+    if (!newSessionData) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to retrieve new session.' });
+    }
+
+    // Ensure all Timestamp fields are correctly serialized to ISO strings before returning
+    const finalData = {
+      ...newSessionData,
       id: docRef.id,
-      ...sessionData,
-      // Convert Firestore Timestamp to ISO string for proper serialization
-      date: sessionData.date.toDate().toISOString(),
-      createdAt: sessionData.createdAt.toDate().toISOString(),
-      updatedAt: sessionData.updatedAt.toDate().toISOString(),
+      date: newSessionData.date?.toDate ? newSessionData.date.toDate().toISOString() : null,
+      createdAt: newSessionData.createdAt?.toDate ? newSessionData.createdAt.toDate().toISOString() : null,
+      updatedAt: newSessionData.updatedAt?.toDate ? newSessionData.updatedAt.toDate().toISOString() : null,
     };
+
+    return finalData as typeof finalData & { id: string };
   }),
 
   /**
@@ -229,11 +236,11 @@ export const sessionsRouter = router({
       query = query.where('sessionTypeId', '==', input.sessionTypeId);
     }
 
-    // Filter by date range
+    // Filter by date range - use parseLocalDate to handle timezone correctly
     if (input.dateRange) {
       query = query
-        .where('date', '>=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.start)))
-        .where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(input.dateRange.end)));
+        .where('date', '>=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.start)))
+        .where('date', '<=', admin.firestore.Timestamp.fromDate(parseLocalDate(input.dateRange.end)));
     }
 
     // Order by date descending
@@ -327,21 +334,28 @@ export const sessionsRouter = router({
     }
 
     if (updates.date) {
-      updateData.date = admin.firestore.Timestamp.fromDate(parseLocalDate(updates.date));
+      const parsed = parseLocalDate(updates.date);
+      updateData.date = admin.firestore.Timestamp.fromDate(parsed);
     }
 
     await docRef.update(cleanUndefinedValues(updateData));
 
     const updated = await docRef.get();
     const updatedData = updated.data();
-    return {
-      id: updated.id,
+
+    if (!updatedData) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to retrieve updated session.' });
+    }
+
+    const finalData = {
       ...updatedData,
-      // Convert Firestore Timestamp to ISO string for proper serialization
-      date: updatedData?.date?.toDate ? updatedData.date.toDate().toISOString() : updatedData?.date,
-      createdAt: updatedData?.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString() : updatedData?.createdAt,
-      updatedAt: updatedData?.updatedAt?.toDate ? updatedData.updatedAt.toDate().toISOString() : updatedData?.updatedAt,
+      id: updated.id,
+      date: updatedData.date?.toDate ? updatedData.date.toDate().toISOString() : null,
+      createdAt: updatedData.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString() : null,
+      updatedAt: updatedData.updatedAt?.toDate ? updatedData.updatedAt.toDate().toISOString() : null,
     };
+    
+    return finalData as typeof finalData & { id: string };
   }),
 
   /**

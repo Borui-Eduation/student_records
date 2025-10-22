@@ -179,7 +179,7 @@ export default function InvoicesPage() {
                     </div>
                     <div className="text-right sm:text-right">
                       <div className="text-2xl sm:text-3xl font-bold">
-                        ¥{invoice.totalAmount?.toLocaleString()}
+                        ${invoice.totalAmount?.toLocaleString()}
                       </div>
                       <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                         {invoice.currency}
@@ -214,12 +214,12 @@ export default function InvoicesPage() {
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Subtotal:</span>
-                      <span className="font-medium">¥{invoice.subtotal?.toLocaleString()}</span>
+                      <span className="font-medium">${invoice.subtotal?.toLocaleString()}</span>
                     </div>
                     {invoice.taxAmount > 0 && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-muted-foreground">Tax:</span>
-                        <span className="font-medium">¥{invoice.taxAmount?.toLocaleString()}</span>
+                        <span className="font-medium">${invoice.taxAmount?.toLocaleString()}</span>
                       </div>
                     )}
                   </div>

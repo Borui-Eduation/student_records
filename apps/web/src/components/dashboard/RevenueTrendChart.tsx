@@ -102,7 +102,7 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
               Revenue vs Expenses Trend
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm mt-1">
-              {rangeInfo.label} • Net: ¥{stats.netTotal.toLocaleString()}
+              {rangeInfo.label} • Net: ${stats.netTotal.toLocaleString()}
             </CardDescription>
           </div>
           <Tabs value={timeRange} onValueChange={handleRangeChange} className="w-full sm:w-auto">
@@ -120,13 +120,13 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
           <div className="text-center p-3 bg-green-50 rounded-lg">
             <p className="text-xs text-gray-600">Avg Revenue</p>
             <p className="text-base sm:text-lg font-bold text-green-600">
-              ¥{stats.avgRevenue.toFixed(0)}
+              ${stats.avgRevenue.toFixed(0)}
             </p>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-lg">
             <p className="text-xs text-gray-600">Avg Expenses</p>
             <p className="text-base sm:text-lg font-bold text-red-600">
-              ¥{stats.avgExpenses.toFixed(0)}
+              ${stats.avgExpenses.toFixed(0)}
             </p>
           </div>
           <div className={`text-center p-3 rounded-lg ${stats.netTotal >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
@@ -189,9 +189,10 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // value is like "2025-W42"
                       return value.split('-W')[1] ? `W${value.split('-W')[1]}` : value;
                     } else {
-                      // month: value is like "2025-10" (UTC)
+                      // month: value is like "2025-10" where 10 is October
                       const [year, month] = value.split('-').map(Number);
-                      const date = new Date(Date.UTC(year, month - 1, 1));
+                      // month is already the correct month number (1-12), subtract 1 for JS Date (0-11)
+                      const date = new Date(year, month - 1, 1);
                       if (isNaN(date.getTime())) {
                         return value;
                       }
@@ -206,7 +207,7 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                 stroke="#6b7280"
                 fontSize={12}
                 tickLine={false}
-                tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 contentStyle={{
@@ -215,7 +216,7 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                   borderRadius: '8px',
                   fontSize: '12px',
                 }}
-                formatter={(value: number) => [`¥${value.toLocaleString()}`, '']}
+                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
                 labelFormatter={(label) => {
                   try {
                     if (timeRange === 'day') {
@@ -230,9 +231,9 @@ export function RevenueTrendChart({ monthlyRevenue, monthlyExpenses, isLoading, 
                       // label is like "2025-W42"
                       return label.split('-W')[1] ? `Week ${label.split('-W')[1]} of ${label.split('-W')[0]}` : label;
                     } else {
-                      // month: label is like "2025-10" (UTC)
+                      // month: label is like "2025-10" where 10 is October
                       const [year, month] = label.split('-').map(Number);
-                      const date = new Date(Date.UTC(year, month - 1, 1));
+                      const date = new Date(year, month - 1, 1);
                       if (isNaN(date.getTime())) {
                         return label;
                       }
@@ -339,7 +340,7 @@ function prepareTrendData(
   const completeRange = generateDateRange(timeRange, dateRange);
   
   // Fill in missing dates with zero values
-  const sortedData = completeRange.map(dateKey => {
+  const allData = completeRange.map(dateKey => {
     const data = dataMap.get(dateKey) || { revenue: 0, expenses: 0 };
     return {
       date: dateKey,
@@ -349,7 +350,25 @@ function prepareTrendData(
     };
   });
 
-  return sortedData;
+  // Filter out periods with no data (both revenue and expenses are 0)
+  // Only show periods that have at least some activity
+  const filteredData = allData.filter(item => item.revenue > 0 || item.expenses > 0);
+  
+  console.log('Chart Data Debug:', {
+    allDataLength: allData.length,
+    filteredDataLength: filteredData.length,
+    allData: allData.map(d => ({ date: d.date, revenue: d.revenue, expenses: d.expenses })),
+    filteredData: filteredData.map(d => ({ date: d.date, revenue: d.revenue, expenses: d.expenses })),
+  });
+  
+  // If we have no data after filtering, return empty array
+  if (filteredData.length === 0) {
+    return [];
+  }
+  
+  // Return only the last 6 periods with data, or all if less than 6
+  const maxPeriods = 6;
+  return filteredData.slice(-maxPeriods);
 }
 
 // Generate complete date range based on granularity
