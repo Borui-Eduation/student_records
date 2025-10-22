@@ -117,11 +117,15 @@ export const knowledgeBaseRouter = router({
       accessCount: admin.firestore.FieldValue.increment(1),
     }));
 
+    // Re-fetch to get the updated accessCount
+    const updatedDoc = await doc.ref.get();
+    const updatedData = updatedDoc.data()!;
+
     // Decrypt if encrypted
-    let content = data.content;
-    if (data.isEncrypted) {
+    let content = updatedData.content;
+    if (updatedData.isEncrypted) {
       try {
-        content = await encryptionService.decrypt(data.content);
+        content = await encryptionService.decrypt(updatedData.content);
       } catch (error) {
         console.error('Decryption failed:', error);
         throw new TRPCError({
@@ -132,22 +136,22 @@ export const knowledgeBaseRouter = router({
     }
 
     return {
-      id: doc.id,
-      userId: data.userId,
-      title: data.title,
-      type: data.type,
+      id: updatedDoc.id,
+      userId: updatedData.userId,
+      title: updatedData.title,
+      type: updatedData.type,
       content,
-      isEncrypted: data.isEncrypted,
-      tags: data.tags || [],
-      category: data.category,
-      attachments: data.attachments || [],
-      accessCount: data.accessCount || 0,
-      createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-      updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-      accessedAt: data.accessedAt?.toDate?.() ? data.accessedAt.toDate().toISOString() : undefined,
-      createdBy: data.createdBy,
-      kmsKeyId: data.kmsKeyId,
-      encryptionMetadata: data.encryptionMetadata,
+      isEncrypted: updatedData.isEncrypted,
+      tags: updatedData.tags || [],
+      category: updatedData.category,
+      attachments: updatedData.attachments || [],
+      accessCount: updatedData.accessCount || 0,
+      createdAt: updatedData.createdAt?.toDate?.() ? updatedData.createdAt.toDate().toISOString() : updatedData.createdAt,
+      updatedAt: updatedData.updatedAt?.toDate?.() ? updatedData.updatedAt.toDate().toISOString() : updatedData.updatedAt,
+      accessedAt: updatedData.accessedAt?.toDate?.() ? updatedData.accessedAt.toDate().toISOString() : undefined,
+      createdBy: updatedData.createdBy,
+      kmsKeyId: updatedData.kmsKeyId,
+      encryptionMetadata: updatedData.encryptionMetadata,
     };
   }),
 

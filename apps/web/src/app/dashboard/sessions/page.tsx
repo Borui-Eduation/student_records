@@ -204,11 +204,12 @@ export default function SessionsPage() {
                         </span>
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${getBillingStatusColor(
-                            session.billingStatus
+                            session.billingStatus || 'unbilled'
                           )}`}
                         >
-                          {session.billingStatus.charAt(0).toUpperCase() +
-                            session.billingStatus.slice(1)}
+                          {session.billingStatus
+                            ? session.billingStatus.charAt(0).toUpperCase() + session.billingStatus.slice(1)
+                            : 'Unbilled'}
                         </span>
                       </div>
                     </div>
