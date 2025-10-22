@@ -47,6 +47,16 @@ const nextConfig = {
           },
         ],
       },
+      // Browser config for Windows
+      {
+        source: '/browserconfig.xml',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/xml',
+          },
+        ],
+      },
       // Security headers for all routes
       {
         source: '/:path*',
