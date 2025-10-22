@@ -38,11 +38,7 @@ export default function DashboardLayout({
     if (!loading && !user) {
       router.push('/login');
     }
-    // Redirect non-admin users back to login
-    if (!loading && user && userRole && userRole !== 'admin' && userRole !== 'superadmin') {
-      router.push('/login');
-    }
-  }, [user, userRole, loading, router]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (

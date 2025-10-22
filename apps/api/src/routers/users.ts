@@ -25,7 +25,9 @@ export const usersRouter = router({
 
     // Create new user document
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    const role = ctx.user.email === superAdminEmail ? 'superadmin' : 'user';
+    // New users are created as 'admin' by default so they can access the dashboard
+    // Only the super admin email gets 'superadmin' role
+    const role = ctx.user.email === superAdminEmail ? 'superadmin' : 'admin';
 
     const newUser = {
       email: ctx.user.email || '',

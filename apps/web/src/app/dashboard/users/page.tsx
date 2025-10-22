@@ -234,11 +234,11 @@ export default function UsersPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
-          <p>• <strong>User</strong>: Default role for new users. Cannot access the dashboard.</p>
-          <p>• <strong>Admin</strong>: Can access dashboard and manage their own data.</p>
+          <p>• <strong>User</strong>: Limited role. Can only view their own data.</p>
+          <p>• <strong>Admin</strong>: Default role for new users. Can access dashboard and manage their own data.</p>
           <p>• <strong>Super Admin</strong>: Full access. Can manage all users and view all data.</p>
           <p>• You cannot change your own role (security measure)</p>
-          <p>• Any user can login with Google, but needs admin role to access the dashboard</p>
+          <p>• New users are automatically created with Admin role</p>
           <p>• Role changes take effect immediately</p>
         </CardContent>
       </Card>
