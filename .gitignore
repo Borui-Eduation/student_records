@@ -62,3 +62,4 @@ Thumbs.db
 *service-account*.json
 *.json
 vercel-service-account.json
+github-actions-key.json
