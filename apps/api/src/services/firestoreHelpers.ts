@@ -3,6 +3,39 @@
  * Utilities for safely handling Firestore operations and data cleaning
  */
 
+import * as admin from 'firebase-admin';
+
+/**
+ * Check if an object is a Firestore special type that should not be recursively processed
+ */
+function isFirestoreSpecialType(obj: any): boolean {
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+
+  // Check for Firestore Timestamp
+  if (obj instanceof admin.firestore.Timestamp) {
+    return true;
+  }
+
+  // Check for Firestore FieldValue
+  if (obj.constructor && obj.constructor.name === 'FieldValue') {
+    return true;
+  }
+
+  // Check for Firestore GeoPoint
+  if (obj instanceof admin.firestore.GeoPoint) {
+    return true;
+  }
+
+  // Check for Firestore DocumentReference
+  if (obj instanceof admin.firestore.DocumentReference) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Recursively removes undefined values from an object
  * This is needed because Firestore cannot store undefined values
@@ -15,19 +48,24 @@ export function cleanUndefinedValues<T extends Record<string, any>>(obj: T): Par
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => 
-      item !== null && typeof item === 'object' 
-        ? cleanUndefinedValues(item) 
+    return obj.map(item =>
+      item !== null && typeof item === 'object' && !isFirestoreSpecialType(item)
+        ? cleanUndefinedValues(item)
         : item
     ) as any;
   }
 
   if (typeof obj === 'object') {
+    // Don't process Firestore special types
+    if (isFirestoreSpecialType(obj)) {
+      return obj;
+    }
+
     const cleaned: any = {};
     for (const key in obj) {
       const value = obj[key];
       if (value !== undefined) {
-        if (value !== null && typeof value === 'object') {
+        if (value !== null && typeof value === 'object' && !isFirestoreSpecialType(value)) {
           cleaned[key] = cleanUndefinedValues(value);
         } else {
           cleaned[key] = value;

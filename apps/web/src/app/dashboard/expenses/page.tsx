@@ -22,8 +22,11 @@ export default function ExpensesPage() {
     end: endOfMonth(new Date()).toISOString(),
   });
 
+  // Debug: Log when component mounts
+  console.log('📊 Expenses page mounted', { dateRange });
+
   // 获取费用列表
-  const { data: expensesData, isLoading, refetch } = trpc.expenses.list.useQuery({
+  const { data: expensesData, isLoading, refetch, error: listError } = trpc.expenses.list.useQuery({
     dateRange,
     sortBy: 'date',
     sortOrder: 'desc',
@@ -31,9 +34,17 @@ export default function ExpensesPage() {
   });
 
   // 获取本月统计
-  const { data: stats } = trpc.expenses.getStatistics.useQuery({
+  const { data: stats, error: statsError } = trpc.expenses.getStatistics.useQuery({
     dateRange,
   });
+
+  // Log errors for debugging
+  if (listError) {
+    console.error('❌ Expense list error:', listError);
+  }
+  if (statsError) {
+    console.error('❌ Stats error:', statsError);
+  }
 
   // 删除mutation
   const deleteMutation = trpc.expenses.delete.useMutation({
@@ -88,6 +99,30 @@ export default function ExpensesPage() {
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
           <p className="mt-4 text-sm text-muted-foreground">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if there's an issue loading expenses
+  if (listError) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Expenses</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Track and manage your expenses
+          </p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Error Loading Expenses</h3>
+          <p className="text-red-700 mb-4">{listError.message}</p>
+          <div className="text-sm text-red-600 mb-4">
+            <strong>Error Code:</strong> {listError.data?.code || 'UNKNOWN'}
+          </div>
+          <Button onClick={() => refetch()} variant="outline">
+            Try Again
+          </Button>
         </div>
       </div>
     );

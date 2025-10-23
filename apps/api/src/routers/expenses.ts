@@ -27,8 +27,20 @@ function parseLocalDate(dateInput: string | Date): Date {
   if (dateInput instanceof Date) {
     return dateInput;
   }
+
+  // Handle ISO string format (e.g., "2025-10-01T00:00:00.000Z")
+  if (dateInput.includes('T')) {
+    return new Date(dateInput);
+  }
+
   // Parse YYYY-MM-DD as local time at noon to avoid timezone issues
   const [year, month, day] = dateInput.split('-').map(Number);
+
+  // Validate the parsed values
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error(`Invalid date format: ${dateInput}`);
+  }
+
   return new Date(year, month - 1, day, 12, 0, 0);
 }
 
@@ -142,9 +154,8 @@ export const expensesRouter = router({
 
     // 创建费用记录
     // Parse date in local timezone to avoid UTC conversion issues
-    const [year, month, day] = input.date.split('-').map(Number);
-    const localDate = new Date(year, month - 1, day, 12, 0, 0); // Use noon to avoid timezone edge cases
-    
+    const localDate = parseLocalDate(input.date);
+
     const expenseData = {
       userId: ctx.user.uid,
       date: admin.firestore.Timestamp.fromDate(localDate),
@@ -314,8 +325,7 @@ export const expensesRouter = router({
 
     // 更新日期
     if (updates.date) {
-      const [year, month, day] = updates.date.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day, 12, 0, 0);
+      const localDate = parseLocalDate(updates.date);
       updateData.date = admin.firestore.Timestamp.fromDate(localDate);
     }
 
