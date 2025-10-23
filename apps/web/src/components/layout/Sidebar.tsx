@@ -18,6 +18,7 @@ import {
   Tag,
   Grid2X2,
   UserPlus,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -77,6 +78,11 @@ const navItems = [
     title: 'Company Profile',
     href: '/dashboard/profile',
     icon: Building2,
+  },
+  {
+    title: 'Settings',
+    href: '/dashboard/settings',
+    icon: Settings,
   },
   {
     title: 'User Management',

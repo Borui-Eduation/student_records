@@ -47,7 +47,16 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=borui-education-c6666
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=borui-education-c6666.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+
+# Firebase Cloud Messaging (推送通知)
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=your-vapid-key
 ```
+
+**如何获取 VAPID Key：**
+1. 打开 [Firebase Console](https://console.firebase.google.com)
+2. 进入项目设置 > Cloud Messaging
+3. 在"Web 推送证书"部分，点击"生成密钥对"
+4. 复制生成的 VAPID key 到上述环境变量
 
 ## ☁️ 生产环境配置
 

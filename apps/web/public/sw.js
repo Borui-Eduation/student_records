@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_VERSION = 'v1'
+const CACHE_VERSION = 'v2'
 const CACHE_NAME = `professional-workspace-${CACHE_VERSION}`
 const RUNTIME_CACHE = `professional-workspace-runtime-${CACHE_VERSION}`
 const API_CACHE = `professional-workspace-api-${CACHE_VERSION}`
@@ -191,14 +191,23 @@ async function trimCache(cacheName, maxItems) {
 
 // Add response to cache with size limit
 async function addToCache(cacheName, request, response) {
-  if (!response || response.status !== 200) {
+  if (!response || response.status !== 200 || !response.ok) {
     return
   }
-  const cache = await caches.open(cacheName)
-  cache.put(request, response.clone())
-  const limit = CACHE_LIMITS[cacheName]
-  if (limit) {
-    trimCache(cacheName, limit)
+  // Check if response body has already been used
+  if (response.bodyUsed) {
+    return
+  }
+  try {
+    const cache = await caches.open(cacheName)
+    await cache.put(request, response.clone())
+    const limit = CACHE_LIMITS[cacheName]
+    if (limit) {
+      await trimCache(cacheName, limit)
+    }
+  } catch (error) {
+    // Silently fail if response cannot be cloned or cached
+    console.warn('[SW] Failed to cache response:', error)
   }
 }
 
@@ -207,5 +216,75 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
+  
+  // Handle show notification request from client
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, options } = event.data
+    self.registration.showNotification(title, {
+      icon: '/icon-192x192.png',
+      badge: '/icon-192x192.png',
+      ...options,
+    })
+  }
+})
+
+// Handle push events (for web push notifications)
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received:', event)
+  
+  let data = {}
+  let title = 'New Notification'
+  let options = {
+    body: 'You have a new message',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    vibrate: [200, 100, 200],
+    tag: 'default',
+    requireInteraction: false,
+  }
+
+  if (event.data) {
+    try {
+      data = event.data.json()
+      title = data.title || title
+      options = {
+        ...options,
+        body: data.body || options.body,
+        icon: data.icon || options.icon,
+        tag: data.tag || options.tag,
+        data: data.data || {},
+      }
+    } catch (e) {
+      console.error('[SW] Error parsing push data:', e)
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  )
+})
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event.notification)
+  
+  event.notification.close()
+
+  const urlToOpen = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Try to focus existing window
+      for (const client of clientList) {
+        if (client.url.includes(urlToOpen) && 'focus' in client) {
+          return client.focus()
+        }
+      }
+      // Open new window
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen)
+      }
+    })
+  )
 })
 

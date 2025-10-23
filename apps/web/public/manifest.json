@@ -10,6 +10,7 @@
   "theme_color": "#000000",
   "categories": ["business", "productivity"],
   "prefer_related_applications": false,
+  "gcm_sender_id": "103953800507",
   "screenshots": [
     {
       "src": "/icon-192x192.png",
