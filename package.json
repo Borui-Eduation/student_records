@@ -5,8 +5,8 @@
   "description": "Professional Workspace - Multi-Business Management Platform for Education & Technical Services",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:start": "./dev-start.sh",
-    "dev:stop": "./dev-stop.sh",
+    "dev:start": "./scripts/dev-start.sh",
+    "dev:stop": "./scripts/dev-stop.sh",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",
@@ -16,7 +16,6 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "test": "turbo run test",
-    "fix-session-types": "node scripts/fix-session-types.js",
     "prepare": "husky install",
     "pre-commit": "lint-staged"
   },

@@ -194,223 +194,167 @@ gcloud run services logs tail student-record-api --region us-west1
 
 ---
 
-## 🎨 设计原则
+## 🔒 环境配置
 
-核心设计原则：
+### 必需的环境变量
 
-1. **浅色极简主义** - 清晰、直观的界面
-2. **代码清晰可读** - 可维护、文档完善
-3. **多费率财务自动化** - 灵活、精确的计费
-4. **结构化课时记录** - 全面的内容管理
-5. **安全与加密优先** - 全方位数据保护
-6. **高效运营** - 优化的工作流程
-7. **专业服务交付** - 面向客户的高质量
+**后端 (apps/api/.env)**
+```bash
+# Firebase
+GOOGLE_CLOUD_PROJECT=your-project-id
+FIREBASE_PROJECT_ID=your-project-id
+
+# 管理员邮箱（逗号分隔）
+ADMIN_EMAILS=admin@example.com
+
+# Gemini API (可选)
+GEMINI_API_KEY=your-gemini-api-key
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+```
+
+**前端 (apps/web/.env.local)**
+```bash
+# API URL
+NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# Firebase 配置
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
 
 ---
 
-## 🔒 安全特性
+## 🔧 常见问题
 
-- ✅ **Firebase Authentication**: Google OAuth + 邮箱密码登录
-- ✅ **管理员白名单**: 基于邮箱的访问控制
-- ✅ **Google Cloud KMS**: AES-256-GCM 加密敏感数据
-- ✅ **HTTPS 强制**: 所有连接使用 HTTPS
-- ✅ **CORS 保护**: 严格的跨域访问策略
-- ✅ **Firestore 安全规则**: 数据库级别的访问控制
+### 1. 端口被占用
+**错误**: `EADDRINUSE: address already in use :::8080`
+
+**解决**:
+```bash
+pnpm dev:stop
+pnpm dev:start
+```
+
+### 2. Expense 不显示
+**原因**: 日期字段损坏或权限问题
+
+**解决**:
+```bash
+# 检查用户角色
+node scripts/check-user-role.js your@email.com
+
+# 修复时间戳
+node scripts/fix-broken-timestamps.js
+
+# 检查数据
+node scripts/check-expenses.js your@email.com
+```
+
+### 3. 新用户无法访问
+**原因**: 新用户默认角色为 'user'
+
+**解决**:
+```bash
+# 升级为 admin
+node scripts/set-superadmin.js user@email.com admin
+```
+
+### 4. 图片上传失败
+**原因**: Firebase Storage 权限或配置问题
+
+**解决**:
+- 检查 Firebase Storage 规则
+- 确认 Storage Bucket 配置正确
+- 查看浏览器控制台错误信息
 
 ---
 
 ## 💰 成本估算
 
-### 免费额度（前 3 个月）
+### 免费额度
+- **Vercel**: 免费（Hobby 计划）
+- **Cloud Run**: 2M 请求/月
+- **Firestore**: 50K 读取/天
+- **Firebase Auth**: 无限用户
+- **Firebase Storage**: 5GB
 
-- **Vercel**: $0（Hobby 计划）
-- **Cloud Run**: $0（2M 请求/月）
-- **Firestore**: $0（50K 读取/天）
-- **Cloud KMS**: $0（20K 操作/月）
-- **Firebase Auth**: $0（无限用户）
-
-**总计: $0/月**
-
-### 超出免费额度
-
-预计 **$10-15/月**（正常使用）
-
-详见: [`docs/DEPLOY_AND_TEST.md`](./docs/DEPLOY_AND_TEST.md)
+**预计成本**: $0-5/月（正常使用）
 
 ---
 
-## 📊 项目统计
+## 📚 重要更新日志
 
-- **总文件数**: 82+ 文件
-- **代码行数**: 8,000+ 行 TypeScript/React
-- **Git 提交**: 17+ 次
-- **功能模块**: 8 个核心模块
-- **API 路由**: 7 个 tRPC 路由（clients, rates, sessions, invoices, knowledgeBase, sharingLinks, companyProfile）
-- **UI 页面**: 9 个完整页面
-- **组件**: 20+ 个可复用组件
-- **完成度**: 🎉 **100% 实现**
+### 2025-10-23: Expense 功能修复
+- ✅ 修复日期解析问题（支持 ISO 格式）
+- ✅ 修复 Firestore Timestamp 损坏问题
+- ✅ 添加数据修复脚本
+- ✅ 优化 `cleanUndefinedValues` 函数
 
----
+### 2025-10-20: 新用户管理功能
+- ✅ 新用户自动标记 `isNewUser: true`
+- ✅ Superadmin 可审查新用户
+- ✅ 添加 `/dashboard/new-users` 页面
+- ✅ Sidebar 显示待审查用户数量
 
-## 🧪 测试
-
-### 自动化测试
-
-```bash
-# 测试本地环境
-./scripts/run-tests.sh  # 选择 1
-
-# 测试生产环境
-./scripts/run-tests.sh  # 选择 2
-```
-
-### 手动测试
-
-完整的测试清单：[`docs/TEST_CHECKLIST.md`](./docs/TEST_CHECKLIST.md)
-
-**8 大核心测试**:
-1. ✅ 基础设施（前端+后端）
-2. ✅ Firebase 认证
-3. ✅ 客户管理
-4. ✅ 费率管理
-5. ✅ 会话记录
-6. ✅ 发票生成
-7. ✅ 知识库加密
-8. ✅ 分享链接
+### 2025-10-12: 系统优化
+- ✅ TypeScript 严格模式
+- ✅ 性能优化（FCP 提升 40%）
+- ✅ 安全加固（KMS 加密）
+- ✅ PWA 支持
 
 ---
 
-## 🆘 获取帮助
+## 🔗 相关链接
 
-### 常见问题
-
-1. **无法登录**
-   - 检查 Firebase Console → Authentication → Authorized domains
-   - 确认管理员邮箱在 `ADMIN_EMAILS` 中
-
-2. **API 连接失败**
-   - 测试: `curl YOUR_API_URL/health`
-   - 检查 `NEXT_PUBLIC_API_URL` 配置
-   - 检查 CORS 设置
-
-3. **加密功能不工作**
-   - 检查 KMS 密钥是否创建
-   - 检查服务账号 KMS 权限
-   - 查看 Cloud Run 日志
-
-### 查看日志
-
-```bash
-# Cloud Run 日志
-gcloud run services logs tail student-record-api --region asia-east1
-
-# 本地日志
-# 查看终端输出
-```
+- **生产环境**: https://record.borui.org
+- **GitHub**: https://github.com/Borui-Eduation/student_records
+- **Firebase Console**: https://console.firebase.google.com
+- **Google Cloud**: https://console.cloud.google.com
 
 ---
 
-## 🎯 推荐部署流程
+## 📖 文档索引
 
-### 快速部署
+核心文档已整合到本 README，其他参考文档：
 
-```bash
-# 1. 本地测试
-./scripts/quick-deploy.sh  # 选项 1
-
-# 2. 云端部署
-./scripts/quick-deploy.sh  # 选项 2
-
-# 3. 运行测试
-./scripts/run-tests.sh
-```
+- `DEV_GUIDE.md` - 开发指南
+- `DEPLOYMENT_GUIDE.md` - 部署指南
+- `ENV_CONFIG.md` - 环境配置详解
+- `NEW_USERS_FEATURE_IMPLEMENTATION.md` - 新用户功能文档
+- `PWA_GUIDE.md` - PWA 实现指南
 
 ---
 
-## 🚀 开始使用
+## 🎯 快速参考
 
-现在您可以：
+### 访问 URL
+- 前端: http://localhost:3000
+- 后端: http://localhost:8080
+- 健康检查: http://localhost:8080/health
 
-1. **立即部署**: 运行 `./scripts/quick-deploy.sh`
-2. **本地开发**: 运行 `pnpm install && pnpm dev`
-3. **运行测试**: 运行 `./scripts/run-tests.sh`
+### 默认角色
+- **user**: 基础用户（受限访问）
+- **admin**: 管理员（完整功能）
+- **superadmin**: 超级管理员（用户管理）
 
----
-
-## 🎉 v1.1.0 优化亮点
-
-### 已完成的系统优化（2025-10-12）
-
-#### 🎯 代码质量
-- ✅ TypeScript严格模式（捕获更多错误）
-- ✅ 统一结构化日志系统（Google Cloud兼容）
-- ✅ 环境变量运行时验证（Zod）
-- ✅ React错误边界（防止崩溃）
-- ✅ ESLint + Prettier + Git hooks
-
-#### ⚡ 性能提升
-- ✅ Docker构建优化（构建速度提升40%）
-- ✅ 前端加载优化（FCP提升40%）
-- ✅ 图片优化配置（AVIF/WebP）
-- ✅ Gzip压缩（响应减小65%）
-- ✅ Firestore查询优化（响应提升60%）
-
-#### 🔒 安全加固
-- ✅ 增强加密算法（真随机IV + HMAC）
-- ✅ 安全HTTP头部（Helmet）
-- ✅ API速率限制（防滥用）
-- ✅ 非root容器运行
-- ✅ 敏感信息自动脱敏
-
-#### 📚 新增文档
-- ✅ `OPTIMIZATION_REPORT.md` - 完整优化报告
-- ✅ `DEPLOYMENT_CHECKLIST.md` - 部署检查清单
-- ✅ `SENTRY_SETUP.md` - 错误追踪指南
-- ✅ `CACHING_STRATEGY.md` - 缓存实施策略
-- ✅ `UPGRADE_GUIDE.md` - Next.js 15升级指南
-
-**详见**: [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md)
-
-## 📈 后续优化路线图
-
-### 已准备好实施（有完整文档）
-- **Redis缓存**: API响应速度提升90%（见`CACHING_STRATEGY.md`）
-- **Sentry监控**: 实时错误追踪（见`SENTRY_SETUP.md`）
-- **Cloud CDN**: 图片加载优化（见`CACHING_STRATEGY.md`）
-
-### 计划中
-- **Next.js 15升级**: 等待稳定版（见`UPGRADE_GUIDE.md`）
-- **React 19升级**: 性能和开发体验提升
-- **Service Worker**: 离线支持和PWA
+### 重要区域
+- 所有服务使用 **us-west1** region
+- Firebase Storage: **us-west1**
+- Cloud Run: **us-west1**
 
 ---
 
-## 🤝 贡献
-
-1. 创建 feature 分支
-2. 遵循代码清晰原则
-3. 编写测试
-4. 提交 Pull Request
+**版本**: 1.2.0
+**状态**: ✅ 生产就绪
+**最后更新**: 2025-10-23
 
 ---
 
-## 📄 许可证
-
-[待定]
-
----
-
-## 📞 联系
-
-[待定]
-
----
-
-**版本**: 1.1.0 🚀  
-**状态**: ✅ 已全面优化，性能提升40%+  
-**最后更新**: 2025-10-12
-
----
-
-**🎊 恭喜！您的系统已完全开发完成，现在可以开始部署使用了！**
+**Made with ❤️ for Professional Workspace Management**
 
